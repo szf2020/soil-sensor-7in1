@@ -38,8 +38,8 @@
 #else
 #include "test/stubs/esp32_stubs.h"
 #endif
-// Веб-сервер
-WebServer server(80);  // NOLINT(misc-use-internal-linkage)
+// Веб-сервер - используем глобальный экземпляр из wifi_manager.cpp
+// WebServer server(80);  // NOLINT(misc-use-internal-linkage) - УДАЛЕНО: конфликт с wifi_manager.cpp
 
 // Глобальные экземпляры бизнес-сервисов
 extern CropRecommendationEngine gCropEngine;
