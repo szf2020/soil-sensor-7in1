@@ -9,7 +9,13 @@
 #include "jxct_config_vars.h"
 #include "logger.h"  // ✅ Добавляем для logDebugSafe
 #include "modbus_sensor.h"
-#include "sensor_compensation.h"
+#include "business/sensor_compensation_service.h"
+#include "business/sensor_calibration_service.h"
+#include "sensor_types.h"  // Для SoilProfile
+#include "sensor_processing.h"    // Общая логика обработки
+// Глобальные экземпляры бизнес-сервисов объявлены в business_instances.cpp
+extern SensorCalibrationService gCalibrationService;
+extern SensorCompensationService gCompensationService;
 
 namespace
 {
@@ -60,37 +66,10 @@ void fakeSensorTask(void* parameters)
             sensorData.phosphorus = npk.phosphorus;
             sensorData.potassium = npk.potassium;
 
-            // Применяем компенсацию, если включена
-            if (config.flags.calibrationEnabled)
-            {
-                logDebugSafe("✅ Применяем исправленную компенсацию датчика");
+            // Применяем единую логику обработки данных датчика
+            SensorProcessing::processSensorData(sensorData, config);
 
-                // Используем массив для устранения дублирования кода
-                static const std::array<SoilType, 5> soilTypes = {{
-                    SoilType::SAND,     // 0
-                    SoilType::LOAM,     // 1
-                    SoilType::PEAT,     // 2
-                    SoilType::CLAY,     // 3
-                    SoilType::SANDPEAT  // 4
-                }};
 
-                const int profileIndex = (config.soilProfile >= 0 && config.soilProfile < 5) ? config.soilProfile : 1;
-                const SoilType soil = soilTypes[profileIndex];
-
-                // 1. EC: температурная компенсация
-                sensorData.ec = correctEC(sensorData.ec, sensorData.temperature, sensorData.humidity, soil);
-
-                // 2. pH: температурная поправка
-                sensorData.ph = correctPH(sensorData.temperature, sensorData.ph);
-
-                // 3. NPK: температурная компенсация
-                correctNPK(sensorData.temperature, sensorData.humidity, soil, npk);
-
-                // Сохраняем скорректированные NPK данные в sensorData
-                sensorData.nitrogen = npk.nitrogen;
-                sensorData.phosphorus = npk.phosphorus;
-                sensorData.potassium = npk.potassium;
-            }
 
             DEBUG_PRINTLN("[fakeSensorTask] Сгенерированы тестовые данные датчика");
             iterationCounter = 0;  // Сброс счетчика

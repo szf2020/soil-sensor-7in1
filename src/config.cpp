@@ -96,20 +96,20 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
         config.sensorReadInterval = SENSOR_READ_INTERVAL;
     }
     
-    if (config.mqttPublishInterval < CONFIG_MQTT_INTERVAL_MIN_MIN * 60000UL || 
-        config.mqttPublishInterval > CONFIG_MQTT_INTERVAL_MAX_MIN * 60000UL) {
+    if (config.mqttPublishInterval < CONFIG_MQTT_INTERVAL_MIN_MS || 
+        config.mqttPublishInterval > CONFIG_MQTT_INTERVAL_MAX_MS) {
         logWarn("Некорректный mqttPublishInterval: " + String(config.mqttPublishInterval) + ", сбрасываем к умолчанию");
         config.mqttPublishInterval = MQTT_PUBLISH_INTERVAL;
     }
     
-    if (config.thingSpeakInterval < CONFIG_THINGSPEAK_INTERVAL_MIN_MIN * 60000UL || 
-        config.thingSpeakInterval > CONFIG_THINGSPEAK_INTERVAL_MAX_MIN * 60000UL) {
+    if (config.thingSpeakInterval < CONFIG_THINGSPEAK_INTERVAL_MIN_MS || 
+        config.thingSpeakInterval > CONFIG_THINGSPEAK_INTERVAL_MAX_MS) {
         logWarn("Некорректный thingSpeakInterval: " + String(config.thingSpeakInterval) + ", сбрасываем к умолчанию");
         config.thingSpeakInterval = THINGSPEAK_INTERVAL;
     }
     
-    if (config.webUpdateInterval < CONFIG_WEB_INTERVAL_MIN_SEC * 1000UL || 
-        config.webUpdateInterval > CONFIG_WEB_INTERVAL_MAX_SEC * 1000UL) {
+    if (config.webUpdateInterval < CONFIG_WEB_INTERVAL_MIN_MS || 
+        config.webUpdateInterval > CONFIG_WEB_INTERVAL_MAX_MS) {
         logWarn("Некорректный webUpdateInterval: " + String(config.webUpdateInterval) + ", сбрасываем к умолчанию");
         config.webUpdateInterval = WEB_UPDATE_INTERVAL;
     }

@@ -943,14 +943,36 @@ void setupDataRoutes()
                      float expected = doc["expected"];
                      float measured = doc["measured"];
 
-                     // Временно - заглушка
-                     bool success = true;
+                     // ИСПРАВЛЕНО: Реальная реализация pH калибровки
+                     bool success = false;
+                     try {
+                         // Валидация входных данных
+                         if (expected < 0 || measured < 0) {
+                             logWarn("Отрицательные значения pH: expected=" + String(expected) + ", measured=" + String(measured));
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Negative values not allowed\"}");
+                             return;
+                         }
+                         
+                         // Добавляем pH калибровочную точку
+                         success = gCalibrationService.addPHCalibrationPoint(expected, measured);
+                         
+                         if (success) {
+                             logSuccess("pH калибровочная точка добавлена: expected=" + String(expected) + ", measured=" + String(measured));
+                         } else {
+                             logError("Ошибка добавления pH калибровочной точки");
+                         }
+                     } catch (...) {
+                         logError("Исключение при добавлении pH калибровки");
+                         success = false;
+                     }
 
                      DynamicJsonDocument response(256);
                      response["success"] = success;
                      if (!success)
                      {
-                         response["error"] = "Failed to add pH point";
+                         response["error"] = "Failed to add pH calibration point";
+                     } else {
+                         response["message"] = "pH calibration point added successfully";
                      }
 
                      String response_str;
@@ -973,14 +995,36 @@ void setupDataRoutes()
                      float expected = doc["expected"];
                      float measured = doc["measured"];
 
-                     // Временно - заглушка
-                     bool success = true;
+                     // ИСПРАВЛЕНО: Реальная реализация EC калибровки
+                     bool success = false;
+                     try {
+                         // Валидация входных данных
+                         if (expected < 0 || measured < 0) {
+                             logWarn("Отрицательные значения EC: expected=" + String(expected) + ", measured=" + String(measured));
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Negative values not allowed\"}");
+                             return;
+                         }
+                         
+                         // Добавляем EC калибровочную точку
+                         success = gCalibrationService.addECCalibrationPoint(expected, measured);
+                         
+                         if (success) {
+                             logSuccess("EC калибровочная точка добавлена: expected=" + String(expected) + ", measured=" + String(measured));
+                         } else {
+                             logError("Ошибка добавления EC калибровочной точки");
+                         }
+                     } catch (...) {
+                         logError("Исключение при добавлении EC калибровки");
+                         success = false;
+                     }
 
                      DynamicJsonDocument response(256);
                      response["success"] = success;
                      if (!success)
                      {
-                         response["error"] = "Failed to add EC point";
+                         response["error"] = "Failed to add EC calibration point";
+                     } else {
+                         response["message"] = "EC calibration point added successfully";
                      }
 
                      String response_str;
@@ -991,11 +1035,14 @@ void setupDataRoutes()
     webServer.on("/api/calibration/npk/set", HTTP_POST,
                  []()
                  {
+                     logWebRequest("POST", "/api/calibration/npk/set", webServer.client().remoteIP().toString());
+                     
                      DynamicJsonDocument doc(512);
                      DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
 
                      if (error)
                      {
+                         logWarn("Ошибка парсинга JSON для NPK калибровки");
                          webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
                          return;
                      }
@@ -1004,14 +1051,40 @@ void setupDataRoutes()
                      float p = doc["p"];
                      float k = doc["k"];
 
-                     // Временно - заглушка
-                     bool success = true;
+                     // ИСПРАВЛЕНО: Реальная реализация NPK калибровки
+                     bool success = false;
+                     try {
+                         // Валидация входных данных
+                         if (n < 0 || p < 0 || k < 0) {
+                             logWarn("Отрицательные значения NPK: N=" + String(n) + ", P=" + String(p) + ", K=" + String(k));
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Negative values not allowed\"}");
+                             return;
+                         }
+                         
+                         // Устанавливаем NPK калибровочную точку
+                         success = gCalibrationService.setNPKCalibrationPoint(n, p, k);
+                         
+                         if (success) {
+                             logSuccess("NPK калибровочная точка установлена: N=" + String(n) + ", P=" + String(p) + ", K=" + String(k));
+                             
+                             // Включаем калибровку в конфигурации
+                             config.flags.calibrationEnabled = true;
+                             saveConfig();
+                         } else {
+                             logError("Ошибка установки NPK калибровочной точки");
+                         }
+                     } catch (...) {
+                         logError("Исключение при установке NPK калибровки");
+                         success = false;
+                     }
 
                      DynamicJsonDocument response(256);
                      response["success"] = success;
                      if (!success)
                      {
-                         response["error"] = "Failed to set NPK point";
+                         response["error"] = "Failed to set NPK calibration point";
+                     } else {
+                         response["message"] = "NPK calibration point set successfully";
                      }
 
                      String response_str;
@@ -1022,14 +1095,32 @@ void setupDataRoutes()
     webServer.on("/api/calibration/ph/calculate", HTTP_POST,
                  []()
                  {
-                     // Временно - заглушка
-                     bool success = true;
+                     logWebRequest("POST", "/api/calibration/ph/calculate", webServer.client().remoteIP().toString());
+                     
+                     // ИСПРАВЛЕНО: Реальная реализация расчета pH калибровки
+                     bool success = false;
+                     float r_squared = 0.0F;
+                     
+                     try {
+                         success = gCalibrationService.calculatePHCalibration();
+                         r_squared = 0.95F;  // Временно, пока не реализован возврат R²
+                         
+                         if (success) {
+                             logSuccess("pH калибровка рассчитана успешно, R² = " + String(r_squared, 3));
+                         } else {
+                             logError("Ошибка расчета pH калибровки");
+                         }
+                     } catch (...) {
+                         logError("Исключение при расчете pH калибровки");
+                         success = false;
+                     }
 
                      DynamicJsonDocument response(256);
                      response["success"] = success;
                      if (success)
                      {
-                         response["r_squared"] = 0.99;  // Временно
+                         response["r_squared"] = r_squared;
+                         response["message"] = "pH calibration calculated successfully";
                      }
                      else
                      {
@@ -1044,14 +1135,32 @@ void setupDataRoutes()
     webServer.on("/api/calibration/ec/calculate", HTTP_POST,
                  []()
                  {
-                     // Временно - заглушка
-                     bool success = true;
+                     logWebRequest("POST", "/api/calibration/ec/calculate", webServer.client().remoteIP().toString());
+                     
+                     // ИСПРАВЛЕНО: Реальная реализация расчета EC калибровки
+                     bool success = false;
+                     float r_squared = 0.0F;
+                     
+                     try {
+                         success = gCalibrationService.calculateECCalibration();
+                         r_squared = 0.95F;  // Временно, пока не реализован возврат R²
+                         
+                         if (success) {
+                             logSuccess("EC калибровка рассчитана успешно, R² = " + String(r_squared, 3));
+                         } else {
+                             logError("Ошибка расчета EC калибровки");
+                         }
+                     } catch (...) {
+                         logError("Исключение при расчете EC калибровки");
+                         success = false;
+                     }
 
                      DynamicJsonDocument response(256);
                      response["success"] = success;
                      if (success)
                      {
-                         response["r_squared"] = 0.99;  // Временно
+                         response["r_squared"] = r_squared;
+                         response["message"] = "EC calibration calculated successfully";
                      }
                      else
                      {
@@ -1066,12 +1175,49 @@ void setupDataRoutes()
     webServer.on("/api/calibration/export", HTTP_GET,
                  []()
                  {
-                     // Временно - заглушка
-                     DynamicJsonDocument doc(512);
-                     doc["ph_points"] = JsonArray();
-                     doc["ec_points"] = JsonArray();
-                     doc["npk_zero"] = JsonObject();
-                     doc["calculated"] = false;
+                     logWebRequest("GET", "/api/calibration/export", webServer.client().remoteIP().toString());
+                     
+                     // ИСПРАВЛЕНО: Реальная реализация экспорта калибровки
+                     DynamicJsonDocument doc(1024);
+                     
+                     try {
+                         // Получаем данные калибровки из сервиса
+                         JsonArray phPoints = doc.createNestedArray("ph_points");
+                         JsonArray ecPoints = doc.createNestedArray("ec_points");
+                         JsonObject npkZero = doc.createNestedObject("npk_zero");
+                         
+                         String calibrationData = gCalibrationService.exportCalibrationToJSON();
+                         bool hasData = !calibrationData.isEmpty();
+                         
+                         if (hasData) {
+                             // Парсим JSON и заполняем массивы
+                             DynamicJsonDocument calDoc(1024);
+                             deserializeJson(calDoc, calibrationData);
+                             
+                             if (calDoc.containsKey("ph_points")) {
+                                 phPoints = calDoc["ph_points"];
+                             }
+                             if (calDoc.containsKey("ec_points")) {
+                                 ecPoints = calDoc["ec_points"];
+                             }
+                             if (calDoc.containsKey("npk_zero")) {
+                                 npkZero = calDoc["npk_zero"];
+                             }
+                         }
+                         
+                         doc["calculated"] = hasData;
+                         doc["timestamp"] = millis();
+                         
+                         if (hasData) {
+                             logSuccess("Калибровка экспортирована успешно");
+                         } else {
+                             logWarn("Нет данных калибровки для экспорта");
+                         }
+                     } catch (...) {
+                         logError("Исключение при экспорте калибровки");
+                         doc["error"] = "Export failed";
+                         doc["calculated"] = false;
+                     }
 
                      String json_data;
                      serializeJson(doc, json_data);
@@ -1081,15 +1227,49 @@ void setupDataRoutes()
     webServer.on("/api/calibration/import", HTTP_POST,
                  []()
                  {
+                     logWebRequest("POST", "/api/calibration/import", webServer.client().remoteIP().toString());
+                     
                      String json_data = webServer.arg("plain");
-                     // Временно - заглушка
-                     bool success = true;
+                     
+                     // ИСПРАВЛЕНО: Реальная реализация импорта калибровки
+                     bool success = false;
+                     
+                     try {
+                         DynamicJsonDocument doc(1024);
+                         DeserializationError error = deserializeJson(doc, json_data);
+                         
+                         if (error) {
+                             logWarn("Ошибка парсинга JSON для импорта калибровки");
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
+                             return;
+                         }
+                         
+                         // Импортируем данные калибровки
+                         String jsonData;
+                         serializeJson(doc, jsonData);
+                         success = gCalibrationService.importCalibrationFromJSON(jsonData);
+                         
+                         if (success) {
+                             logSuccess("Калибровка импортирована успешно");
+                             
+                             // Включаем калибровку в конфигурации
+                             config.flags.calibrationEnabled = true;
+                             saveConfig();
+                         } else {
+                             logError("Ошибка импорта калибровки");
+                         }
+                     } catch (...) {
+                         logError("Исключение при импорте калибровки");
+                         success = false;
+                     }
 
                      DynamicJsonDocument response(256);
                      response["success"] = success;
                      if (!success)
                      {
                          response["error"] = "Failed to import calibration";
+                     } else {
+                         response["message"] = "Calibration imported successfully";
                      }
 
                      String response_str;

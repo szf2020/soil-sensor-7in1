@@ -26,6 +26,7 @@
 
 // Допустимые пределы измерений (используем единые константы из jxct_constants.h)
 #include "jxct_constants.h"
+#include "sensor_types.h"
 #define MIN_TEMPERATURE SENSOR_TEMP_MIN
 #define MAX_TEMPERATURE SENSOR_TEMP_MAX
 #define MIN_HUMIDITY SENSOR_HUMIDITY_MIN
@@ -37,16 +38,9 @@
 #define MIN_NPK SENSOR_NPK_MIN
 #define MAX_NPK SENSOR_NPK_MAX
 
-// Структура для хранения данных с датчика
-struct SensorData
+// Структура для хранения данных с датчика (расширенная версия SensorData из sensor_types.h)
+struct ModbusSensorData : public SensorData
 {
-    float temperature;          // Температура почвы в °C (делится на 10)
-    float humidity;             // Влажность почвы в % (делится на 10)
-    float ec;                   // Электропроводность почвы в µS/cm
-    float ph;                   // pH почвы (делится на 100)
-    float nitrogen;             // Содержание азота в мг/кг
-    float phosphorus;           // Содержание фосфора в мг/кг
-    float potassium;            // Содержание калия в мг/кг
     float moisture;             // Добавляем поле для влажности
     float conductivity;         // Добавляем поле для электропроводности
     uint16_t firmware_version;  // Версия прошивки
@@ -86,22 +80,41 @@ struct SensorData
     float raw_phosphorus;
     float raw_potassium;
     bool recentIrrigation;
+    
+    ModbusSensorData() : SensorData(), moisture(0.0F), conductivity(0.0F), 
+                        firmware_version(0), error_status(0), valid(false), isValid(false),
+                        last_update(0), timestamp(0), prev_temperature(0.0F), prev_humidity(0.0F),
+                        prev_ec(0.0F), prev_ph(0.0F), prev_nitrogen(0.0F), prev_phosphorus(0.0F),
+                        prev_potassium(0.0F), last_mqtt_publish(0), buffer_index(0), buffer_filled(0),
+                        raw_temperature(0.0F), raw_humidity(0.0F), raw_ec(0.0F), raw_ph(0.0F),
+                        raw_nitrogen(0.0F), raw_phosphorus(0.0F), raw_potassium(0.0F), recentIrrigation(false) {
+        // Инициализация буферов
+        for (int i = 0; i < 15; i++) {
+            temp_buffer[i] = 0.0F;
+            hum_buffer[i] = 0.0F;
+            ec_buffer[i] = 0.0F;
+            ph_buffer[i] = 0.0F;
+            n_buffer[i] = 0.0F;
+            p_buffer[i] = 0.0F;
+            k_buffer[i] = 0.0F;
+        }
+    }
 };
 
 // Структура для кэширования данных
 struct SensorCache
 {
-    SensorData data;
+    ModbusSensorData data;
     bool is_valid;
     unsigned long timestamp;
 };
 
-extern SensorData sensorData;
+extern ModbusSensorData sensorData;
 extern SensorCache sensorCache;
 String& getSensorLastError();
 
 // Получение текущих данных датчика
-SensorData getSensorData();
+ModbusSensorData getSensorData();
 
 // Инициализация Modbus
 void setupModbus();
@@ -119,10 +132,10 @@ bool readErrorStatus();
 bool changeDeviceAddress(uint8_t new_address);
 
 // Проверка валидности значений
-bool validateSensorData(SensorData& data);
+bool validateSensorData(ModbusSensorData& data);
 
 // Получение кэшированных данных
-bool getCachedData(SensorData& data);
+bool getCachedData(ModbusSensorData& data);
 
 // Преобразование значения регистра в число с плавающей точкой
 float convertRegisterToFloat(uint16_t value, float multiplier);
@@ -139,9 +152,9 @@ void printModbusError(uint8_t errNum);
 void startRealSensorTask();
 
 // v2.3.0: Функции скользящего среднего
-void addToMovingAverage(SensorData& data, const SensorData& newReading);
+void addToMovingAverage(ModbusSensorData& data, const ModbusSensorData& newReading);
 float calculateMovingAverage(const float* buffer, uint8_t window_size, uint8_t filled);
-void initMovingAverageBuffers(SensorData& data);
+void initMovingAverageBuffers(ModbusSensorData& data);
 
 // Тестовые функции
 void testSP3485E();               // Тест драйвера SP3485E

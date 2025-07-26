@@ -8,7 +8,7 @@
 #define ICROP_RECOMMENDATION_ENGINE_H
 
 #include <Arduino.h>
-#include "../sensor_compensation.h"  // Для SoilProfile
+#include "../sensor_types.h"  // Для SoilProfile
 
 // Структура для рекомендаций
 struct RecValues
@@ -22,23 +22,10 @@ struct RecValues
     float k;    // Калий
 };
 
-// Перечисления для типов
-enum class Season
-{
-    SPRING,
-    SUMMER,
-    AUTUMN,
-    WINTER
-};
+// Перечисления для типов (удалены - теперь в sensor_types.h)
+// Season и EnvironmentType определены в sensor_types.h
 
-enum class EnvironmentType
-{
-    OUTDOOR = 0,
-    GREENHOUSE = 1,
-    INDOOR = 2
-};
-
-// SoilProfile определен в sensor_compensation.h
+// SoilProfile определен в sensor_types.h
 
 /**
  * @brief Интерфейс для движка рекомендаций по культурам

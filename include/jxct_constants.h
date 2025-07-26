@@ -315,14 +315,24 @@ constexpr unsigned long REPORTS_AUTOREFRESH_INTERVAL_MS = 300000;  // 5 мину
 // КОНФИГУРАЦИЯ И ВАЛИДАЦИЯ
 // ============================================================================
 
-// Лимиты интервалов конфигурации (в секундах/минутах)
+// Лимиты интервалов конфигурации (в миллисекундах)
+constexpr unsigned long CONFIG_SENSOR_INTERVAL_MIN_MS = 1000;       // 1 сек
+constexpr unsigned long CONFIG_SENSOR_INTERVAL_MAX_MS = 300000;     // 5 мин
+constexpr unsigned long CONFIG_MQTT_INTERVAL_MIN_MS = 60000;        // 1 мин
+constexpr unsigned long CONFIG_MQTT_INTERVAL_MAX_MS = 3600000;      // 60 мин
+constexpr unsigned long CONFIG_THINGSPEAK_INTERVAL_MIN_MS = 300000; // 5 мин
+constexpr unsigned long CONFIG_THINGSPEAK_INTERVAL_MAX_MS = 7200000; // 120 мин
+constexpr unsigned long CONFIG_WEB_INTERVAL_MIN_MS = 1000;          // 1 сек
+constexpr unsigned long CONFIG_WEB_INTERVAL_MAX_MS = 60000;         // 1 мин
+
+// Обратная совместимость (для веб-интерфейса)
 constexpr int CONFIG_SENSOR_INTERVAL_MIN_SEC = 1;
 constexpr int CONFIG_SENSOR_INTERVAL_MAX_SEC = 300;
 constexpr int CONFIG_MQTT_INTERVAL_MIN_MIN = 1;
 constexpr int CONFIG_MQTT_INTERVAL_MAX_MIN = 60;
 constexpr int CONFIG_THINGSPEAK_INTERVAL_MIN_MIN = 5;
 constexpr int CONFIG_THINGSPEAK_INTERVAL_MAX_MIN = 120;
-constexpr int CONFIG_WEB_INTERVAL_MIN_SEC = 5;
+constexpr int CONFIG_WEB_INTERVAL_MIN_SEC = 1;
 constexpr int CONFIG_WEB_INTERVAL_MAX_SEC = 60;
 
 // Лимиты дельта-фильтров

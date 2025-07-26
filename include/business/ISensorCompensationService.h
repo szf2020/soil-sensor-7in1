@@ -8,7 +8,7 @@
 #define ISENSOR_COMPENSATION_SERVICE_H
 
 #include <Arduino.h>
-#include "../sensor_compensation.h"
+#include "../sensor_types.h"
 #include "../validation_utils.h"
 
 /**

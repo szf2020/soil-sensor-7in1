@@ -13,7 +13,7 @@
 #else
 #include "esp32_stubs.h"
 #endif
-#include "sensor_compensation.h"
+#include "sensor_types.h"
 
 // Структура одной записи калибровочной таблицы (сырое значение -> скорректированное)
 struct CalibrationEntry

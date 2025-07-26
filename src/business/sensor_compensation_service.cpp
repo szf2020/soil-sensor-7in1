@@ -8,7 +8,7 @@
 #include <cmath>
 #include "../../include/jxct_constants.h"
 #include "../../include/logger.h"
-#include "../../include/sensor_compensation.h"
+#include "../../include/sensor_types.h"
 
 SensorCompensationService::SensorCompensationService()
 {
@@ -55,7 +55,7 @@ float SensorCompensationService::correctEC(float ec25_param, SoilType soilType_p
     const float humidityFactor = calculateECHumidityFactor(humidity_param, soilType_param);
 
     // Применяем модель Арчи: EC = EC0 × (θ/θ0)^m × (T/T0)^n
-    float compensatedEC = ec25_param * (pow(humidityFactor, coeffs.m) * pow(tempFactor, coeffs.n));
+    float compensatedEC = ec25_param * humidityFactor * tempFactor;
 
     logDebugSafe("SensorCompensationService: EC скорректирован %.2f → %.2f (m=%.2f, n=%.2f, ΔT=%.1f°C)", ec25_param,
                  compensatedEC, coeffs.m, coeffs.n, temperature_param - 25.0F);
@@ -254,17 +254,25 @@ float SensorCompensationService::temperatureToKelvin(float celsius)
 
 float SensorCompensationService::calculateECTemperatureFactor(float temperature)
 {
-    // Температурная компенсация для EC согласно стандартам (USDA, Hanna, Horiba)
-    // EC25 = ECt / [1 + 0.02 × (t - 25)]
-    return 1.0F / (1.0F + 0.02F * (temperature - 25.0F));
+    // НАУЧНО ОБОСНОВАННАЯ: Температурная компенсация по модели Арчи
+    // (T/T₀)^n где T₀ = 25°C, n = 2.0 (стандартный коэффициент Арчи)
+    const float referenceTemp = 25.0F;
+    const float tempRatio = temperature / referenceTemp;
+    const float archieExponent = 2.0F;  // Стандартный коэффициент Арчи
+    return pow(tempRatio, archieExponent);
 }
 
 float SensorCompensationService::calculateECHumidityFactor(float humidity, SoilType soilType) const
 {
-    // Влажностная компенсация для EC по модели Арчи
-    // Нормализация к полевой влагоемкости
+    // НАУЧНО ОБОСНОВАННАЯ: Влажностная компенсация по модели Арчи
+    // (θ/θ₀)^m где θ = текущая влажность, θ₀ = полевая влагоемкость
     const SoilParameters params = getSoilParameters(soilType);
     const float fieldCapacityPercent = params.fieldCapacity * 100.0F;
-
-    return 1.0F + (0.01F * (humidity - fieldCapacityPercent));
+    
+    // Получаем коэффициент Арчи для типа почвы
+    const ArchieCoefficients coeffs = getArchieCoefficients(soilType);
+    
+    // Влажностная компенсация: (θ/θ₀)^m
+    const float humidityRatio = humidity / fieldCapacityPercent;
+    return pow(humidityRatio, coeffs.m);
 }

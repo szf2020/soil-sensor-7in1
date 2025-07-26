@@ -33,13 +33,14 @@ void SensorCalibrationService::applyCalibration(SensorData& data, SoilProfile pr
     logDebugSafe("SensorCalibrationService: Применение калибровки для профиля %d", static_cast<int>(profile));
 
     // Сохраняем исходные значения
-    data.raw_temperature = data.temperature;
-    data.raw_humidity = data.humidity;
-    data.raw_ec = data.ec;
-    data.raw_ph = data.ph;
-    data.raw_nitrogen = data.nitrogen;
-    data.raw_phosphorus = data.phosphorus;
-    data.raw_potassium = data.potassium;
+    // Сохраняем сырые значения (если структура поддерживает)
+    // data.raw_temperature = data.temperature;
+    // data.raw_humidity = data.humidity;
+    // data.raw_ec = data.ec;
+    // data.raw_ph = data.ph;
+    // data.raw_nitrogen = data.nitrogen;
+    // data.raw_phosphorus = data.phosphorus;
+    // data.raw_potassium = data.potassium;
 
     // Применяем калибровку к каждому параметру
     if (hasCalibrationTable(profile))

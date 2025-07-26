@@ -115,7 +115,7 @@ void setupConfigRoutes()
             html += "<div class='help'>" + String(CONFIG_SENSOR_INTERVAL_MIN_SEC) + "-" +
                     String(CONFIG_SENSOR_INTERVAL_MAX_SEC) +
                     " сек. Текущее: " + String(config.sensorReadInterval / CONVERSION_SEC_TO_MS) +
-                    " сек (по умолчанию: 1 сек)</div></div>";
+                    " сек (по умолчанию: " + String(SENSOR_READ_INTERVAL / CONVERSION_SEC_TO_MS) + " сек)</div></div>";
 
             html += "<div class='form-group'><label for='mqtt_interval'>Интервал MQTT публикации (мин):</label>";
             html += "<input type='number' id='mqtt_interval' name='mqtt_interval' min='" +
@@ -123,7 +123,8 @@ void setupConfigRoutes()
                     "' value='" + String(config.mqttPublishInterval / CONVERSION_MIN_TO_MS) + "' required>";
             html += "<div class='help'>" + String(CONFIG_MQTT_INTERVAL_MIN_MIN) + "-" +
                     String(CONFIG_MQTT_INTERVAL_MAX_MIN) +
-                    " мин. Текущее: " + String(config.mqttPublishInterval / CONVERSION_MIN_TO_MS) + " мин</div></div>";
+                    " мин. Текущее: " + String(config.mqttPublishInterval / CONVERSION_MIN_TO_MS) + 
+                    " мин (по умолчанию: " + String(MQTT_PUBLISH_INTERVAL / CONVERSION_MIN_TO_MS) + " мин = 30 мин)</div></div>";
 
             html += "<div class='form-group'><label for='ts_interval'>Интервал ThingSpeak (мин):</label>";
             html += "<input type='number' id='ts_interval' name='ts_interval' min='" +
@@ -132,7 +133,8 @@ void setupConfigRoutes()
                     String(config.thingSpeakInterval / CONVERSION_MIN_TO_MS) + "' required>";
             html += "<div class='help'>" + String(CONFIG_THINGSPEAK_INTERVAL_MIN_MIN) + "-" +
                     String(CONFIG_THINGSPEAK_INTERVAL_MAX_MIN) +
-                    " мин. Текущее: " + String(config.thingSpeakInterval / CONVERSION_MIN_TO_MS) + " мин</div></div>";
+                    " мин. Текущее: " + String(config.thingSpeakInterval / CONVERSION_MIN_TO_MS) + 
+                    " мин (по умолчанию: " + String(THINGSPEAK_INTERVAL / CONVERSION_MIN_TO_MS) + " мин)</div></div>";
 
             html +=
                 "<div class='form-group'><label for='web_interval'>Интервал обновления веб-интерфейса (сек):</label>";
@@ -141,7 +143,8 @@ void setupConfigRoutes()
                     "' value='" + String(config.webUpdateInterval / CONVERSION_SEC_TO_MS) + "' required>";
             html +=
                 "<div class='help'>" + String(CONFIG_WEB_INTERVAL_MIN_SEC) + "-" + String(CONFIG_WEB_INTERVAL_MAX_SEC) +
-                " сек. Текущее: " + String(config.webUpdateInterval / CONVERSION_SEC_TO_MS) + " сек</div></div></div>";
+                " сек. Текущее: " + String(config.webUpdateInterval / CONVERSION_SEC_TO_MS) + 
+                " сек (по умолчанию: " + String(WEB_UPDATE_INTERVAL / CONVERSION_SEC_TO_MS) + " сек)</div></div></div>";
 
             html += "<div class='section'><h2>🎯 Пороги дельта-фильтра</h2>";
             html += "<div class='form-group'><label for='delta_temp'>Порог температуры (°C):</label>";
@@ -247,9 +250,11 @@ void setupConfigRoutes()
 
             html += generateButton(ButtonType::PRIMARY, ButtonConfig{UI_ICON_SAVE, "Сохранить настройки", ""});
             html += "</form>";
-            html += generateButton(ButtonType::SECONDARY,
-                                   ButtonConfig{UI_ICON_RESET, "Сбросить к умолчанию (1 сек + мин. фильтрация)", ""});
-            html += "</form>";
+            html += "<div style='margin-top: 15px;'>";
+            html += "<a href='/reset_intervals' class='btn btn-secondary' onclick='return confirm(\"Сбросить все настройки интервалов к значениям по умолчанию?\")'>";
+            html += UI_ICON_RESET " Сбросить к умолчанию (1 сек + мин. фильтрация)";
+            html += "</a>";
+            html += "</div>";
 
             // JavaScript для динамического управления полями
             html += "<script>";
@@ -394,23 +399,27 @@ void setupConfigRoutes()
                          return;
                      }
 
-                     // Сбрасываем к умолчанию (МИНИМАЛЬНАЯ ФИЛЬТРАЦИЯ + ЧАСТЫЙ MQTT)
-                     config.sensorReadInterval = SENSOR_READ_INTERVAL;
-                     config.mqttPublishInterval = MQTT_PUBLISH_INTERVAL;
-                     config.thingSpeakInterval = THINGSPEAK_INTERVAL;
-                     config.webUpdateInterval = WEB_UPDATE_INTERVAL;
-                     config.deltaTemperature = DELTA_TEMPERATURE;       // 0.1°C
-                     config.deltaHumidity = DELTA_HUMIDITY;             // 0.5%
-                     config.deltaPh = DELTA_PH;                         // 0.01 pH
-                     config.deltaEc = DELTA_EC;                         // 10 µS/cm
-                     config.deltaNpk = DELTA_NPK;                       // 1 mg/kg
-                     config.movingAverageWindow = 5;                    // минимальное окно
-                     config.forcePublishCycles = FORCE_PUBLISH_CYCLES;  // каждые 5 циклов
-                     config.filterAlgorithm = 0;                        // среднее
-                     config.outlierFilterEnabled = 0;                   // отключен
-                     config.adaptiveFiltering = 0;                      // отключена
-                     config.exponentialAlpha = 0.3F;                    // по умолчанию
-                     config.outlierThreshold = 2.0F;                    // по умолчанию
+                                     // Сбрасываем к умолчанию (ПРАВИЛЬНЫЕ ЗНАЧЕНИЯ)
+                config.sensorReadInterval = SENSOR_READ_INTERVAL;           // 2000 мс (2 сек)
+                config.mqttPublishInterval = MQTT_PUBLISH_INTERVAL;         // 1800000 мс (30 мин)
+                config.thingSpeakInterval = THINGSPEAK_INTERVAL;            // 600000 мс (10 мин)
+                config.webUpdateInterval = WEB_UPDATE_INTERVAL;             // 3000 мс (3 сек)
+                     
+                     // Дельта-фильтры (правильные значения)
+                     config.deltaTemperature = DEFAULT_DELTA_TEMPERATURE;        // 0.5°C
+                     config.deltaHumidity = DEFAULT_DELTA_HUMIDITY;              // 2.0%
+                     config.deltaPh = DEFAULT_DELTA_PH;                          // 0.1 pH
+                     config.deltaEc = DEFAULT_DELTA_EC;                          // 50 µS/cm
+                     config.deltaNpk = DEFAULT_DELTA_NPK;                        // 10 mg/kg
+                     
+                     // Фильтрация (минимальная)
+                     config.movingAverageWindow = MOVING_AVERAGE_WINDOW_DEFAULT; // 5
+                     config.forcePublishCycles = DEFAULT_FORCE_PUBLISH_CYCLES;   // 10
+                     config.filterAlgorithm = 0;                                 // среднее
+                     config.outlierFilterEnabled = 0;                            // отключен
+                     config.adaptiveFiltering = 0;                               // отключена
+                     config.exponentialAlpha = EXPONENTIAL_ALPHA_DEFAULT;        // 0.3
+                     config.outlierThreshold = OUTLIER_THRESHOLD_DEFAULT;        // 2.5
 
                      saveConfig();
 

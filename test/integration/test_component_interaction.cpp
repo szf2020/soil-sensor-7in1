@@ -26,7 +26,7 @@ extern "C" void tearDown() {}
 #include "calibration_manager.h"
 #include "jxct_format_utils.h"
 #include "logger.h"
-#include "sensor_compensation.h"
+#include "sensor_types.h"
 #include "validation_utils.h"
 #include "web/csrf_protection.h"
 

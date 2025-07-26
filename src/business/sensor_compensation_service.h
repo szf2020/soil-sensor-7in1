@@ -10,7 +10,7 @@
 #include <Arduino.h>
 #include <map>
 #include "../../include/business/ISensorCompensationService.h"
-#include "../../include/sensor_compensation.h"
+#include "../../include/sensor_types.h"
 #include "../../include/validation_utils.h"
 
 /**

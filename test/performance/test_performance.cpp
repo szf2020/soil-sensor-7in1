@@ -12,7 +12,7 @@
 #include "csrf_protection.h"
 #include "jxct_format_utils.h"
 #include "logger.h"
-#include "sensor_compensation.h"
+#include "sensor_types.h"
 #include "validation_utils.h"
 
 // Константы для тестирования

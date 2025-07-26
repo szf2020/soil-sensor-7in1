@@ -15,8 +15,9 @@
 #include "jxct_constants.h"  // ✅ Централизованные константы
 #include "jxct_device_info.h"
 #include "logger.h"
-#include "sensor_compensation.h"
+#include "sensor_types.h"
 #include "validation_utils.h"  // Для централизованной валидации
+#include "sensor_processing.h"    // Общая логика обработки
 
 // Глобальные переменные (должны быть доступны через extern)
 // Внутренние переменные и функции — только для этой единицы трансляции
@@ -123,7 +124,7 @@ uint16_t calculateCRC16(const uint8_t* data, size_t length)
     return crc;
 }
 
-void saveRawSnapshot(SensorData& data)
+void saveRawSnapshot(ModbusSensorData& data)
 {
     data.raw_temperature = data.temperature;
     data.raw_humidity = data.humidity;
@@ -134,7 +135,7 @@ void saveRawSnapshot(SensorData& data)
     data.raw_potassium = data.potassium;
 }
 
-void updateIrrigationFlag(SensorData& data)
+void updateIrrigationFlag(ModbusSensorData& data)
 {
     constexpr uint8_t WIN = 6;
     static std::array<float, WIN> buf = {NAN};
@@ -167,42 +168,10 @@ void updateIrrigationFlag(SensorData& data)
     data.recentIrrigation = (millis() - lastIrrigationTs) <= (unsigned long)config.irrigationHoldMinutes * 60000UL;
 }
 
-void applyCompensationIfEnabled(SensorData& data)
+void applyCompensationIfEnabled(ModbusSensorData& data)
 {
-    if (!config.flags.calibrationEnabled)
-    {
-        return;
-    }
-
-    logDebugSafe("✅ Применяем исправленную компенсацию датчика");
-
-    // Преобразуем конфигурацию в типы бизнес-логики
-    // Используем массивы для устранения дублирования кода
-    static const std::array<SoilType, 5> soilTypes = {{
-        SoilType::SAND,     // 0
-        SoilType::LOAM,     // 1
-        SoilType::PEAT,     // 2
-        SoilType::CLAY,     // 3
-        SoilType::SANDPEAT  // 4
-    }};
-
-    static const std::array<SoilProfile, 5> soilProfiles = {{
-        SoilProfile::SAND,     // 0
-        SoilProfile::LOAM,     // 1
-        SoilProfile::PEAT,     // 2
-        SoilProfile::CLAY,     // 3
-        SoilProfile::SANDPEAT  // 4
-    }};
-
-    const int profileIndex = (config.soilProfile >= 0 && config.soilProfile < 5) ? config.soilProfile : 1;
-    const SoilType soil = soilTypes[profileIndex];
-    const SoilProfile profile = soilProfiles[profileIndex];
-
-    // Шаг 1: Применяем калибровку через бизнес-сервис
-    getCalibrationService().applyCalibration(data, profile);
-
-    // Шаг 2: Применяем компенсацию через бизнес-сервис
-    getCompensationService().applyCompensation(data, soil);
+    // Применяем единую логику обработки данных датчика
+    SensorProcessing::processSensorData(data, config);
 }
 
 bool readSingleRegister(uint16_t reg_addr, const char* reg_name, float multiplier, void* target, bool is_float)
@@ -389,7 +358,7 @@ void setupModbus()
     logPrintHeader("MODBUS ГОТОВ ДЛЯ ПОЛНОГО ТЕСТИРОВАНИЯ", LogColor::GREEN);
 }
 
-bool validateSensorData(SensorData& data)
+bool validateSensorData(ModbusSensorData& data)
 {
     auto result = validateFullSensorData(data);
     if (!result.isValid)
@@ -400,7 +369,7 @@ bool validateSensorData(SensorData& data)
     return true;
 }
 
-bool getCachedData(SensorData& data)
+bool getCachedData(ModbusSensorData& data)
 {
     if (!sensorCache.is_valid)
     {
@@ -668,7 +637,7 @@ void printModbusError(uint8_t errNum)  // NOLINT(misc-use-internal-linkage)
 // v2.3.0: РЕАЛИЗАЦИЯ СКОЛЬЗЯЩЕГО СРЕДНЕГО
 // ========================================
 
-void initMovingAverageBuffers(SensorData& data)
+void initMovingAverageBuffers(ModbusSensorData& data)
 {
     // Инициализируем буферы нулями
     for (int i = 0; i < 15; ++i)
@@ -686,7 +655,7 @@ void initMovingAverageBuffers(SensorData& data)
     DEBUG_PRINTLN("[MOVING_AVG] Буферы скользящего среднего инициализированы");
 }
 
-void addToMovingAverage(SensorData& data, const SensorData& newReading)
+void addToMovingAverage(ModbusSensorData& data, const ModbusSensorData& newReading)
 {
     uint8_t window_size =
         std::max(static_cast<uint8_t>(5), std::min(static_cast<uint8_t>(15), config.movingAverageWindow));
@@ -718,10 +687,10 @@ void addToMovingAverage(SensorData& data, const SensorData& newReading)
 }
 
 // Функция для получения текущих данных датчика
-SensorData getSensorData()
+ModbusSensorData getSensorData()
 {
     // Возвращаем копию текущих данных датчика
-    SensorData result = sensorData;
+    ModbusSensorData result = sensorData;
 
     // Обновляем поле isValid для совместимости с веб-интерфейсом
     result.isValid = result.valid;
@@ -745,7 +714,7 @@ String& getSensorLastError()
 }  // NOLINT(misc-use-internal-linkage)
 
 // Функции доступа к глобальным переменным
-SensorData& getSensorDataRef()
+ModbusSensorData& getSensorDataRef()
 {
     return sensorData;
 }  // NOLINT(misc-use-internal-linkage)
@@ -755,5 +724,5 @@ SensorCache& getSensorCache()
 }  // NOLINT(misc-use-internal-linkage)
 
 // Определение глобальных переменных
-SensorData sensorData;
+ModbusSensorData sensorData;
 SensorCache sensorCache;

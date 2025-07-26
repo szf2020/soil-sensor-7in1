@@ -11,19 +11,8 @@
 #include "../../include/logger.h"
 #include "validation_utils.h"  // Для централизованной валидации
 
-// Заглушки для внутренних функций компенсации
-float compensatePHInternal(float pHRawValue, float temperatureValue, float moistureValue)
-{
-    return pHRawValue;
-}
-float compensateECInternal(float ECRawValue, float temperatureValue)
-{
-    return ECRawValue;
-}
-float compensateNPKInternal(float NPKRawValue, float temperatureValue, float moistureValue)
-{
-    return NPKRawValue;
-}
+// УДАЛЕНО: Внутренние функции компенсации
+// Используется SensorCompensationService для единообразной компенсации
 
 CropRecommendationEngine::CropRecommendationEngine()
 {
@@ -193,30 +182,9 @@ RecommendationResult CropRecommendationEngine::generateRecommendation(const Sens
     // Компенсация показаний датчиков [Источники: SSSA Journal, 2008; Advances in Agronomy, 2014; Journal of Soil
     // Science, 2020]
     SensorData compensatedData = params.data;
-    compensatedData.ph = compensatePH(CropCompensationParams::builder()
-                                          .setRawValue(params.data.ph)
-                                          .setTemperature(params.data.temperature)
-                                          .setMoisture(params.data.humidity)
-                                          .build());
-    compensatedData.ec = compensateEC(CropECCompensationParams::builder()
-                                          .setRawValue(params.data.ec)
-                                          .setTemperature(params.data.temperature)
-                                          .build());
-    compensatedData.nitrogen = compensateNPK(CropCompensationParams::builder()
-                                                 .setRawValue(params.data.nitrogen)
-                                                 .setTemperature(params.data.temperature)
-                                                 .setMoisture(params.data.humidity)
-                                                 .build());
-    compensatedData.phosphorus = compensateNPK(CropCompensationParams::builder()
-                                                   .setRawValue(params.data.phosphorus)
-                                                   .setTemperature(params.data.temperature)
-                                                   .setMoisture(params.data.humidity)
-                                                   .build());
-    compensatedData.potassium = compensateNPK(CropCompensationParams::builder()
-                                                  .setRawValue(params.data.potassium)
-                                                  .setTemperature(params.data.temperature)
-                                                  .setMoisture(params.data.humidity)
-                                                  .build());
+    // УДАЛЕНО: Дублированные функции компенсации
+    // Используется SensorCompensationService для единообразной компенсации
+    // Компенсация теперь применяется через SensorProcessing::processSensorData()
 
     RecommendationResult result;
     result.cropType = params.cropType;
@@ -929,34 +897,5 @@ void CropRecommendationEngine::applySeasonalCorrection(RecValues& rec, Season se
     }
 }
 
-// Обёртки для функций с легко перепутываемыми параметрами
-float CropRecommendationEngine::compensatePH(const CropCompensationParams& params)
-{
-    return compensatePHInternal(params.rawValue, params.temperature, params.moisture);
-}
-
-float CropRecommendationEngine::compensateEC(const CropECCompensationParams& params)
-{
-    return compensateECInternal(params.rawValue, params.temperature);
-}
-
-float CropRecommendationEngine::compensateNPK(const CropCompensationParams& params)
-{
-    return compensateNPKInternal(params.rawValue, params.temperature, params.moisture);
-}
-
-// Обратная совместимость
-float CropRecommendationEngine::compensatePH(float pHRawValue, float temperatureValue, float moistureValue)
-{
-    return compensatePHInternal(pHRawValue, temperatureValue, moistureValue);
-}
-
-float CropRecommendationEngine::compensateEC(float ECRawValue, float temperatureValue)
-{
-    return compensateECInternal(ECRawValue, temperatureValue);
-}
-
-float CropRecommendationEngine::compensateNPK(float NPKRawValue, float temperatureValue, float moistureValue)
-{
-    return compensateNPKInternal(NPKRawValue, temperatureValue, moistureValue);
-}
+// УДАЛЕНО: Дублированные функции компенсации
+// Используется SensorCompensationService для единообразной компенсации
