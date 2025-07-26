@@ -20,6 +20,11 @@
 #include "../wifi_manager.h"
 #include "business_services.h"
 #include "calibration_manager.h"
+#include "../../include/advanced_filters.h"
+#include "../business/sensor_calibration_service.h"
+
+// Глобальный экземпляр сервиса калибровки
+extern SensorCalibrationService gCalibrationService;
 
 extern NTPClient* timeClient;
 
@@ -1095,13 +1100,40 @@ void setupDataRoutes()
     webServer.on("/api/calibration/reset", HTTP_POST,
                  []()
                  {
-                     // Временно - заглушка
-                     DynamicJsonDocument response(128);
-                     response["success"] = true;
+                     logWebRequest("POST", "/api/calibration/reset", webServer.client().remoteIP().toString());
+                     
+                     // ИСПРАВЛЕНО: Реальная реализация сброса калибровки
+                     try {
+                                              // Сбрасываем калибровочные данные
+                     gCalibrationService.resetCalibration();
+                         
+                         // Сбрасываем фильтры
+                         AdvancedFilters::resetAllFilters();
+                         
+                         // Отключаем калибровку в конфигурации
+                         config.flags.calibrationEnabled = false;
+                         saveConfig();
+                         
+                         logSuccess("Калибровка успешно сброшена");
+                         
+                         DynamicJsonDocument response(128);
+                         response["success"] = true;
+                         response["message"] = "Калибровка сброшена успешно";
 
-                     String response_str;
-                     serializeJson(response, response_str);
-                     webServer.send(200, "application/json", response_str);
+                         String response_str;
+                         serializeJson(response, response_str);
+                         webServer.send(200, "application/json", response_str);
+                     } catch (...) {
+                         logError("Ошибка при сбросе калибровки");
+                         
+                         DynamicJsonDocument response(128);
+                         response["success"] = false;
+                         response["error"] = "Ошибка при сбросе калибровки";
+
+                         String response_str;
+                         serializeJson(response, response_str);
+                         webServer.send(500, "application/json", response_str);
+                     }
                  });
 
     logDebug("Маршруты данных настроены: /readings, /api/v1/sensor (json), /sensor_json [legacy], /api/calibration/*");

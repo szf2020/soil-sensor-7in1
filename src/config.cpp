@@ -89,6 +89,31 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
     config.thingSpeakInterval = preferences.getUInt("tsInterval", THINGSPEAK_INTERVAL);
     config.webUpdateInterval = preferences.getUInt("webInterval", WEB_UPDATE_INTERVAL);
 
+    // ИСПРАВЛЕНО: Валидация интервалов - проверяем, что значения в допустимых пределах
+    if (config.sensorReadInterval < CONFIG_SENSOR_INTERVAL_MIN_SEC * 1000UL || 
+        config.sensorReadInterval > CONFIG_SENSOR_INTERVAL_MAX_SEC * 1000UL) {
+        logWarn("Некорректный sensorReadInterval: " + String(config.sensorReadInterval) + ", сбрасываем к умолчанию");
+        config.sensorReadInterval = SENSOR_READ_INTERVAL;
+    }
+    
+    if (config.mqttPublishInterval < CONFIG_MQTT_INTERVAL_MIN_MIN * 60000UL || 
+        config.mqttPublishInterval > CONFIG_MQTT_INTERVAL_MAX_MIN * 60000UL) {
+        logWarn("Некорректный mqttPublishInterval: " + String(config.mqttPublishInterval) + ", сбрасываем к умолчанию");
+        config.mqttPublishInterval = MQTT_PUBLISH_INTERVAL;
+    }
+    
+    if (config.thingSpeakInterval < CONFIG_THINGSPEAK_INTERVAL_MIN_MIN * 60000UL || 
+        config.thingSpeakInterval > CONFIG_THINGSPEAK_INTERVAL_MAX_MIN * 60000UL) {
+        logWarn("Некорректный thingSpeakInterval: " + String(config.thingSpeakInterval) + ", сбрасываем к умолчанию");
+        config.thingSpeakInterval = THINGSPEAK_INTERVAL;
+    }
+    
+    if (config.webUpdateInterval < CONFIG_WEB_INTERVAL_MIN_SEC * 1000UL || 
+        config.webUpdateInterval > CONFIG_WEB_INTERVAL_MAX_SEC * 1000UL) {
+        logWarn("Некорректный webUpdateInterval: " + String(config.webUpdateInterval) + ", сбрасываем к умолчанию");
+        config.webUpdateInterval = WEB_UPDATE_INTERVAL;
+    }
+
     // v2.3.0: Настраиваемые пороги дельта-фильтра
     config.deltaTemperature = preferences.getFloat("deltaTemp", DELTA_TEMPERATURE);
     config.deltaHumidity = preferences.getFloat("deltaHum", DELTA_HUMIDITY);
@@ -96,17 +121,60 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
     config.deltaEc = preferences.getFloat("deltaEc", DELTA_EC);
     config.deltaNpk = preferences.getFloat("deltaNpk", DELTA_NPK);
 
+    // ИСПРАВЛЕНО: Валидация дельта-фильтров
+    if (config.deltaHumidity < CONFIG_DELTA_HUMIDITY_MIN || config.deltaHumidity > CONFIG_DELTA_HUMIDITY_MAX) {
+        logWarn("Некорректный deltaHumidity: " + String(config.deltaHumidity, 2) + ", сбрасываем к умолчанию");
+        config.deltaHumidity = DELTA_HUMIDITY;
+    }
+    
+    if (config.deltaPh < CONFIG_DELTA_PH_MIN || config.deltaPh > CONFIG_DELTA_PH_MAX) {
+        logWarn("Некорректный deltaPh: " + String(config.deltaPh, 2) + ", сбрасываем к умолчанию");
+        config.deltaPh = DELTA_PH;
+    }
+    
+    if (config.deltaEc < CONFIG_DELTA_EC_MIN || config.deltaEc > CONFIG_DELTA_EC_MAX) {
+        logWarn("Некорректный deltaEc: " + String(config.deltaEc, 2) + ", сбрасываем к умолчанию");
+        config.deltaEc = DELTA_EC;
+    }
+    
+    if (config.deltaNpk < CONFIG_DELTA_NPK_MIN || config.deltaNpk > CONFIG_DELTA_NPK_MAX) {
+        logWarn("Некорректный deltaNpk: " + String(config.deltaNpk, 2) + ", сбрасываем к умолчанию");
+        config.deltaNpk = DELTA_NPK;
+    }
+
     // v2.3.0: Настройки скользящего среднего (МИНИМАЛЬНАЯ ФИЛЬТРАЦИЯ)
     config.movingAverageWindow = preferences.getUChar("avgWindow", 5);  // минимальное окно
     config.forcePublishCycles = preferences.getUChar("forceCycles", FORCE_PUBLISH_CYCLES);
     config.filterAlgorithm = preferences.getUChar("filterAlgo", 0);          // 0=среднее
     config.outlierFilterEnabled = preferences.getUChar("outlierFilter", 0);  // отключен для минимальной фильтрации
 
+    // ИСПРАВЛЕНО: Валидация настроек скользящего среднего
+    if (config.movingAverageWindow < CONFIG_AVG_WINDOW_MIN || config.movingAverageWindow > CONFIG_AVG_WINDOW_MAX) {
+        logWarn("Некорректный movingAverageWindow: " + String(config.movingAverageWindow) + ", сбрасываем к умолчанию");
+        config.movingAverageWindow = 5;
+    }
+    
+    if (config.forcePublishCycles < CONFIG_FORCE_CYCLES_MIN || config.forcePublishCycles > CONFIG_FORCE_CYCLES_MAX) {
+        logWarn("Некорректный forcePublishCycles: " + String(config.forcePublishCycles) + ", сбрасываем к умолчанию");
+        config.forcePublishCycles = FORCE_PUBLISH_CYCLES;
+    }
+
     // v3.10.0: УЛУЧШЕННАЯ СИСТЕМА ФИЛЬТРАЦИИ
     config.exponentialAlpha = preferences.getFloat("expAlpha", EXPONENTIAL_ALPHA_DEFAULT);
     config.outlierThreshold = preferences.getFloat("outlierThresh", OUTLIER_THRESHOLD_DEFAULT);
     config.kalmanEnabled = preferences.getUChar("kalmanEnabled", 0);       // 0=отключен по умолчанию
     config.adaptiveFiltering = preferences.getUChar("adaptiveFilter", 0);  // 0=отключена по умолчанию
+
+    // ИСПРАВЛЕНО: Валидация улучшенной системы фильтрации
+    if (config.exponentialAlpha < EXPONENTIAL_ALPHA_MIN || config.exponentialAlpha > EXPONENTIAL_ALPHA_MAX) {
+        logWarn("Некорректный exponentialAlpha: " + String(config.exponentialAlpha, 2) + ", сбрасываем к умолчанию");
+        config.exponentialAlpha = EXPONENTIAL_ALPHA_DEFAULT;
+    }
+    
+    if (config.outlierThreshold < OUTLIER_THRESHOLD_MIN || config.outlierThreshold > OUTLIER_THRESHOLD_MAX) {
+        logWarn("Некорректный outlierThreshold: " + String(config.outlierThreshold, 2) + ", сбрасываем к умолчанию");
+        config.outlierThreshold = OUTLIER_THRESHOLD_DEFAULT;
+    }
 
     // Soil profile и агро-поля
     config.soilProfile = preferences.getUChar("soilProfile", 0);

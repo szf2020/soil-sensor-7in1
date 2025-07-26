@@ -6,10 +6,11 @@
 #define STATUS_LED_PIN 2
 
 // Интервалы (мс) - ОПТИМИЗИРОВАННАЯ ПРОИЗВОДИТЕЛЬНОСТЬ
-#define SENSOR_READ_INTERVAL 2000    // 2 сек (было 1 сек) - оптимальный баланс точности и производительности
-#define MQTT_PUBLISH_INTERVAL 30000  // 30 сек (было 1 мин) - улучшенная отзывчивость MQTT
-#define THINGSPEAK_INTERVAL 600000   // 10 мин (было 15 мин) - более частые обновления
-#define WEB_UPDATE_INTERVAL 3000     // 3 сек (было 5 сек) - максимальная отзывчивость веб-интерфейса
+// ИСПРАВЛЕНО: Используем constexpr для унификации с jxct_constants.h
+constexpr unsigned long SENSOR_READ_INTERVAL = 2000;    // 2 сек (было 1 сек) - оптимальный баланс точности и производительности
+constexpr unsigned long MQTT_PUBLISH_INTERVAL = 30000;  // 30 сек (было 1 мин) - улучшенная отзывчивость MQTT
+constexpr unsigned long THINGSPEAK_INTERVAL = 600000;   // 10 мин (было 15 мин) - более частые обновления
+constexpr unsigned long WEB_UPDATE_INTERVAL = 3000;     // 3 сек (было 5 сек) - максимальная отзывчивость веб-интерфейса
 
 // Константы для системы - v2.5.0 подготовка к OTA
 #define HTTP_PORT 80                 // Порт веб-сервера
@@ -24,12 +25,13 @@
 #define OTA_WATCHDOG_TIMEOUT_SEC 60  // Увеличенный таймаут для OTA
 
 // ДЕЛЬТА-ФИЛЬТР v2.2.1: Пороговые значения для публикации (МИНИМАЛЬНАЯ ФИЛЬТРАЦИЯ)
-#define DELTA_TEMPERATURE 0.1f  // ±0.1°C (минимум)
-#define DELTA_HUMIDITY 0.5f     // ±0.5% (минимум)
-#define DELTA_PH 0.01f          // ±0.01 pH (минимум)
-#define DELTA_EC 10.0f          // ±10 µS/cm (минимум)
-#define DELTA_NPK 1.0f          // ±1 mg/kg (минимум для N, P, K)
-#define FORCE_PUBLISH_CYCLES 5  // Принудительная публикация каждые 5 циклов (5 мин при 1 мин интервале)
+// ИСПРАВЛЕНО: Используем constexpr для унификации с jxct_constants.h
+constexpr float DELTA_TEMPERATURE = 0.1f;  // ±0.1°C (минимум)
+constexpr float DELTA_HUMIDITY = 0.5f;     // ±0.5% (минимум)
+constexpr float DELTA_PH = 0.01f;          // ±0.01 pH (минимум)
+constexpr float DELTA_EC = 10.0f;          // ±10 µS/cm (минимум)
+constexpr float DELTA_NPK = 1.0f;          // ±1 mg/kg (минимум для N, P, K)
+constexpr unsigned char FORCE_PUBLISH_CYCLES = 5;  // Принудительная публикация каждые 5 циклов (5 мин при 1 мин интервале)
 
 // Modbus ID по умолчанию
 #define JXCT_MODBUS_ID 1
