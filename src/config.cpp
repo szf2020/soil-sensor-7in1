@@ -61,7 +61,7 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
         preferences.getBool("useRealSensor", true);  // ИСПРАВЛЕНО: по умолчанию используем реальный датчик
     config.flags.mqttEnabled = preferences.getBool("mqttEnabled", false);
     config.flags.thingSpeakEnabled = preferences.getBool("tsEnabled", false);
-    config.flags.calibrationEnabled = preferences.getBool("calEnabled", false);
+    config.flags.compensationEnabled = preferences.getBool("compEnabled", false);
 
     config.mqttQos = preferences.getUChar("mqttQos", 0);
     config.thingspeakInterval = preferences.getUShort("tsInterval", 60);
@@ -231,7 +231,7 @@ void saveConfig()  // NOLINT(misc-use-internal-linkage)
     preferences.putBool("useRealSensor", config.flags.useRealSensor);
     preferences.putBool("mqttEnabled", config.flags.mqttEnabled);
     preferences.putBool("tsEnabled", config.flags.thingSpeakEnabled);
-    preferences.putBool("calEnabled", config.flags.calibrationEnabled);
+    preferences.putBool("compEnabled", config.flags.compensationEnabled);
 
     preferences.putUChar("mqttQos", config.mqttQos);
     preferences.putUShort("tsInterval", config.thingspeakInterval);
@@ -321,7 +321,7 @@ void resetConfig()  // NOLINT(misc-use-internal-linkage)
     config.flags.thingSpeakEnabled = 0;
     config.flags.hassEnabled = 0;
     config.flags.useRealSensor = 0;
-    config.flags.calibrationEnabled = 0;
+    config.flags.compensationEnabled = 0;
 
     // ✅ Очистка всех строковых полей
     strlcpy(config.thingSpeakChannelId, "", sizeof(config.thingSpeakChannelId));

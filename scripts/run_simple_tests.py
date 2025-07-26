@@ -236,6 +236,22 @@ def main():
     esp32_result = run_esp32_tests()
     results["esp32_tests"] = esp32_result
 
+    # 4. Валидация соответствия формул
+    log_info("Проверка соответствия формул...")
+    try:
+        import sys
+        sys.path.append(str(project_root))
+        import scripts.validate_formula_consistency
+        if scripts.validate_formula_consistency.main():
+            results["formula_consistency"] = {"status": "PASS"}
+            log_success("Формулы синхронизированы")
+        else:
+            results["formula_consistency"] = {"status": "FAIL", "error": "Найдены несоответствия в формулах"}
+            log_error("Найдены несоответствия в формулах")
+    except Exception as e:
+        results["formula_consistency"] = {"status": "ERROR", "error": str(e)}
+        log_error(f"Ошибка валидации формул: {e}")
+
     # Генерируем отчет
     report = generate_report(results)
 

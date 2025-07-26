@@ -106,11 +106,9 @@ class SensorCompensationService : public ISensorCompensationService
     // Расчет температуры в Кельвинах
     static float temperatureToKelvin(float celsius);
 
-    // Расчет коэффициента температурной компенсации для EC
-    static float calculateECTemperatureFactor(float temperature);
-
-    // Расчет коэффициента влажностной компенсации для EC
-    float calculateECHumidityFactor(float humidity, SoilType soilType) const;
+    // УДАЛЕНО: Старые функции заменены на научные формулы модели Арчи
+    // static float calculateECTemperatureFactor(float temperature); - УДАЛЕНО
+    // float calculateECHumidityFactor(float humidity, SoilType soilType) const; - УДАЛЕНО
 
    public:
     /**

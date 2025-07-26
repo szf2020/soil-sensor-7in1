@@ -1067,8 +1067,8 @@ void setupDataRoutes()
                          if (success) {
                              logSuccess("NPK калибровочная точка установлена: N=" + String(n) + ", P=" + String(p) + ", K=" + String(k));
                              
-                             // Включаем калибровку в конфигурации
-                             config.flags.calibrationEnabled = true;
+                                                      // Включаем компенсацию в конфигурации
+                         config.flags.compensationEnabled = true;
                              saveConfig();
                          } else {
                              logError("Ошибка установки NPK калибровочной точки");
@@ -1252,8 +1252,8 @@ void setupDataRoutes()
                          if (success) {
                              logSuccess("Калибровка импортирована успешно");
                              
-                             // Включаем калибровку в конфигурации
-                             config.flags.calibrationEnabled = true;
+                             // Включаем компенсацию в конфигурации
+                             config.flags.compensationEnabled = true;
                              saveConfig();
                          } else {
                              logError("Ошибка импорта калибровки");
@@ -1285,13 +1285,13 @@ void setupDataRoutes()
                      // ИСПРАВЛЕНО: Реальная реализация сброса калибровки
                      try {
                                               // Сбрасываем калибровочные данные
-                     gCalibrationService.resetCalibration();
+                         gCalibrationService.resetCalibration();
                          
                          // Сбрасываем фильтры
                          AdvancedFilters::resetAllFilters();
                          
-                         // Отключаем калибровку в конфигурации
-                         config.flags.calibrationEnabled = false;
+                         // НЕ трогаем флаг компенсации! Калибровка и компенсация - разные вещи
+                         // config.flags.compensationEnabled остается как есть
                          saveConfig();
                          
                          logSuccess("Калибровка успешно сброшена");

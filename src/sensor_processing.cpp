@@ -71,12 +71,12 @@ void processSensorData(SensorData& sensorData, const Config& config) {
     gCalibrationService.applyCalibration(sensorData, profile);
 
     // 2. Применяем научную компенсацию ТОЛЬКО если включена
-    if (config.flags.calibrationEnabled) {
+    if (config.flags.compensationEnabled) {  // ✅ Правильный флаг для компенсации
         logDebugSafe("🔬 Применяем научную компенсацию датчика");
         
         const SoilType soil = getSoilType(config.soilProfile);
         
-        // EC: температурная компенсация по модели Арчи
+        // EC: консервативная температурная компенсация
         sensorData.ec = gCompensationService.correctEC(sensorData.ec, soil, sensorData.temperature, sensorData.humidity);
 
         // pH: температурная поправка по уравнению Нернста
@@ -90,6 +90,8 @@ void processSensorData(SensorData& sensorData, const Config& config) {
         sensorData.nitrogen = npk.nitrogen;
         sensorData.phosphorus = npk.phosphorus;
         sensorData.potassium = npk.potassium;
+    } else {
+        logDebugSafe("🔬 Компенсация отключена");
     }
 }
 

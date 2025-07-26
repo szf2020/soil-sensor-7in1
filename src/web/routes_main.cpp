@@ -86,7 +86,7 @@ void setupMainRoutes()
                 strlcpy(config.thingSpeakChannelId, webServer.arg("ts_channel_id").c_str(),
                         sizeof(config.thingSpeakChannelId));
                 config.flags.useRealSensor = (uint8_t)webServer.hasArg("real_sensor");
-                config.flags.calibrationEnabled = (uint8_t)webServer.hasArg("cal_enabled");
+                config.flags.compensationEnabled = (uint8_t)webServer.hasArg("comp_enabled");
                 // Тип среды выращивания v2.6.1
                 if (webServer.hasArg("env_type"))
                 {
@@ -233,11 +233,11 @@ void handleRoot()
 
         // ----------------- ⚙️ Компенсация датчиков -----------------
         html += "<div class='section'><h2>⚙️ Компенсация датчиков</h2>";
-        const String calibChecked = config.flags.calibrationEnabled ? " checked" : "";
+        const String compChecked = config.flags.compensationEnabled ? " checked" : "";
         html +=
-            "<div class='form-group'><label for='cal_enabled'>Включить компенсацию:</label><input type='checkbox' "
-            "id='cal_enabled' name='cal_enabled'" +
-            calibChecked + "></div>";
+            "<div class='form-group'><label for='comp_enabled'>Включить научную компенсацию:</label><input type='checkbox' "
+            "id='comp_enabled' name='comp_enabled'" +
+            compChecked + "></div>";
         html +=
             "<div class='form-group'><label for='irrig_th'>Порог ∆влажности (%):</label><input type='number' "
             "step='0.1' id='irrig_th' name='irrig_th' value='" +
