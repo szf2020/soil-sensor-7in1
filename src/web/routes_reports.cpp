@@ -126,17 +126,25 @@ void updateReportsCache()
     lastReportUpdate = now;
 }
 
+// Вынесем CSS в отдельную функцию для уменьшения дублирования
+String getReportsCSS() 
+{
+    return R"(
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%); color: white; padding: 2rem; text-align: center; }
+        .metric-card { background: #f8f9fa; border-left: 4px solid #2e7d32; padding: 20px; border-radius: 5px; }
+    )";
+}
+
 String generateReportsHTML()
 {
     updateReportsCache();
-    const String html = R"(
-<!DOCTYPE html>
-<html lang=\"en\">
-<head>
-    <meta charset=\"UTF-8\">
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
-    <title>[TEST] Reports - JXCT</title>
-    <style>
+    String html = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\">";
+    html += "<title>[TEST] Reports - JXCT</title><style>";
+    html += getReportsCSS();
+    html += "</style></head><body>";
+    // Остальной HTML...
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
         .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); overflow: hidden; }
         .header { background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%); color: white; padding: 2rem; text-align: center; }
