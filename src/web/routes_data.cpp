@@ -373,7 +373,7 @@ void setupDataRoutes()
             html += "<li>⚡ <strong>EC:</strong> температурная компенсация (Rhoades et al., 1989)</li>";
             html += "<li>⚗️ <strong>pH:</strong> температурная поправка по Нернсту (Nernst, 1889)</li>";
             html +=
-                "<li>🔴🟡🔵 <strong>NPK:</strong> экспоненциальная компенсация по T и влажности (Delgado et al., 2020)</li>";
+                "<li>🌿🌱🍎 <strong>NPK:</strong> экспоненциальная компенсация по T и влажности (Delgado et al., 2020)</li>";
             html += "</ul>";
             html += "</ul>";
             html += "</div>";
@@ -577,15 +577,15 @@ void setupDataRoutes()
             html += "<h3>🌿🍎 NPK калибровка</h3>";
             html += "<p>Введите показания для дистиллированной воды (должны быть близки к нулю):</p>";
             html += "<div class='form-group'>";
-            html += "<label for='npk_n'>🌿 N - стебель (мг/кг):</label>";
+            html += "<label for='npk_n'>🌿 N (мг/кг):</label>";
             html += "<input type='number' id='npk_n' step='0.1' min='0' placeholder='0.0'>";
             html += "</div>";
             html += "<div class='form-group'>";
-            html += "<label for='npk_p'>🌱 P - корень (мг/кг):</label>";
+            html += "<label for='npk_p'>🌱 P (мг/кг):</label>";
             html += "<input type='number' id='npk_p' step='0.1' min='0' placeholder='0.0'>";
             html += "</div>";
             html += "<div class='form-group'>";
-            html += "<label for='npk_k'>🍎 K - плод (мг/кг):</label>";
+            html += "<label for='npk_k'>🍎 K (мг/кг):</label>";
             html += "<input type='number' id='npk_k' step='0.1' min='0' placeholder='0.0'>";
             html += "</div>";
             html += "<button onclick='setNPKPoint()' class='btn btn-primary'>Установить NPK</button>";
