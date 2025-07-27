@@ -472,6 +472,46 @@ void setupDataRoutes()
             html += "<div id='calibration-status'>Загрузка статуса...</div>";
             html += "</div>";
 
+            // Температура и влажность (offset калибровка)
+            html += "<div class='section' style='background:#fff3cd;padding:15px;border-radius:8px;margin:15px 0;'>";
+            html += "<h3>🌡️💧 Температура и влажность (Offset калибровка)</h3>";
+            html += "<p><strong>Инструкция:</strong> Сравните показания датчика с лабораторными приборами и введите поправку.</p>";
+            
+            html += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:15px 0;'>";
+            
+            // Температура
+            html += "<div style='border:1px solid #ffc107;padding:15px;border-radius:8px;'>";
+            html += "<h4>🌡️ Температура</h4>";
+            html += "<div class='form-group'>";
+            html += "<label for='temp_lab'>Лабораторный термометр (°C):</label>";
+            html += "<input type='number' id='temp_lab' step='0.1' placeholder='25.0' style='width:100%;'>";
+            html += "</div>";
+            html += "<div class='form-group'>";
+            html += "<label for='temp_sensor'>Показание датчика (°C):</label>";
+            html += "<input type='number' id='temp_sensor' step='0.1' placeholder='24.5' style='width:100%;'>";
+            html += "</div>";
+            html += "<button onclick='calibrateTemperature()' class='btn btn-warning' style='width:100%;'>Калибровать температуру</button>";
+            html += "<div id='temp-status' style='margin-top:10px;font-size:14px;min-height:20px;'></div>";
+            html += "</div>";
+            
+            // Влажность
+            html += "<div style='border:1px solid #17a2b8;padding:15px;border-radius:8px;'>";
+            html += "<h4>💧 Влажность</h4>";
+            html += "<div class='form-group'>";
+            html += "<label for='hum_lab'>Лабораторный гигрометр (%):</label>";
+            html += "<input type='number' id='hum_lab' step='0.1' placeholder='60.0' style='width:100%;'>";
+            html += "</div>";
+            html += "<div class='form-group'>";
+            html += "<label for='hum_sensor'>Показание датчика (%):</label>";
+            html += "<input type='number' id='hum_sensor' step='0.1' placeholder='58.5' style='width:100%;'>";
+            html += "</div>";
+            html += "<button onclick='calibrateHumidity()' class='btn btn-info' style='width:100%;'>Калибровать влажность</button>";
+            html += "<div id='hum-status' style='margin-top:10px;font-size:14px;min-height:20px;'></div>";
+            html += "</div>";
+            
+            html += "</div>";
+            html += "</div>";
+
             // pH калибровка
             html += "<div class='section'>";
             html += "<h3>🧪 pH калибровка</h3>";
@@ -715,6 +755,80 @@ void setupDataRoutes()
             html += "      document.getElementById('calibration-status').innerHTML = '❌ Ошибка загрузки: ' + err.message;";
             html += "    });";
             html += "}";
+            
+            // Функции калибровки температуры и влажности
+            html += "function calibrateTemperature() {";
+            html += "  const lab = parseFloat(document.getElementById('temp_lab').value);";
+            html += "  const sensor = parseFloat(document.getElementById('temp_sensor').value);";
+            html += "  if(isNaN(lab) || isNaN(sensor)) {";
+            html += "    alert('⚠️ Введите корректные значения температуры');";
+            html += "    return;";
+            html += "  }";
+            html += "  if(Math.abs(lab - sensor) > 10) {";
+            html += "    if(!confirm('⚠️ Большая разность (' + (lab - sensor).toFixed(1) + '°C). Продолжить?')) return;";
+            html += "  }";
+            html += "  fetch('/api/calibration/temperature/add', {";
+            html += "    method: 'POST',";
+            html += "    headers: {'Content-Type': 'application/json'},";
+            html += "    body: JSON.stringify({expected: lab, measured: sensor})";
+            html += "  }).then(response => response.json())";
+            html += "    .then(data => {";
+            html += "      if(data.success) {";
+            html += "        const offset = (lab - sensor).toFixed(2);";
+            html += "        document.getElementById('temp-status').innerHTML = '✅ Offset: ' + offset + '°C';";
+            html += "        document.getElementById('temp-status').style.color = '#28a745';";
+            html += "        updateCalibrationStatus();";
+            html += "        console.log('Temperature calibration success:', data);";
+            html += "      } else {";
+            html += "        document.getElementById('temp-status').innerHTML = '❌ Ошибка: ' + (data.error || 'Неизвестная ошибка');";
+            html += "        document.getElementById('temp-status').style.color = '#dc3545';";
+            html += "      }";
+            html += "    })";
+            html += "    .catch(err => {";
+            html += "      console.error('Temperature calibration error:', err);";
+            html += "      document.getElementById('temp-status').innerHTML = '❌ Ошибка соединения';";
+            html += "      document.getElementById('temp-status').style.color = '#dc3545';";
+            html += "    });";
+            html += "}";
+            
+            html += "function calibrateHumidity() {";
+            html += "  const lab = parseFloat(document.getElementById('hum_lab').value);";
+            html += "  const sensor = parseFloat(document.getElementById('hum_sensor').value);";
+            html += "  if(isNaN(lab) || isNaN(sensor)) {";
+            html += "    alert('⚠️ Введите корректные значения влажности');";
+            html += "    return;";
+            html += "  }";
+            html += "  if(lab < 0 || lab > 100 || sensor < 0 || sensor > 100) {";
+            html += "    alert('⚠️ Влажность должна быть в диапазоне 0-100%');";
+            html += "    return;";
+            html += "  }";
+            html += "  if(Math.abs(lab - sensor) > 20) {";
+            html += "    if(!confirm('⚠️ Большая разность (' + (lab - sensor).toFixed(1) + '%RH). Продолжить?')) return;";
+            html += "  }";
+            html += "  fetch('/api/calibration/humidity/add', {";
+            html += "    method: 'POST',";
+            html += "    headers: {'Content-Type': 'application/json'},";
+            html += "    body: JSON.stringify({expected: lab, measured: sensor})";
+            html += "  }).then(response => response.json())";
+            html += "    .then(data => {";
+            html += "      if(data.success) {";
+            html += "        const offset = (lab - sensor).toFixed(2);";
+            html += "        document.getElementById('hum-status').innerHTML = '✅ Offset: ' + offset + '%RH';";
+            html += "        document.getElementById('hum-status').style.color = '#28a745';";
+            html += "        updateCalibrationStatus();";
+            html += "        console.log('Humidity calibration success:', data);";
+            html += "      } else {";
+            html += "        document.getElementById('hum-status').innerHTML = '❌ Ошибка: ' + (data.error || 'Неизвестная ошибка');";
+            html += "        document.getElementById('hum-status').style.color = '#dc3545';";
+            html += "      }";
+            html += "    })";
+            html += "    .catch(err => {";
+            html += "      console.error('Humidity calibration error:', err);";
+            html += "      document.getElementById('hum-status').innerHTML = '❌ Ошибка соединения';";
+            html += "      document.getElementById('hum-status').style.color = '#dc3545';";
+            html += "    });";
+            html += "}";
+            
             html += "function addPHPoint() {";
             html += "  const expected = parseFloat(document.getElementById('ph_expected').value);";
             html += "  const measured = parseFloat(document.getElementById('ph_measured').value);";
@@ -950,6 +1064,81 @@ void setupDataRoutes()
                      
                      String statusJson = gCalibrationService.getCalibrationStatus();
                      webServer.send(200, "application/json", statusJson);
+                 });
+
+    // API endpoints для температуры и влажности
+    webServer.on("/api/calibration/temperature/add", HTTP_POST,
+                 []()
+                 {
+                     logWebRequest("POST", "/api/calibration/temperature/add", webServer.client().remoteIP().toString());
+                     
+                     DynamicJsonDocument doc(512);
+                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
+                     if (error) {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
+                         return;
+                     }
+                     
+                     float expected = doc["expected"];
+                     float measured = doc["measured"];
+                     
+                     // Валидация данных
+                     if (isnan(expected) || isnan(measured)) {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid temperature values\"}");
+                         return;
+                     }
+                     
+                     bool success = gCalibrationService.addTemperatureCalibrationPoint(expected, measured);
+                     
+                     DynamicJsonDocument response(256);
+                     response["success"] = success;
+                     if (success) {
+                         response["message"] = "Temperature calibration point added successfully";
+                         response["offset"] = expected - measured;
+                     } else {
+                         response["error"] = "Failed to add temperature calibration point";
+                     }
+                     
+                     String response_str;
+                     serializeJson(response, response_str);
+                     webServer.send(200, "application/json", response_str);
+                 });
+
+    webServer.on("/api/calibration/humidity/add", HTTP_POST,
+                 []()
+                 {
+                     logWebRequest("POST", "/api/calibration/humidity/add", webServer.client().remoteIP().toString());
+                     
+                     DynamicJsonDocument doc(512);
+                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
+                     if (error) {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
+                         return;
+                     }
+                     
+                     float expected = doc["expected"];
+                     float measured = doc["measured"];
+                     
+                     // Валидация данных
+                     if (isnan(expected) || isnan(measured) || expected < 0 || expected > 100 || measured < 0 || measured > 100) {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid humidity values (0-100%)\"}");
+                         return;
+                     }
+                     
+                     bool success = gCalibrationService.addHumidityCalibrationPoint(expected, measured);
+                     
+                     DynamicJsonDocument response(256);
+                     response["success"] = success;
+                     if (success) {
+                         response["message"] = "Humidity calibration point added successfully";
+                         response["offset"] = expected - measured;
+                     } else {
+                         response["error"] = "Failed to add humidity calibration point";
+                     }
+                     
+                     String response_str;
+                     serializeJson(response, response_str);
+                     webServer.send(200, "application/json", response_str);
                  });
 
     webServer.on("/api/calibration/ph/add", HTTP_POST,
