@@ -763,7 +763,7 @@ void setupDataRoutes()
             html += "      statusHtml += '<h5>🌡️💧 Offset калибровки:</h5>';";
             html += "      statusHtml += '<p>🌡️ Температура: ' + (data.temperature && data.temperature.status ? data.temperature.status : '❌ Не настроена') + '</p>';";
             html += "      statusHtml += '<p>💧 Влажность: ' + (data.humidity && data.humidity.status ? data.humidity.status : '❌ Не настроена') + '</p>';";
-            html += "      statusHtml += '<h5>🌿🍎 NPK:</h5>';";
+            html += "      statusHtml += '<h5>🌿🌱🍎 NPK:</h5>';";
             html += "      statusHtml += '<p>' + (data.npk && data.npk.status ? data.npk.status : '❌ Не настроена') + '</p>';";
             html += "      statusHtml += '</div>';";
             html += "      statusHtml += '<div>';";
