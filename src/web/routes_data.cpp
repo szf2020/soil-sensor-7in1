@@ -83,16 +83,31 @@ RecValues computeRecommendations()
         struct tm* timeInfo = localtime(&now);
         const int month = timeInfo != nullptr ? timeInfo->tm_mon + 1 : 1;
 
-        // Определяем сезон
+        // Определяем сезон с учетом координат (полушария)
         Season season = Season::WINTER;
-        if (month >= 3 && month <= 5)
-            season = Season::SPRING;
-        else if (month >= 6 && month <= 8)
-            season = Season::SUMMER;
-        else if (month >= 9 && month <= 11)
-            season = Season::AUTUMN;
-        else
-            season = Season::WINTER;
+        bool isNorthernHemisphere = config.latitude >= 0.0F;
+        
+        if (isNorthernHemisphere) {
+            // Северное полушарие: стандартные сезоны
+            if (month >= 3 && month <= 5)
+                season = Season::SPRING;
+            else if (month >= 6 && month <= 8)
+                season = Season::SUMMER;
+            else if (month >= 9 && month <= 11)
+                season = Season::AUTUMN;
+            else
+                season = Season::WINTER;
+        } else {
+            // Южное полушарие: инвертированные сезоны
+            if (month >= 9 && month <= 11)
+                season = Season::SPRING;
+            else if (month == 12 || month == 1 || month == 2)
+                season = Season::SUMMER;
+            else if (month >= 3 && month <= 5)
+                season = Season::AUTUMN;
+            else
+                season = Season::WINTER;
+        }
 
         const bool isGreenhouse = (config.environmentType == 1);
         getCropEngine().applySeasonalCorrection(rec, season, isGreenhouse);
@@ -240,19 +255,41 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
             return "Н/Д";
         }
         uint8_t month = timeInfo->tm_mon + 1;
-        if (month == 12 || month == 1 || month == 2)
-        {
+        
+        // Определяем сезон с учетом координат (полушария)
+        bool isNorthernHemisphere = config.latitude >= 0.0F;
+        
+        if (isNorthernHemisphere) {
+            // Северное полушарие: стандартные сезоны
+            if (month == 12 || month == 1 || month == 2)
+            {
+                return "Зима";
+            }
+            if (month >= 3 && month <= 5)
+            {
+                return "Весна";
+            }
+            if (month >= 6 && month <= 8)
+            {
+                return "Лето";
+            }
+            return "Осень";
+        } else {
+            // Южное полушарие: инвертированные сезоны
+            if (month >= 9 && month <= 11)
+            {
+                return "Весна";
+            }
+            if (month == 12 || month == 1 || month == 2)
+            {
+                return "Лето";
+            }
+            if (month >= 3 && month <= 5)
+            {
+                return "Осень";
+            }
             return "Зима";
         }
-        if (month >= 3 && month <= 5)
-        {
-            return "Весна";
-        }
-        if (month >= 6 && month <= 8)
-        {
-            return "Лето";
-        }
-        return "Осень";
     }();
     doc["season"] = seasonName;
 
