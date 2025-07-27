@@ -94,13 +94,13 @@ def test_npk_temperature_compensation():
             assert temp_factor_p < 1.0, f"P фактор должен быть < 1.0 при T < 20°C"
             assert temp_factor_k < 1.0, f"K фактор должен быть < 1.0 при T < 20°C"
 
-    print("  ✅ НАУЧНАЯ температурная компенсация NPK (FAO 56) корректна")
+    print("  ✅ НАУЧНАЯ температурная компенсация NPK (Delgado et al., 2020) корректна")
 
 def test_npk_humidity_compensation():
-    """Тест влажностной компенсации NPK (НАУЧНАЯ ФОРМУЛА FAO 56)"""
-    print("\n=== Тест влажностной компенсации NPK (НАУЧНАЯ ФОРМУЛА FAO 56) ===")
+    """Тест влажностной компенсации NPK (НАУЧНАЯ ФОРМУЛА Delgado et al., 2020)"""
+    print("\n=== Тест влажностной компенсации NPK (НАУЧНАЯ ФОРМУЛА Delgado et al., 2020) ===")
 
-    # НАУЧНАЯ ФОРМУЛА: FAO 56
+    # НАУЧНАЯ ФОРМУЛА: Delgado et al. (2020)
     # N_comp = N_raw × (1 + εN(θ-30))
     # P_comp = P_raw × (1 + εP(θ-30))
     # K_comp = K_raw × (1 + εK(θ-30))
@@ -142,7 +142,7 @@ def test_npk_humidity_compensation():
             assert moisture_factor_p < 1.0, f"P фактор должен быть < 1.0 при влажности < 30%"
             assert moisture_factor_k < 1.0, f"K фактор должен быть < 1.0 при влажности < 30%"
 
-    print("  ✅ НАУЧНАЯ влажностная компенсация NPK (FAO 56) корректна")
+    print("  ✅ НАУЧНАЯ влажностная компенсация NPK (Delgado et al., 2020) корректна")
 
 def test_ec_humidity_compensation():
     """Тест влажностной компенсации EC (НАУЧНАЯ МОДЕЛЬ АРЧИ)"""
@@ -341,7 +341,7 @@ def test_real_world_scenarios():
     n_coeff = 2.0  # коэффициент насыщенности
     field_capacity = 20.0  # полевая влагоемкость для суглинка
 
-    # NPK: FAO 56
+    # NPK: Delgado et al. (2020)
     delta_N = 0.0038
     delta_P = 0.0049
     delta_K = 0.0029
@@ -359,7 +359,7 @@ def test_real_world_scenarios():
         humidity_factor_ec = pow(humidity_ratio, m_coeff)
         ec_compensated = scenario['ec_raw'] * humidity_factor_ec * temp_factor_ec
 
-        # NPK компенсация (FAO 56)
+        # NPK компенсация (Delgado et al., 2020)
         temp_factor_n = math.exp(delta_N * (scenario['temp'] - 20.0))
         temp_factor_p = math.exp(delta_P * (scenario['temp'] - 20.0))
         temp_factor_k = math.exp(delta_K * (scenario['temp'] - 20.0))
@@ -404,7 +404,7 @@ def main():
         print("✅ ВСЕ ТЕСТЫ ПРОЙДЕНЫ УСПЕШНО!")
         print("📊 Формулы компенсации соответствуют независимым источникам:")
         print("   • EC: USDA, Hanna, Horiba стандарты")
-        print("   • NPK: FAO 56, Soil Science Society, European Journal")
+        print("   • NPK: Delgado et al. (2020), Soil Science Society, European Journal")
         print("   • Archie: современные коэффициенты для разных почв")
 
     except AssertionError as e:

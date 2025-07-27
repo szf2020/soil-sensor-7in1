@@ -13,7 +13,6 @@
 SensorCompensationService::SensorCompensationService()
 {
     logDebugSafe("SensorCompensationService: Инициализация сервиса компенсации");
-    initializeSoilTypeCoefficients();
     initializeSoilParameters();
     initializeNPKCoefficients();
 }
@@ -38,26 +37,23 @@ void SensorCompensationService::applyCompensation(SensorData& data, SoilType soi
 
 float SensorCompensationService::correctEC(float ec25_param, SoilType soilType_param, float temperature_param)
 {
-    if (!validateCompensationInputs(soilType_param, 50.0F,
-                                    temperature_param))  // Используем среднюю влажность для валидации
+    if (!validateCompensationInputs(soilType_param, 50.0F, temperature_param))  // Используем среднюю влажность
     {
         logDebugSafe("SensorCompensationService: Недопустимые входные данные для компенсации EC");
         return ec25_param;
     }
 
-    // ✅ НАУЧНО ОБОСНОВАННАЯ ФОРМУЛА (Rhoades et al., 1989)
-    // Источник: Rhoades, J.D., et al. (1989). Temperature Compensation for Soil Electrical Conductivity Measurements.
-    // Soil Science Society of America Journal, 53(2), 433-439. DOI: 10.2136/sssaj1989.03615995005300020020x
-
-    // Линейная температурная компенсация: EC_comp = EC_raw × (1 + 0.021 × (T - 25))
-    // Коэффициент 0.021 получен из экспериментальных данных для почвенных датчиков
+    // ИСПРАВЛЕНО: Упрощенная формула только с температурной компенсацией
+    // Источник: [Rhoades et al., 1989. Soil Science Society of America Journal]
+    
+    // Температурная компенсация: линейная формула
     const float tempFactor = 1.0F + 0.021F * (temperature_param - 25.0F);
-
+    
     // Применяем компенсацию: EC = EC0 × tempFactor
     float compensatedEC = ec25_param * tempFactor;
 
-    logDebugSafe("SensorCompensationService: EC скорректирован %.2f → %.2f (tempFactor=%.3f)", ec25_param,
-                 compensatedEC, tempFactor);
+    logDebugSafe("SensorCompensationService: EC скорректирован %.2f → %.2f (tempFactor=%.3f)", 
+                 ec25_param, compensatedEC, tempFactor);
     return compensatedEC;
 }
 
@@ -72,12 +68,12 @@ float SensorCompensationService::correctPH(float temperatureValue, float phRawVa
     // НАУЧНАЯ ФОРМУЛА: Уравнение Нернста
     // pH_comp = pH_raw - 0.003 × (T - 25)
     // При повышении температуры на 1°C pH снижается на 0.003 единицы
-
+    
     const float tempCorrection = -0.003F * (temperatureValue - 25.0F);
     const float compensatedPH = phRawValue + tempCorrection;
 
-    logDebugSafe("SensorCompensationService: pH скорректирован %.2f → %.2f (ΔT=%.1f°C, поправка=%.3f)", phRawValue,
-                 compensatedPH, temperatureValue - 25.0F, tempCorrection);
+    logDebugSafe("SensorCompensationService: pH скорректирован %.2f → %.2f (ΔT=%.1f°C, поправка=%.3f)", 
+                 phRawValue, compensatedPH, temperatureValue - 25.0F, tempCorrection);
     return compensatedPH;
 }
 
@@ -89,13 +85,11 @@ void SensorCompensationService::correctNPK(float temperature, float humidity, So
         return;
     }
 
-    // ✅ НАУЧНО ОБОСНОВАННАЯ ФОРМУЛА (Delgado et al., 2020)
-    // Источник: Delgado, A., et al. (2020). Nutrient Availability in Soils: Temperature and Moisture Effects.
-    // European Journal of Soil Science, 71(4), 567-578. DOI: 10.1007/s42729-020-00215-4
+    // НАУЧНАЯ ФОРМУЛА: NPK компенсация (Delgado et al., 2020)
     // N_comp = N_raw × e^(δN(T-20)) × (1 + εN(θ-30))
     // P_comp = P_raw × e^(δP(T-20)) × (1 + εP(θ-30))
     // K_comp = K_raw × e^(δK(T-20)) × (1 + εK(θ-30))
-
+    
     // Получаем коэффициенты NPK для типа почвы
     const NPKCoefficients coeffs = getNPKCoefficients(soilType);
 
@@ -114,10 +108,11 @@ void SensorCompensationService::correctNPK(float temperature, float humidity, So
     npk.phosphorus *= (tempFactorP * moistureFactorP);
     npk.potassium *= (tempFactorK * moistureFactorK);
 
-    logDebugSafe(
-        "SensorCompensationService: NPK скорректирован N:%.2f P:%.2f K:%.2f (δN=%.4f, εN=%.3f, ΔT=%.1f°C, θ=%.1f%%)",
-        npk.nitrogen, npk.phosphorus, npk.potassium, coeffs.delta_N, coeffs.epsilon_N, temperature - 20.0F, humidity);
+    logDebugSafe("SensorCompensationService: NPK скорректирован N:%.2f P:%.2f K:%.2f (δN=%.4f, εN=%.3f, ΔT=%.1f°C, θ=%.1f%%)",
+                 npk.nitrogen, npk.phosphorus, npk.potassium, coeffs.delta_N, coeffs.epsilon_N, temperature - 20.0F, humidity);
 }
+
+
 
 float SensorCompensationService::getPorosity(SoilType soilType) const
 {
@@ -157,37 +152,14 @@ bool SensorCompensationService::validateCompensationInputs(
     }
 }
 
-namespace
-{
-void initializeArchieCoefficients(std::map<SoilType, ArchieCoefficients>& archieCoefficients)
-{
-    // Коэффициенты Арчи для разных типов почвы
-    // Источник: Archie, G.E. (1942). The electrical resistivity log as an aid in determining some reservoir
-    // characteristics.
 
-    // ИСПРАВЛЕНО: Консервативные коэффициенты для почвенных датчиков
-    // Источник: [Rhoades et al., 1989. Soil Science Society of America Journal]
-    archieCoefficients[SoilType::SAND] = ArchieCoefficients(0.8F, 0.02F, 0.35F);       // m=0.8, n=0.02
-    archieCoefficients[SoilType::LOAM] = ArchieCoefficients(0.9F, 0.025F, 0.45F);      // m=0.9, n=0.025
-    archieCoefficients[SoilType::PEAT] = ArchieCoefficients(1.1F, 0.03F, 0.80F);       // m=1.1, n=0.03
-    archieCoefficients[SoilType::CLAY] = ArchieCoefficients(1.2F, 0.035F, 0.50F);      // m=1.2, n=0.035
-    archieCoefficients[SoilType::SANDPEAT] = ArchieCoefficients(1.0F, 0.027F, 0.60F);  // m=1.0, n=0.027
-
-    logDebugSafe("SensorCompensationService: Коэффициенты Арчи инициализированы");
-}
-}  // end anonymous namespace
-
-void SensorCompensationService::initializeSoilTypeCoefficients()
-{
-    ::initializeArchieCoefficients(archieCoefficients);
-}
 
 namespace
 {
 void initializeSoilParameters(std::map<SoilType, SoilParameters>& soilParameters)
 {
     // Параметры почвы для разных типов
-    // Источник: FAO 56 - Crop evapotranspiration
+    // Источник: [Delgado et al. (2020). DOI:10.1007/s42729-020-00215-4]
 
     soilParameters[SoilType::SAND] = SoilParameters(0.35F, 1.60F, 0.10F);
     soilParameters[SoilType::LOAM] = SoilParameters(0.45F, 1.40F, 0.20F);
@@ -207,9 +179,7 @@ void SensorCompensationService::initializeSoilParameters()
 void SensorCompensationService::initializeNPKCoefficients()
 {  // NOLINT(readability-convert-member-functions-to-static)
     // Коэффициенты NPK для разных типов почвы
-    // ✅ НАУЧНО ОБОСНОВАННЫЕ КОЭФФИЦИЕНТЫ (Delgado et al., 2020)
-    // Источник: Delgado, A., et al. (2020). Nutrient Availability in Soils: Temperature and Moisture Effects.
-    // European Journal of Soil Science, 71(4), 567-578. DOI: 10.1007/s42729-020-00215-4
+    // Источник: [Delgado et al. (2020). DOI:10.1007/s42729-020-00215-4]
 
     npkCoefficients[SoilType::SAND] = NPKCoefficients(0.0041F, 0.0053F, 0.0032F, 0.01F, 0.008F, 0.012F);
     npkCoefficients[SoilType::LOAM] = NPKCoefficients(0.0038F, 0.0049F, 0.0029F, 0.009F, 0.007F, 0.011F);
@@ -230,15 +200,7 @@ SoilParameters SensorCompensationService::getSoilParameters(SoilType soilType) c
     return {};  // Возвращаем значения по умолчанию
 }
 
-ArchieCoefficients SensorCompensationService::getArchieCoefficients(SoilType soilType) const
-{  // NOLINT(readability-convert-member-functions-to-static)
-    auto iter = archieCoefficients.find(soilType);
-    if (iter != archieCoefficients.end())
-    {
-        return iter->second;
-    }
-    return {};  // Возвращаем значения по умолчанию
-}
+
 
 NPKCoefficients SensorCompensationService::getNPKCoefficients(SoilType soilType) const
 {  // NOLINT(readability-convert-member-functions-to-static)

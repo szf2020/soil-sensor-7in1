@@ -8,7 +8,6 @@
 #include <LittleFS.h>
 #include <NTPClient.h>
 #include <ctime>
-#include "../../include/advanced_filters.h"
 #include "../../include/jxct_config_vars.h"
 #include "../../include/jxct_constants.h"
 #include "../../include/jxct_format_utils.h"
@@ -17,11 +16,12 @@
 #include "../../include/logger.h"
 #include "../../include/web/csrf_protection.h"  // 🔒 CSRF защита
 #include "../../include/web_routes.h"
-#include "../business/sensor_calibration_service.h"
 #include "../modbus_sensor.h"
 #include "../wifi_manager.h"
 #include "business_services.h"
 #include "calibration_manager.h"
+#include "../../include/advanced_filters.h"
+#include "../business/sensor_calibration_service.h"
 
 // Глобальный экземпляр сервиса калибровки
 extern SensorCalibrationService gCalibrationService;
@@ -61,17 +61,14 @@ RecValues computeRecommendations()
         SoilProfile::SANDPEAT  // 4
     }};
 
-    static const std::array<EnvironmentType, 6> envTypes = {{
-        EnvironmentType::OUTDOOR,     // 0 - Открытый грунт
-        EnvironmentType::GREENHOUSE,  // 1 - Теплица
-        EnvironmentType::INDOOR,      // 2 - Комнатная
-        EnvironmentType::OUTDOOR,     // 3 - Гидропоника (используем OUTDOOR как базовый)
-        EnvironmentType::OUTDOOR,     // 4 - Аэропоника (используем OUTDOOR как базовый)
-        EnvironmentType::OUTDOOR      // 5 - Органическое (используем OUTDOOR как базовый)
+    static const std::array<EnvironmentType, 3> envTypes = {{
+        EnvironmentType::OUTDOOR,     // 0
+        EnvironmentType::GREENHOUSE,  // 1
+        EnvironmentType::INDOOR       // 2
     }};
 
     const int soilIndex = (config.soilProfile >= 0 && config.soilProfile < 5) ? config.soilProfile : 0;
-    const int envIndex = (config.environmentType >= 0 && config.environmentType < 6) ? config.environmentType : 0;
+    const int envIndex = (config.environmentType >= 0 && config.environmentType < 3) ? config.environmentType : 0;
 
     soilProfile = soilProfiles[soilIndex];
     envType = envTypes[envIndex];
@@ -86,34 +83,16 @@ RecValues computeRecommendations()
         struct tm* timeInfo = localtime(&now);
         const int month = timeInfo != nullptr ? timeInfo->tm_mon + 1 : 1;
 
-        // Определяем сезон с учетом координат (полушария)
+        // Определяем сезон
         Season season = Season::WINTER;
-        bool isNorthernHemisphere = config.latitude >= 0.0F;
-
-        if (isNorthernHemisphere)
-        {
-            // Северное полушарие: стандартные сезоны
-            if (month >= 3 && month <= 5)
-                season = Season::SPRING;
-            else if (month >= 6 && month <= 8)
-                season = Season::SUMMER;
-            else if (month >= 9 && month <= 11)
-                season = Season::AUTUMN;
-            else
-                season = Season::WINTER;
-        }
+        if (month >= 3 && month <= 5)
+            season = Season::SPRING;
+        else if (month >= 6 && month <= 8)
+            season = Season::SUMMER;
+        else if (month >= 9 && month <= 11)
+            season = Season::AUTUMN;
         else
-        {
-            // Южное полушарие: инвертированные сезоны
-            if (month >= 9 && month <= 11)
-                season = Season::SPRING;
-            else if (month == 12 || month == 1 || month == 2)
-                season = Season::SUMMER;
-            else if (month >= 3 && month <= 5)
-                season = Season::AUTUMN;
-            else
-                season = Season::WINTER;
-        }
+            season = Season::WINTER;
 
         const bool isGreenhouse = (config.environmentType == 1);
         getCropEngine().applySeasonalCorrection(rec, season, isGreenhouse);
@@ -198,50 +177,31 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     }
 
     StaticJsonDocument<SENSOR_JSON_DOC_SIZE> doc;
-
-    // Определяем совместимость с типом среды выращивания
-    bool npkAvailable = true;
-    bool allAvailable = true;
-
-    if (config.environmentType == 3)
-    {                          // Гидропоника
-        npkAvailable = false;  // NPK недоступны в растворе
-    }
-    else if (config.environmentType == 4)
-    {                          // Аэропоника
-        allAvailable = false;  // Все измерения недоступны
-    }
-
-    // Основные измерения (всегда доступны для совместимых типов)
-    doc["temperature"] = allAvailable ? format_temperature(sensorData.temperature) : "—";
-    doc["humidity"] = allAvailable ? format_moisture(sensorData.humidity) : "—";
-    doc["ec"] = allAvailable ? format_ec(sensorData.ec) : "—";
-    doc["ph"] = allAvailable ? format_ph(sensorData.ph) : "—";
-
-    // NPK измерения (доступны только для почвенных типов)
-    doc["nitrogen"] = npkAvailable ? format_npk(sensorData.nitrogen) : "—";
-    doc["phosphorus"] = npkAvailable ? format_npk(sensorData.phosphorus) : "—";
-    doc["potassium"] = npkAvailable ? format_npk(sensorData.potassium) : "—";
-
-    // RAW измерения (то же правило совместимости)
-    doc["raw_temperature"] = allAvailable ? format_temperature(sensorData.raw_temperature) : "—";
-    doc["raw_humidity"] = allAvailable ? format_moisture(sensorData.raw_humidity) : "—";
-    doc["raw_ec"] = allAvailable ? format_ec(sensorData.raw_ec) : "—";
-    doc["raw_ph"] = allAvailable ? format_ph(sensorData.raw_ph) : "—";
-    doc["raw_nitrogen"] = npkAvailable ? format_npk(sensorData.raw_nitrogen) : "—";
-    doc["raw_phosphorus"] = npkAvailable ? format_npk(sensorData.raw_phosphorus) : "—";
-    doc["raw_potassium"] = npkAvailable ? format_npk(sensorData.raw_potassium) : "—";
+    doc["temperature"] = format_temperature(sensorData.temperature);
+    doc["humidity"] = format_moisture(sensorData.humidity);
+    doc["ec"] = format_ec(sensorData.ec);
+    doc["ph"] = format_ph(sensorData.ph);
+    doc["nitrogen"] = format_npk(sensorData.nitrogen);
+    doc["phosphorus"] = format_npk(sensorData.phosphorus);
+    doc["potassium"] = format_npk(sensorData.potassium);
+    doc["raw_temperature"] = format_temperature(sensorData.raw_temperature);
+    doc["raw_humidity"] = format_moisture(sensorData.raw_humidity);
+    doc["raw_ec"] = format_ec(sensorData.raw_ec);
+    doc["raw_ph"] = format_ph(sensorData.raw_ph);
+    doc["raw_nitrogen"] = format_npk(sensorData.raw_nitrogen);
+    doc["raw_phosphorus"] = format_npk(sensorData.raw_phosphorus);
+    doc["raw_potassium"] = format_npk(sensorData.raw_potassium);
     doc["irrigation"] = sensorData.recentIrrigation;
     doc["valid"] = validateSensorData(sensorData);  // Флаг валидности по лимитам датчика
 
     const RecValues rec = computeRecommendations();
-    doc["rec_temperature"] = allAvailable ? format_temperature(rec.t) : "—";
-    doc["rec_humidity"] = allAvailable ? format_moisture(rec.hum) : "—";
-    doc["rec_ec"] = allAvailable ? format_ec(rec.ec) : "—";
-    doc["rec_ph"] = allAvailable ? format_ph(rec.ph) : "—";
-    doc["rec_nitrogen"] = npkAvailable ? format_npk(rec.n) : "—";
-    doc["rec_phosphorus"] = npkAvailable ? format_npk(rec.p) : "—";
-    doc["rec_potassium"] = npkAvailable ? format_npk(rec.k) : "—";
+    doc["rec_temperature"] = format_temperature(rec.t);
+    doc["rec_humidity"] = format_moisture(rec.hum);
+    doc["rec_ec"] = format_ec(rec.ec);
+    doc["rec_ph"] = format_ph(rec.ph);
+    doc["rec_nitrogen"] = format_npk(rec.n);
+    doc["rec_phosphorus"] = format_npk(rec.p);
+    doc["rec_potassium"] = format_npk(rec.k);
 
     // ---- Дополнительная информация ----
     // Сезон по текущему месяцу
@@ -280,44 +240,19 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
             return "Н/Д";
         }
         uint8_t month = timeInfo->tm_mon + 1;
-
-        // Определяем сезон с учетом координат (полушария)
-        bool isNorthernHemisphere = config.latitude >= 0.0F;
-
-        if (isNorthernHemisphere)
+        if (month == 12 || month == 1 || month == 2)
         {
-            // Северное полушарие: стандартные сезоны
-            if (month == 12 || month == 1 || month == 2)
-            {
-                return "Зима";
-            }
-            if (month >= 3 && month <= 5)
-            {
-                return "Весна";
-            }
-            if (month >= 6 && month <= 8)
-            {
-                return "Лето";
-            }
-            return "Осень";
-        }
-        else
-        {
-            // Южное полушарие: инвертированные сезоны
-            if (month >= 9 && month <= 11)
-            {
-                return "Весна";
-            }
-            if (month == 12 || month == 1 || month == 2)
-            {
-                return "Лето";
-            }
-            if (month >= 3 && month <= 5)
-            {
-                return "Осень";
-            }
             return "Зима";
         }
+        if (month >= 3 && month <= 5)
+        {
+            return "Весна";
+        }
+        if (month >= 6 && month <= 8)
+        {
+            return "Лето";
+        }
+        return "Осень";
     }();
     doc["season"] = seasonName;
 
@@ -331,41 +266,34 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
         }
         alerts += n;
     };
-    // Физические пределы датчика (только если измерения доступны)
-    if (allAvailable)
+    // Физические пределы датчика
+    if (sensorData.temperature < TEMP_MIN_VALID || sensorData.temperature > TEMP_MAX_VALID)
     {
-        if (sensorData.temperature < TEMP_MIN_VALID || sensorData.temperature > TEMP_MAX_VALID)
-        {
-            append("T");
-        }
-        if (sensorData.humidity < HUM_MIN_VALID || sensorData.humidity > HUM_MAX_VALID)
-        {
-            append("θ");
-        }
-        if (sensorData.ec < 0 || sensorData.ec > EC_MAX_VALID)
-        {
-            append("EC");
-        }
-        if (sensorData.ph < 3 || sensorData.ph > 9)
-        {
-            append("pH");
-        }
+        append("T");
     }
-    // Проверяем валидность NPK значений (только если доступны)
-    if (npkAvailable)
+    if (sensorData.humidity < HUM_MIN_VALID || sensorData.humidity > HUM_MAX_VALID)
     {
-        if (sensorData.nitrogen < 0 || sensorData.nitrogen > NPK_MAX_VALID)
-        {
-            append("N");
-        }
-        if (sensorData.phosphorus < 0 || sensorData.phosphorus > NPK_MAX_VALID)
-        {
-            append("P");
-        }
-        if (sensorData.potassium < 0 || sensorData.potassium > NPK_MAX_VALID)
-        {
-            append("K");
-        }
+        append("θ");
+    }
+    if (sensorData.ec < 0 || sensorData.ec > EC_MAX_VALID)
+    {
+        append("EC");
+    }
+    if (sensorData.ph < 3 || sensorData.ph > 9)
+    {
+        append("pH");
+    }
+    if (sensorData.nitrogen < 0 || sensorData.nitrogen > NPK_MAX_VALID)
+    {
+        append("N");
+    }
+    if (sensorData.phosphorus < 0 || sensorData.phosphorus > NPK_MAX_VALID)
+    {
+        append("P");
+    }
+    if (sensorData.potassium < 0 || sensorData.potassium > NPK_MAX_VALID)
+    {
+        append("K");
     }
     doc["alerts"] = alerts;
 
@@ -416,7 +344,7 @@ void setupDataRoutes()
             html += "<li>⚡ <strong>EC:</strong> температурная компенсация + модель Арчи (Archie, 1942)</li>";
             html += "<li>⚗️ <strong>pH:</strong> температурная поправка по Нернсту (-0.003×ΔT)</li>";
             html +=
-                "<li>🔴🟡🔵 <strong>NPK:</strong> коррекция по T, влажности и типу почвы (FAO 56 + Eur. J. Soil "
+                "<li>🔴🟡🔵 <strong>NPK:</strong> коррекция по T, влажности и типу почвы (Delgado et al., 2020) "
                 "Sci.)</li>";
             html += "</ul>";
             html += "</ul>";
@@ -544,6 +472,52 @@ void setupDataRoutes()
             html += "<div id='calibration-status'>Загрузка статуса...</div>";
             html += "</div>";
 
+            // Температура калибровка (простое смещение)
+            html += "<div class='section'>";
+            html += "<h3>🌡️ Температура калибровка</h3>";
+            html += "<p>Коррекция смещения (offset): <span id='temp_offset'>0.0</span>°C</p>";
+            html += "<div class='form-group'>";
+            html += "<label>Быстрая настройка:</label>";
+            html += "<div style='display:flex;gap:10px;align-items:center;'>";
+            html += "<button onclick='adjustTempOffset(-0.1)' class='btn btn-sm btn-outline-secondary'>-0.1</button>";
+            html += "<button onclick='adjustTempOffset(-0.5)' class='btn btn-sm btn-outline-secondary'>-0.5</button>";
+            html += "<button onclick='adjustTempOffset(-1.0)' class='btn btn-sm btn-outline-secondary'>-1.0</button>";
+            html += "<span style='font-weight:bold;margin:0 10px;'>Текущий offset</span>";
+            html += "<button onclick='adjustTempOffset(1.0)' class='btn btn-sm btn-outline-secondary'>+1.0</button>";
+            html += "<button onclick='adjustTempOffset(0.5)' class='btn btn-sm btn-outline-secondary'>+0.5</button>";
+            html += "<button onclick='adjustTempOffset(0.1)' class='btn btn-sm btn-outline-secondary'>+0.1</button>";
+            html += "</div>";
+            html += "</div>";
+            html += "<div class='form-group'>";
+            html += "<label for='temp_offset_input'>Точное значение offset (°C):</label>";
+            html += "<input type='number' id='temp_offset_input' step='0.1' min='-10' max='10' placeholder='0.0' onchange='setTempOffset(this.value)'>";
+            html += "</div>";
+            html += "<button onclick='saveTempOffset()' class='btn btn-primary'>Сохранить коррекцию</button>";
+            html += "</div>";
+
+            // Влажность калибровка (простое смещение)
+            html += "<div class='section'>";
+            html += "<h3>💧 Влажность калибровка</h3>";
+            html += "<p>Коррекция смещения (offset): <span id='hum_offset'>0.0</span>%</p>";
+            html += "<div class='form-group'>";
+            html += "<label>Быстрая настройка:</label>";
+            html += "<div style='display:flex;gap:10px;align-items:center;'>";
+            html += "<button onclick='adjustHumOffset(-1.0)' class='btn btn-sm btn-outline-secondary'>-1.0</button>";
+            html += "<button onclick='adjustHumOffset(-0.5)' class='btn btn-sm btn-outline-secondary'>-0.5</button>";
+            html += "<button onclick='adjustHumOffset(-0.1)' class='btn btn-sm btn-outline-secondary'>-0.1</button>";
+            html += "<span style='font-weight:bold;margin:0 10px;'>Текущий offset</span>";
+            html += "<button onclick='adjustHumOffset(0.1)' class='btn btn-sm btn-outline-secondary'>+0.1</button>";
+            html += "<button onclick='adjustHumOffset(0.5)' class='btn btn-sm btn-outline-secondary'>+0.5</button>";
+            html += "<button onclick='adjustHumOffset(1.0)' class='btn btn-sm btn-outline-secondary'>+1.0</button>";
+            html += "</div>";
+            html += "</div>";
+            html += "<div class='form-group'>";
+            html += "<label for='hum_offset_input'>Точное значение offset (%):</label>";
+            html += "<input type='number' id='hum_offset_input' step='0.1' min='-10' max='10' placeholder='0.0' onchange='setHumOffset(this.value)'>";
+            html += "</div>";
+            html += "<button onclick='saveHumOffset()' class='btn btn-primary'>Сохранить коррекцию</button>";
+            html += "</div>";
+
             // pH калибровка
             html += "<div class='section'>";
             html += "<h3>🧪 pH калибровка</h3>";
@@ -576,23 +550,41 @@ void setupDataRoutes()
             html += "<div id='ec-points' style='margin-top:10px;'></div>";
             html += "</div>";
 
-            // NPK калибровка
+            // NPK калибровка (линейная коррекция)
             html += "<div class='section'>";
             html += "<h3>🌱 NPK калибровка</h3>";
-            html += "<p>Введите показания для дистиллированной воды (должны быть близки к нулю):</p>";
+            html += "<p>Линейная коррекция: <strong>corrected = slope × raw + offset</strong></p>";
             html += "<div class='form-group'>";
-            html += "<label for='npk_n'>N (мг/кг):</label>";
-            html += "<input type='number' id='npk_n' step='0.1' min='0' placeholder='0.0'>";
+            html += "<label for='npk_n_raw'>N - сырое значение (мг/кг):</label>";
+            html += "<input type='number' id='npk_n_raw' step='0.1' min='0' placeholder='0.0'>";
             html += "</div>";
             html += "<div class='form-group'>";
-            html += "<label for='npk_p'>P (мг/кг):</label>";
-            html += "<input type='number' id='npk_p' step='0.1' min='0' placeholder='0.0'>";
+            html += "<label for='npk_n_reference'>N - эталонное значение (мг/кг):</label>";
+            html += "<input type='number' id='npk_n_reference' step='0.1' min='0' placeholder='0.0'>";
             html += "</div>";
             html += "<div class='form-group'>";
-            html += "<label for='npk_k'>K (мг/кг):</label>";
-            html += "<input type='number' id='npk_k' step='0.1' min='0' placeholder='0.0'>";
+            html += "<label for='npk_p_raw'>P - сырое значение (мг/кг):</label>";
+            html += "<input type='number' id='npk_p_raw' step='0.1' min='0' placeholder='0.0'>";
             html += "</div>";
-            html += "<button onclick='setNPKPoint()' class='btn btn-primary'>Установить NPK</button>";
+            html += "<div class='form-group'>";
+            html += "<label for='npk_p_reference'>P - эталонное значение (мг/кг):</label>";
+            html += "<input type='number' id='npk_p_reference' step='0.1' min='0' placeholder='0.0'>";
+            html += "</div>";
+            html += "<div class='form-group'>";
+            html += "<label for='npk_k_raw'>K - сырое значение (мг/кг):</label>";
+            html += "<input type='number' id='npk_k_raw' step='0.1' min='0' placeholder='0.0'>";
+            html += "</div>";
+            html += "<div class='form-group'>";
+            html += "<label for='npk_k_reference'>K - эталонное значение (мг/кг):</label>";
+            html += "<input type='number' id='npk_k_reference' step='0.1' min='0' placeholder='0.0'>";
+            html += "</div>";
+            html += "<button onclick='calculateNPKCalibration()' class='btn btn-primary'>Рассчитать NPK коррекцию</button>";
+            html += "<div id='npk-coefficients' style='margin-top:10px;background:#f8f9fa;padding:10px;border-radius:5px;display:none;'>";
+            html += "<h4>Коэффициенты коррекции:</h4>";
+            html += "<p>N: slope = <span id='npk_n_slope'>1.0</span>, offset = <span id='npk_n_offset'>0.0</span></p>";
+            html += "<p>P: slope = <span id='npk_p_slope'>1.0</span>, offset = <span id='npk_p_offset'>0.0</span></p>";
+            html += "<p>K: slope = <span id='npk_k_slope'>1.0</span>, offset = <span id='npk_k_offset'>0.0</span></p>";
+            html += "</div>";
             html += "</div>";
 
             // Действия
@@ -757,7 +749,30 @@ void setupDataRoutes()
             html += "  fetch('/api/calibration/status')";
             html += "    .then(response => response.json())";
             html += "    .then(data => {";
-            html += "      document.getElementById('calibration-status').innerHTML = data.status;";
+            html += "      let statusHtml = '<h4>📊 Статус калибровки</h4>';";
+            html += "      for (let profile in data) {";
+            html += "        const profileData = data[profile];";
+            html += "        statusHtml += '<div class=\"profile-status\">';";
+            html += "        statusHtml += '<strong>Профиль ' + profile + ':</strong> ';";
+            html += "        statusHtml += profileData.is_complete ? '✅ Полная' : '❌ Неполная';";
+            html += "        statusHtml += '<br>Датчики: ';";
+            html += "        profileData.sensors.forEach(sensor => {";
+            html += "          statusHtml += sensor.is_valid ? '✅' : '❌';";
+            html += "          statusHtml += sensor.type_name + ' (' + sensor.point_count + ' точек) ';";
+            html += "        });";
+            html += "        statusHtml += '</div>';";
+            html += "      }";
+            html += "      const statusElement = document.getElementById('calibration-status');";
+            html += "      if (statusElement) {";
+            html += "        statusElement.innerHTML = statusHtml;";
+            html += "      }";
+            html += "    })";
+            html += "    .catch(error => {";
+            html += "      console.error('Error updating calibration status:', error);";
+            html += "      const statusElement = document.getElementById('calibration-status');";
+            html += "      if (statusElement) {";
+            html += "        statusElement.innerHTML = '❌ Ошибка загрузки статуса';";
+            html += "      }";
             html += "    });";
             html += "}";
             html += "function addPHPoint() {";
@@ -790,9 +805,111 @@ void setupDataRoutes()
             html += "        document.getElementById('ec_expected').value = '';";
             html += "        document.getElementById('ec_measured').value = '';";
             html += "      }";
-            html += "    });";
-            html += "}";
-            html += "function setNPKPoint() {";
+                html += "    });";
+    html += "}";
+    html += "let tempOffset = 0.0;";
+    html += "let humOffset = 0.0;";
+    html += "";
+    html += "function adjustTempOffset(delta) {";
+    html += "  tempOffset += delta;";
+    html += "  tempOffset = Math.round(tempOffset * 10) / 10;";
+    html += "  document.getElementById('temp_offset').textContent = tempOffset.toFixed(1);";
+    html += "  document.getElementById('temp_offset_input').value = tempOffset.toFixed(1);";
+    html += "}";
+    html += "";
+    html += "function setTempOffset(value) {";
+    html += "  tempOffset = parseFloat(value) || 0.0;";
+    html += "  document.getElementById('temp_offset').textContent = tempOffset.toFixed(1);";
+    html += "}";
+    html += "";
+    html += "function saveTempOffset() {";
+    html += "  fetch('/api/calibration/temp/offset', {";
+    html += "    method: 'POST',";
+    html += "    headers: {'Content-Type': 'application/json'},";
+    html += "    body: JSON.stringify({offset: tempOffset})";
+    html += "  }).then(response => response.json())";
+    html += "    .then(data => {";
+    html += "      if(data.success) {";
+    html += "        alert('Коррекция температуры сохранена: ' + tempOffset.toFixed(1) + '°C');";
+    html += "        updateCalibrationStatus();";
+    html += "      }";
+    html += "    });";
+    html += "}";
+    html += "";
+    html += "function adjustHumOffset(delta) {";
+    html += "  humOffset += delta;";
+    html += "  humOffset = Math.round(humOffset * 10) / 10;";
+    html += "  document.getElementById('hum_offset').textContent = humOffset.toFixed(1);";
+    html += "  document.getElementById('hum_offset_input').value = humOffset.toFixed(1);";
+    html += "}";
+    html += "";
+    html += "function setHumOffset(value) {";
+    html += "  humOffset = parseFloat(value) || 0.0;";
+    html += "  document.getElementById('hum_offset').textContent = humOffset.toFixed(1);";
+    html += "}";
+    html += "";
+    html += "function saveHumOffset() {";
+    html += "  fetch('/api/calibration/hum/offset', {";
+    html += "    method: 'POST',";
+    html += "    headers: {'Content-Type': 'application/json'},";
+    html += "    body: JSON.stringify({offset: humOffset})";
+    html += "  }).then(response => response.json())";
+    html += "    .then(data => {";
+    html += "      if(data.success) {";
+    html += "        alert('Коррекция влажности сохранена: ' + humOffset.toFixed(1) + '%');";
+    html += "        updateCalibrationStatus();";
+    html += "      }";
+    html += "    });";
+    html += "}";
+    html += "";
+    html += "function calculateNPKCalibration() {";
+    html += "  const nRaw = parseFloat(document.getElementById('npk_n_raw').value);";
+    html += "  const nRef = parseFloat(document.getElementById('npk_n_reference').value);";
+    html += "  const pRaw = parseFloat(document.getElementById('npk_p_raw').value);";
+    html += "  const pRef = parseFloat(document.getElementById('npk_p_reference').value);";
+    html += "  const kRaw = parseFloat(document.getElementById('npk_k_raw').value);";
+    html += "  const kRef = parseFloat(document.getElementById('npk_k_reference').value);";
+    html += "";
+    html += "  if (isNaN(nRaw) || isNaN(nRef) || isNaN(pRaw) || isNaN(pRef) || isNaN(kRaw) || isNaN(kRef)) {";
+    html += "    alert('Пожалуйста, заполните все поля NPK калибровки');";
+    html += "    return;";
+    html += "  }";
+    html += "";
+    html += "  // Рассчитываем коэффициенты: corrected = slope × raw + offset";
+    html += "  const nSlope = nRaw > 0 ? nRef / nRaw : 1.0;";
+    html += "  const nOffset = nRef - (nSlope * nRaw);";
+    html += "  const pSlope = pRaw > 0 ? pRef / pRaw : 1.0;";
+    html += "  const pOffset = pRef - (pSlope * pRaw);";
+    html += "  const kSlope = kRaw > 0 ? kRef / kRaw : 1.0;";
+    html += "  const kOffset = kRef - (kSlope * kRaw);";
+    html += "";
+    html += "  // Показываем коэффициенты";
+    html += "  document.getElementById('npk_n_slope').textContent = nSlope.toFixed(3);";
+    html += "  document.getElementById('npk_n_offset').textContent = nOffset.toFixed(1);";
+    html += "  document.getElementById('npk_p_slope').textContent = pSlope.toFixed(3);";
+    html += "  document.getElementById('npk_p_offset').textContent = pOffset.toFixed(1);";
+    html += "  document.getElementById('npk_k_slope').textContent = kSlope.toFixed(3);";
+    html += "  document.getElementById('npk_k_offset').textContent = kOffset.toFixed(1);";
+    html += "  document.getElementById('npk-coefficients').style.display = 'block';";
+    html += "";
+    html += "  // Сохраняем коэффициенты";
+    html += "  fetch('/api/calibration/npk/coefficients', {";
+    html += "    method: 'POST',";
+    html += "    headers: {'Content-Type': 'application/json'},";
+    html += "    body: JSON.stringify({";
+    html += "      n: {slope: nSlope, offset: nOffset},";
+    html += "      p: {slope: pSlope, offset: pOffset},";
+    html += "      k: {slope: kSlope, offset: kOffset}";
+    html += "    })";
+    html += "  }).then(response => response.json())";
+    html += "    .then(data => {";
+    html += "      if(data.success) {";
+    html += "        alert('NPK коэффициенты сохранены!');";
+    html += "        updateCalibrationStatus();";
+    html += "      }";
+    html += "    });";
+    html += "}";
+    html += "function setNPKPoint() {";
             html += "  const n = parseFloat(document.getElementById('npk_n').value);";
             html += "  const p = parseFloat(document.getElementById('npk_p').value);";
             html += "  const k = parseFloat(document.getElementById('npk_k').value);";
@@ -991,9 +1108,41 @@ void setupDataRoutes()
     webServer.on("/api/calibration/status", HTTP_GET,
                  []()
                  {
-                     DynamicJsonDocument doc(512);
-                     doc["status"] = "Калибровка не настроена";  // Временно
-                     doc["complete"] = false;
+                     DynamicJsonDocument doc(1024);
+                     
+                     // Создаем структуру с профилями как ожидает JavaScript
+                     JsonObject profile1 = doc.createNestedObject("1");
+                     profile1["is_complete"] = false;
+                     profile1["last_update"] = 0;
+                     
+                     JsonArray sensors = profile1.createNestedArray("sensors");
+                     
+                     // Добавляем информацию о всех калибруемых датчиках (включая температуру и влажность)
+                     const char* sensorTypes[] = {"temperature", "humidity", "ec", "ph", "nitrogen", "phosphorus", "potassium"};
+                     for (int i = 0; i < 7; i++) {
+                         JsonObject sensor = sensors.createNestedObject();
+                         sensor["type"] = i;
+                         sensor["type_name"] = sensorTypes[i];
+                         sensor["is_valid"] = false;
+                         sensor["point_count"] = 0;
+                         sensor["r_squared"] = 0;
+                         sensor["standard_error"] = 0;
+                     }
+                     
+                     // Добавляем информацию о pH калибровке если есть точки
+                     int phPoints = gCalibrationService.getCalibrationPointsCount(SoilProfile::SAND, "ph");
+                     logDebugSafe("API Status: pH points count = %d", phPoints);
+                     if (phPoints > 0) {
+                         sensors[3]["point_count"] = phPoints; // pH = индекс 3
+                         sensors[3]["is_valid"] = (phPoints >= 2);
+                     }
+                     
+                     // Добавляем информацию о EC калибровке если есть точки
+                     int ecPoints = gCalibrationService.getCalibrationPointsCount(SoilProfile::SAND, "ec");
+                     if (ecPoints > 0) {
+                         sensors[2]["point_count"] = ecPoints; // EC = индекс 2
+                         sensors[2]["is_valid"] = (ecPoints >= 2);
+                     }
 
                      String response;
                      serializeJson(doc, response);
@@ -1017,33 +1166,23 @@ void setupDataRoutes()
 
                      // ИСПРАВЛЕНО: Реальная реализация pH калибровки
                      bool success = false;
-                     try
-                     {
+                     try {
                          // Валидация входных данных
-                         if (expected < 0 || measured < 0)
-                         {
-                             logWarn("Отрицательные значения pH: expected=" + String(expected) +
-                                     ", measured=" + String(measured));
-                             webServer.send(400, "application/json",
-                                            "{\"success\":false,\"error\":\"Negative values not allowed\"}");
+                         if (expected < 0 || measured < 0) {
+                             logWarn("Отрицательные значения pH: expected=" + String(expected) + ", measured=" + String(measured));
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Negative values not allowed\"}");
                              return;
                          }
-
+                         
                          // Добавляем pH калибровочную точку
                          success = gCalibrationService.addPHCalibrationPoint(expected, measured);
-
-                         if (success)
-                         {
-                             logSuccess("pH калибровочная точка добавлена: expected=" + String(expected) +
-                                        ", measured=" + String(measured));
-                         }
-                         else
-                         {
+                         
+                         if (success) {
+                             logSuccess("pH калибровочная точка добавлена: expected=" + String(expected) + ", measured=" + String(measured));
+                         } else {
                              logError("Ошибка добавления pH калибровочной точки");
                          }
-                     }
-                     catch (...)
-                     {
+                     } catch (...) {
                          logError("Исключение при добавлении pH калибровки");
                          success = false;
                      }
@@ -1053,9 +1192,7 @@ void setupDataRoutes()
                      if (!success)
                      {
                          response["error"] = "Failed to add pH calibration point";
-                     }
-                     else
-                     {
+                     } else {
                          response["message"] = "pH calibration point added successfully";
                      }
 
@@ -1081,33 +1218,23 @@ void setupDataRoutes()
 
                      // ИСПРАВЛЕНО: Реальная реализация EC калибровки
                      bool success = false;
-                     try
-                     {
+                     try {
                          // Валидация входных данных
-                         if (expected < 0 || measured < 0)
-                         {
-                             logWarn("Отрицательные значения EC: expected=" + String(expected) +
-                                     ", measured=" + String(measured));
-                             webServer.send(400, "application/json",
-                                            "{\"success\":false,\"error\":\"Negative values not allowed\"}");
+                         if (expected < 0 || measured < 0) {
+                             logWarn("Отрицательные значения EC: expected=" + String(expected) + ", measured=" + String(measured));
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Negative values not allowed\"}");
                              return;
                          }
-
+                         
                          // Добавляем EC калибровочную точку
                          success = gCalibrationService.addECCalibrationPoint(expected, measured);
-
-                         if (success)
-                         {
-                             logSuccess("EC калибровочная точка добавлена: expected=" + String(expected) +
-                                        ", measured=" + String(measured));
-                         }
-                         else
-                         {
+                         
+                         if (success) {
+                             logSuccess("EC калибровочная точка добавлена: expected=" + String(expected) + ", measured=" + String(measured));
+                         } else {
                              logError("Ошибка добавления EC калибровочной точки");
                          }
-                     }
-                     catch (...)
-                     {
+                     } catch (...) {
                          logError("Исключение при добавлении EC калибровки");
                          success = false;
                      }
@@ -1117,9 +1244,7 @@ void setupDataRoutes()
                      if (!success)
                      {
                          response["error"] = "Failed to add EC calibration point";
-                     }
-                     else
-                     {
+                     } else {
                          response["message"] = "EC calibration point added successfully";
                      }
 
@@ -1128,103 +1253,249 @@ void setupDataRoutes()
                      webServer.send(200, "application/json", response_str);
                  });
 
-    webServer.on(
-        "/api/calibration/npk/set", HTTP_POST,
-        []()
-        {
-            logWebRequest("POST", "/api/calibration/npk/set", webServer.client().remoteIP().toString());
+    webServer.on("/api/calibration/temp/offset", HTTP_POST,
+                 []()
+                 {
+                     DynamicJsonDocument doc(512);
+                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
 
-            DynamicJsonDocument doc(512);
-            DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
+                     if (error)
+                     {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
+                         return;
+                     }
 
-            if (error)
-            {
-                logWarn("Ошибка парсинга JSON для NPK калибровки");
-                webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
-                return;
-            }
+                     float offset = doc["offset"];
 
-            float n = doc["n"];
-            float p = doc["p"];
-            float k = doc["k"];
+                     // ИСПРАВЛЕНО: Реальная реализация температуры offset калибровки
+                     bool success = false;
+                     try {
+                         // Валидация входных данных
+                         if (offset < -10.0F || offset > 10.0F) {
+                             logWarn("Недопустимое значение offset температуры: " + String(offset));
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Temperature offset out of range\"}");
+                             return;
+                         }
+                         
+                         // Сохраняем offset температуры
+                         success = gCalibrationService.setTemperatureOffset(offset);
+                         
+                         if (success) {
+                             logSuccess("Температура offset сохранен: " + String(offset));
+                         } else {
+                             logError("Ошибка сохранения температуры offset");
+                         }
+                     } catch (...) {
+                         logError("Исключение при сохранении температуры offset");
+                         success = false;
+                     }
 
-            // ИСПРАВЛЕНО: Реальная реализация NPK калибровки
-            bool success = false;
-            try
-            {
-                // Валидация входных данных
-                if (n < 0 || p < 0 || k < 0)
-                {
-                    logWarn("Отрицательные значения NPK: N=" + String(n) + ", P=" + String(p) + ", K=" + String(k));
-                    webServer.send(400, "application/json",
-                                   "{\"success\":false,\"error\":\"Negative values not allowed\"}");
-                    return;
-                }
+                     DynamicJsonDocument response(256);
+                     response["success"] = success;
+                     if (!success)
+                     {
+                         response["error"] = "Failed to save temperature offset";
+                     } else {
+                         response["message"] = "Temperature offset saved successfully";
+                     }
 
-                // Устанавливаем NPK калибровочную точку
-                success = gCalibrationService.setNPKCalibrationPoint(n, p, k);
+                     String response_str;
+                     serializeJson(response, response_str);
+                     webServer.send(200, "application/json", response_str);
+                 });
 
-                if (success)
-                {
-                    logSuccess("NPK калибровочная точка установлена: N=" + String(n) + ", P=" + String(p) +
-                               ", K=" + String(k));
+    webServer.on("/api/calibration/hum/offset", HTTP_POST,
+                 []()
+                 {
+                     DynamicJsonDocument doc(512);
+                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
 
-                    // Включаем компенсацию в конфигурации
-                    config.flags.compensationEnabled = true;
-                    saveConfig();
-                }
-                else
-                {
-                    logError("Ошибка установки NPK калибровочной точки");
-                }
-            }
-            catch (...)
-            {
-                logError("Исключение при установке NPK калибровки");
-                success = false;
-            }
+                     if (error)
+                     {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
+                         return;
+                     }
 
-            DynamicJsonDocument response(256);
-            response["success"] = success;
-            if (!success)
-            {
-                response["error"] = "Failed to set NPK calibration point";
-            }
-            else
-            {
-                response["message"] = "NPK calibration point set successfully";
-            }
+                     float offset = doc["offset"];
 
-            String response_str;
-            serializeJson(response, response_str);
-            webServer.send(200, "application/json", response_str);
-        });
+                     // ИСПРАВЛЕНО: Реальная реализация влажности offset калибровки
+                     bool success = false;
+                     try {
+                         // Валидация входных данных
+                         if (offset < -10.0F || offset > 10.0F) {
+                             logWarn("Недопустимое значение offset влажности: " + String(offset));
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Humidity offset out of range\"}");
+                             return;
+                         }
+                         
+                         // Сохраняем offset влажности
+                         success = gCalibrationService.setHumidityOffset(offset);
+                         
+                         if (success) {
+                             logSuccess("Влажность offset сохранен: " + String(offset));
+                         } else {
+                             logError("Ошибка сохранения влажности offset");
+                         }
+                     } catch (...) {
+                         logError("Исключение при сохранении влажности offset");
+                         success = false;
+                     }
+
+                     DynamicJsonDocument response(256);
+                     response["success"] = success;
+                     if (!success)
+                     {
+                         response["error"] = "Failed to save humidity offset";
+                     } else {
+                         response["message"] = "Humidity offset saved successfully";
+                     }
+
+                     String response_str;
+                     serializeJson(response, response_str);
+                     webServer.send(200, "application/json", response_str);
+                 });
+
+    webServer.on("/api/calibration/npk/coefficients", HTTP_POST,
+                 []()
+                 {
+                     DynamicJsonDocument doc(512);
+                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
+
+                     if (error)
+                     {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
+                         return;
+                     }
+
+                     JsonObject n = doc["n"];
+                     JsonObject p = doc["p"];
+                     JsonObject k = doc["k"];
+
+                     float nSlope = n["slope"];
+                     float nOffset = n["offset"];
+                     float pSlope = p["slope"];
+                     float pOffset = p["offset"];
+                     float kSlope = k["slope"];
+                     float kOffset = k["offset"];
+
+                     // ИСПРАВЛЕНО: Реальная реализация NPK коэффициентов
+                     bool success = false;
+                     try {
+                         // Валидация входных данных
+                         if (nSlope <= 0 || pSlope <= 0 || kSlope <= 0) {
+                             logWarn("Недопустимые значения slope NPK: N=" + String(nSlope) + ", P=" + String(pSlope) + ", K=" + String(kSlope));
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid NPK slopes\"}");
+                             return;
+                         }
+                         
+                         // Сохраняем NPK коэффициенты
+                         success = gCalibrationService.setNPKCoefficients(nSlope, nOffset, pSlope, pOffset, kSlope, kOffset);
+                         
+                         if (success) {
+                             logSuccess("NPK коэффициенты сохранены: N(slope=" + String(nSlope) + ",offset=" + String(nOffset) + 
+                                      "), P(slope=" + String(pSlope) + ",offset=" + String(pOffset) + 
+                                      "), K(slope=" + String(kSlope) + ",offset=" + String(kOffset) + ")");
+                         } else {
+                             logError("Ошибка сохранения NPK коэффициентов");
+                         }
+                     } catch (...) {
+                         logError("Исключение при сохранении NPK коэффициентов");
+                         success = false;
+                     }
+
+                     DynamicJsonDocument response(256);
+                     response["success"] = success;
+                     if (!success)
+                     {
+                         response["error"] = "Failed to save NPK coefficients";
+                     } else {
+                         response["message"] = "NPK coefficients saved successfully";
+                     }
+
+                     String response_str;
+                     serializeJson(response, response_str);
+                     webServer.send(200, "application/json", response_str);
+                 });
+
+    webServer.on("/api/calibration/npk/set", HTTP_POST,
+                 []()
+                 {
+                     logWebRequest("POST", "/api/calibration/npk/set", webServer.client().remoteIP().toString());
+                     
+                     DynamicJsonDocument doc(512);
+                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
+
+                     if (error)
+                     {
+                         logWarn("Ошибка парсинга JSON для NPK калибровки");
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
+                         return;
+                     }
+
+                     float n = doc["n"];
+                     float p = doc["p"];
+                     float k = doc["k"];
+
+                     // ИСПРАВЛЕНО: Реальная реализация NPK калибровки
+                     bool success = false;
+                     try {
+                         // Валидация входных данных
+                         if (n < 0 || p < 0 || k < 0) {
+                             logWarn("Отрицательные значения NPK: N=" + String(n) + ", P=" + String(p) + ", K=" + String(k));
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Negative values not allowed\"}");
+                             return;
+                         }
+                         
+                         // Устанавливаем NPK калибровочную точку
+                         success = gCalibrationService.setNPKCalibrationPoint(n, p, k);
+                         
+                         if (success) {
+                             logSuccess("NPK калибровочная точка установлена: N=" + String(n) + ", P=" + String(p) + ", K=" + String(k));
+                             
+                                                      // Включаем компенсацию в конфигурации
+                         config.flags.compensationEnabled = true;
+                             saveConfig();
+                         } else {
+                             logError("Ошибка установки NPK калибровочной точки");
+                         }
+                     } catch (...) {
+                         logError("Исключение при установке NPK калибровки");
+                         success = false;
+                     }
+
+                     DynamicJsonDocument response(256);
+                     response["success"] = success;
+                     if (!success)
+                     {
+                         response["error"] = "Failed to set NPK calibration point";
+                     } else {
+                         response["message"] = "NPK calibration point set successfully";
+                     }
+
+                     String response_str;
+                     serializeJson(response, response_str);
+                     webServer.send(200, "application/json", response_str);
+                 });
 
     webServer.on("/api/calibration/ph/calculate", HTTP_POST,
                  []()
                  {
                      logWebRequest("POST", "/api/calibration/ph/calculate", webServer.client().remoteIP().toString());
-
+                     
                      // ИСПРАВЛЕНО: Реальная реализация расчета pH калибровки
                      bool success = false;
                      float r_squared = 0.0F;
-
-                     try
-                     {
+                     
+                     try {
                          success = gCalibrationService.calculatePHCalibration();
                          r_squared = 0.95F;  // Временно, пока не реализован возврат R²
-
-                         if (success)
-                         {
+                         
+                         if (success) {
                              logSuccess("pH калибровка рассчитана успешно, R² = " + String(r_squared, 3));
-                         }
-                         else
-                         {
+                         } else {
                              logError("Ошибка расчета pH калибровки");
                          }
-                     }
-                     catch (...)
-                     {
+                     } catch (...) {
                          logError("Исключение при расчете pH калибровки");
                          success = false;
                      }
@@ -1250,27 +1521,21 @@ void setupDataRoutes()
                  []()
                  {
                      logWebRequest("POST", "/api/calibration/ec/calculate", webServer.client().remoteIP().toString());
-
+                     
                      // ИСПРАВЛЕНО: Реальная реализация расчета EC калибровки
                      bool success = false;
                      float r_squared = 0.0F;
-
-                     try
-                     {
+                     
+                     try {
                          success = gCalibrationService.calculateECCalibration();
                          r_squared = 0.95F;  // Временно, пока не реализован возврат R²
-
-                         if (success)
-                         {
+                         
+                         if (success) {
                              logSuccess("EC калибровка рассчитана успешно, R² = " + String(r_squared, 3));
-                         }
-                         else
-                         {
+                         } else {
                              logError("Ошибка расчета EC калибровки");
                          }
-                     }
-                     catch (...)
-                     {
+                     } catch (...) {
                          logError("Исключение при расчете EC калибровки");
                          success = false;
                      }
@@ -1296,54 +1561,44 @@ void setupDataRoutes()
                  []()
                  {
                      logWebRequest("GET", "/api/calibration/export", webServer.client().remoteIP().toString());
-
+                     
                      // ИСПРАВЛЕНО: Реальная реализация экспорта калибровки
                      DynamicJsonDocument doc(1024);
-
-                     try
-                     {
+                     
+                     try {
                          // Получаем данные калибровки из сервиса
                          JsonArray phPoints = doc.createNestedArray("ph_points");
                          JsonArray ecPoints = doc.createNestedArray("ec_points");
                          JsonObject npkZero = doc.createNestedObject("npk_zero");
-
+                         
                          String calibrationData = gCalibrationService.exportCalibrationToJSON();
                          bool hasData = !calibrationData.isEmpty();
-
-                         if (hasData)
-                         {
+                         
+                         if (hasData) {
                              // Парсим JSON и заполняем массивы
                              DynamicJsonDocument calDoc(1024);
                              deserializeJson(calDoc, calibrationData);
-
-                             if (calDoc.containsKey("ph_points"))
-                             {
+                             
+                             if (calDoc.containsKey("ph_points")) {
                                  phPoints = calDoc["ph_points"];
                              }
-                             if (calDoc.containsKey("ec_points"))
-                             {
+                             if (calDoc.containsKey("ec_points")) {
                                  ecPoints = calDoc["ec_points"];
                              }
-                             if (calDoc.containsKey("npk_zero"))
-                             {
+                             if (calDoc.containsKey("npk_zero")) {
                                  npkZero = calDoc["npk_zero"];
                              }
                          }
-
+                         
                          doc["calculated"] = hasData;
                          doc["timestamp"] = millis();
-
-                         if (hasData)
-                         {
+                         
+                         if (hasData) {
                              logSuccess("Калибровка экспортирована успешно");
-                         }
-                         else
-                         {
+                         } else {
                              logWarn("Нет данных калибровки для экспорта");
                          }
-                     }
-                     catch (...)
-                     {
+                     } catch (...) {
                          logError("Исключение при экспорте калибровки");
                          doc["error"] = "Export failed";
                          doc["calculated"] = false;
@@ -1358,44 +1613,37 @@ void setupDataRoutes()
                  []()
                  {
                      logWebRequest("POST", "/api/calibration/import", webServer.client().remoteIP().toString());
-
+                     
                      String json_data = webServer.arg("plain");
-
+                     
                      // ИСПРАВЛЕНО: Реальная реализация импорта калибровки
                      bool success = false;
-
-                     try
-                     {
+                     
+                     try {
                          DynamicJsonDocument doc(1024);
                          DeserializationError error = deserializeJson(doc, json_data);
-
-                         if (error)
-                         {
+                         
+                         if (error) {
                              logWarn("Ошибка парсинга JSON для импорта калибровки");
                              webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
                              return;
                          }
-
+                         
                          // Импортируем данные калибровки
                          String jsonData;
                          serializeJson(doc, jsonData);
                          success = gCalibrationService.importCalibrationFromJSON(jsonData);
-
-                         if (success)
-                         {
+                         
+                         if (success) {
                              logSuccess("Калибровка импортирована успешно");
-
+                             
                              // Включаем компенсацию в конфигурации
                              config.flags.compensationEnabled = true;
                              saveConfig();
-                         }
-                         else
-                         {
+                         } else {
                              logError("Ошибка импорта калибровки");
                          }
-                     }
-                     catch (...)
-                     {
+                     } catch (...) {
                          logError("Исключение при импорте калибровки");
                          success = false;
                      }
@@ -1405,9 +1653,7 @@ void setupDataRoutes()
                      if (!success)
                      {
                          response["error"] = "Failed to import calibration";
-                     }
-                     else
-                     {
+                     } else {
                          response["message"] = "Calibration imported successfully";
                      }
 
@@ -1420,22 +1666,21 @@ void setupDataRoutes()
                  []()
                  {
                      logWebRequest("POST", "/api/calibration/reset", webServer.client().remoteIP().toString());
-
+                     
                      // ИСПРАВЛЕНО: Реальная реализация сброса калибровки
-                     try
-                     {
-                         // Сбрасываем калибровочные данные
+                     try {
+                                              // Сбрасываем калибровочные данные
                          gCalibrationService.resetCalibration();
-
+                         
                          // Сбрасываем фильтры
                          AdvancedFilters::resetAllFilters();
-
+                         
                          // НЕ трогаем флаг компенсации! Калибровка и компенсация - разные вещи
                          // config.flags.compensationEnabled остается как есть
                          saveConfig();
-
+                         
                          logSuccess("Калибровка успешно сброшена");
-
+                         
                          DynamicJsonDocument response(128);
                          response["success"] = true;
                          response["message"] = "Калибровка сброшена успешно";
@@ -1443,11 +1688,9 @@ void setupDataRoutes()
                          String response_str;
                          serializeJson(response, response_str);
                          webServer.send(200, "application/json", response_str);
-                     }
-                     catch (...)
-                     {
+                     } catch (...) {
                          logError("Ошибка при сбросе калибровки");
-
+                         
                          DynamicJsonDocument response(128);
                          response["success"] = false;
                          response["error"] = "Ошибка при сбросе калибровки";

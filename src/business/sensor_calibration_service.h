@@ -143,7 +143,7 @@ class SensorCalibrationService : public ISensorCalibrationService
      * @param sensorType Тип датчика
      * @return size_t Количество точек калибровки
      */
-    static size_t getCalibrationPointsCount(SoilProfile profile, const String& sensorType);
+    size_t getCalibrationPointsCount(SoilProfile profile, const String& sensorType) override;
 
     /**
      * @brief Экспортирует калибровочную таблицу в CSV
@@ -156,9 +156,14 @@ class SensorCalibrationService : public ISensorCalibrationService
     // Методы для веб-интерфейса калибровки
     String getCalibrationStatus() const;
     bool isCalibrationComplete() const;
-    bool addPHCalibrationPoint(float expected, float measured);
-    bool addECCalibrationPoint(float expected, float measured);
-    bool setNPKCalibrationPoint(float n, float p, float k);
+    bool addPHCalibrationPoint(float expected, float measured) override;
+    bool addECCalibrationPoint(float expected, float measured) override;
+    bool addTemperatureCalibrationPoint(float expected, float measured) override;
+    bool addHumidityCalibrationPoint(float expected, float measured) override;
+    bool setTemperatureOffset(float offset);
+    bool setHumidityOffset(float offset);
+    bool setNPKCoefficients(float nSlope, float nOffset, float pSlope, float pOffset, float kSlope, float kOffset);
+    bool setNPKCalibrationPoint(float n, float p, float k) override;
     bool calculatePHCalibration();
     bool calculateECCalibration();
     String exportCalibrationToJSON();

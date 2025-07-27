@@ -5,18 +5,17 @@
  */
 
 #include "sensor_processing.h"
+#include "logger.h"
+#include "jxct_config_vars.h"
 #include "business/sensor_calibration_service.h"
 #include "business/sensor_compensation_service.h"
-#include "jxct_config_vars.h"
-#include "logger.h"
 #include "sensor_types.h"
 
 // Глобальные экземпляры бизнес-сервисов
 extern SensorCalibrationService gCalibrationService;
 extern SensorCompensationService gCompensationService;
 
-namespace SensorProcessing
-{
+namespace SensorProcessing {
 
 // Константы для маппинга профилей почвы
 static const std::array<SoilType, 5> SOIL_TYPES = {{
@@ -40,11 +39,9 @@ static const std::array<SoilProfile, 5> SOIL_PROFILES = {{
  * @param profileIndex Индекс профиля почвы (0-4)
  * @return SoilType соответствующий профилю
  */
-SoilType getSoilType(int profileIndex)
-{
-    if (profileIndex < 0 || profileIndex >= 5)
-    {
-        profileIndex = 1;  // По умолчанию LOAM
+SoilType getSoilType(int profileIndex) {
+    if (profileIndex < 0 || profileIndex >= 5) {
+        profileIndex = 1; // По умолчанию LOAM
     }
     return SOIL_TYPES[profileIndex];
 }
@@ -54,11 +51,9 @@ SoilType getSoilType(int profileIndex)
  * @param profileIndex Индекс профиля почвы (0-4)
  * @return SoilProfile соответствующий профилю
  */
-SoilProfile getSoilProfile(int profileIndex)
-{
-    if (profileIndex < 0 || profileIndex >= 5)
-    {
-        profileIndex = 1;  // По умолчанию LOAM
+SoilProfile getSoilProfile(int profileIndex) {
+    if (profileIndex < 0 || profileIndex >= 5) {
+        profileIndex = 1; // По умолчанию LOAM
     }
     return SOIL_PROFILES[profileIndex];
 }
@@ -68,22 +63,20 @@ SoilProfile getSoilProfile(int profileIndex)
  * @param sensorData Данные датчика для обработки
  * @param config Конфигурация системы
  */
-void processSensorData(SensorData& sensorData, const Config& config)
-{
+void processSensorData(SensorData& sensorData, const Config& config) {
     // 1. ВСЕГДА применяем калибровку (расчет по точкам)
     logDebugSafe("📊 Применяем калибровку датчика");
-
+    
     const SoilProfile profile = getSoilProfile(config.soilProfile);
     gCalibrationService.applyCalibration(sensorData, profile);
 
     // 2. Применяем научную компенсацию ТОЛЬКО если включена
-    if (config.flags.compensationEnabled)
-    {  // ✅ Правильный флаг для компенсации
+    if (config.flags.compensationEnabled) {  // ✅ Правильный флаг для компенсации
         logDebugSafe("🔬 Применяем научную компенсацию датчика");
-
+        
         const SoilType soil = getSoilType(config.soilProfile);
-
-        // EC: температурная компенсация (Rhoades et al., 1989)
+        
+        // EC: консервативная температурная компенсация
         sensorData.ec = gCompensationService.correctEC(sensorData.ec, soil, sensorData.temperature);
 
         // pH: температурная поправка по уравнению Нернста
@@ -97,11 +90,9 @@ void processSensorData(SensorData& sensorData, const Config& config)
         sensorData.nitrogen = npk.nitrogen;
         sensorData.phosphorus = npk.phosphorus;
         sensorData.potassium = npk.potassium;
-    }
-    else
-    {
+    } else {
         logDebugSafe("🔬 Компенсация отключена");
     }
 }
 
-}  // namespace SensorProcessing
+} // namespace SensorProcessing 

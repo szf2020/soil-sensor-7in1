@@ -70,6 +70,90 @@ class ISensorCalibrationService
      * @param profile Профиль почвы
      */
     virtual void clearCalibrationTable(SoilProfile profile) = 0;
+
+    /**
+     * @brief Добавляет точку калибровки pH
+     *
+     * @param expected Ожидаемое значение
+     * @param measured Измеренное значение
+     * @return true если добавление успешно
+     */
+    virtual bool addPHCalibrationPoint(float expected, float measured) = 0;
+
+    /**
+     * @brief Добавляет точку калибровки EC
+     *
+     * @param expected Ожидаемое значение
+     * @param measured Измеренное значение
+     * @return true если добавление успешно
+     */
+    virtual bool addECCalibrationPoint(float expected, float measured) = 0;
+
+    /**
+     * @brief Добавляет точку калибровки температуры
+     *
+     * @param expected Ожидаемое значение
+     * @param measured Измеренное значение
+     * @return true если добавление успешно
+     */
+    virtual bool addTemperatureCalibrationPoint(float expected, float measured) = 0;
+
+    /**
+     * @brief Добавляет точку калибровки влажности
+     *
+     * @param expected Ожидаемое значение
+     * @param measured Измеренное значение
+     * @return true если добавление успешно
+     */
+    virtual bool addHumidityCalibrationPoint(float expected, float measured) = 0;
+
+    /**
+     * @brief Устанавливает точку калибровки NPK
+     *
+     * @param nitrogen Значение азота
+     * @param phosphorus Значение фосфора
+     * @param potassium Значение калия
+     * @return true если установка успешна
+     */
+    virtual bool setNPKCalibrationPoint(float nitrogen, float phosphorus, float potassium) = 0;
+
+    /**
+     * @brief Получает количество точек калибровки
+     *
+     * @param profile Профиль почвы
+     * @param sensorType Тип датчика
+     * @return Количество точек
+     */
+    virtual size_t getCalibrationPointsCount(SoilProfile profile, const String& sensorType) = 0;
+
+    /**
+     * @brief Устанавливает offset калибровки температуры
+     *
+     * @param offset Смещение температуры
+     * @return true если установка успешна
+     */
+    virtual bool setTemperatureOffset(float offset) = 0;
+
+    /**
+     * @brief Устанавливает offset калибровки влажности
+     *
+     * @param offset Смещение влажности
+     * @return true если установка успешна
+     */
+    virtual bool setHumidityOffset(float offset) = 0;
+
+    /**
+     * @brief Устанавливает коэффициенты калибровки NPK
+     *
+     * @param nSlope Коэффициент наклона для азота
+     * @param nOffset Смещение для азота
+     * @param pSlope Коэффициент наклона для фосфора
+     * @param pOffset Смещение для фосфора
+     * @param kSlope Коэффициент наклона для калия
+     * @param kOffset Смещение для калия
+     * @return true если установка успешна
+     */
+    virtual bool setNPKCoefficients(float nSlope, float nOffset, float pSlope, float pOffset, float kSlope, float kOffset) = 0;
 };
 
 #endif  // ISENSOR_CALIBRATION_SERVICE_H

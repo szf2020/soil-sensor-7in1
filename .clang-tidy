@@ -1,34 +1,35 @@
-﻿Checks: >
-  -*,
-  bugprone-*,
-  misc-*,
-  performance-*,
+﻿---
+# Конфигурация clang-tidy для JXCT ESP32 проекта
+# Мягкая конфигурация для начального анализа
+
+Checks: >
   clang-analyzer-*,
-  modernize-use-trailing-return-type,
-  readability-identifier-naming,
-  -bugprone-easily-swappable-parameters,
-  -readability-convert-member-functions-to-static,
-  -misc-use-internal-linkage
+  bugprone-*,
+  cert-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  -modernize-use-trailing-return-type,
+  -cert-err58-cpp,
+  -misc-non-private-member-variables-in-classes,
+  -misc-include-cleaner,
+  -readability-identifier-naming,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity
 
 WarningsAsErrors: ''
-HeaderFilterRegex: ''
-AnalyzeTemporaryDtors: false
+
+HeaderFilterRegex: '^((?!test/).)*$'
+
+FormatStyle: 'file'
 
 CheckOptions:
-  - key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
-    value: 'true'
-  - key: readability-identifier-naming.ClassCase
-    value: CamelCase
-  - key: readability-identifier-naming.FunctionCase
-    value: lower_case
-  - key: readability-identifier-naming.VariableCase
-    value: lower_case
-  - key: readability-identifier-naming.ConstantCase
-    value: UPPER_CASE
-  - key: readability-identifier-naming.ParameterCase
-    value: lower_case
-  - key: readability-identifier-naming.MacroDefinitionCase
-    value: UPPER_CASE
-
-SystemHeaders: false
-HeaderFilterRegex: '^(include|src)/.*\.(h|hpp|cpp)$'
+  - key: performance-unnecessary-value-param.IncludeStyle
+    value: llvm
+  - key: modernize-loop-convert.MaxCopySize
+    value: 16
+  - key: modernize-loop-convert.MinConfidence
+    value: reasonable
+  - key: modernize-use-nullptr.NullMacros
+    value: 'NULL' 

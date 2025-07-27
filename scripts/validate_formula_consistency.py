@@ -169,9 +169,9 @@ def main():
                 print(f"    Markdown: {'✅' if issue['markdown'] else '❌'}")
         else:
             print("\n✅ ВСЕ ФОРМУЛЫ СИНХРОНИЗИРОВАНЫ!")
-            print("   • EC: Модель Арчи (1942)")
+            print("   • EC: Rhoades et al. (1989)")
             print("   • pH: Уравнение Нернста")
-            print("   • NPK: FAO 56")
+            print("   • NPK: Delgado et al. (2020)")
 
         # Сохраняем отчет
         report_file = "test_reports/formula_consistency_report.json"

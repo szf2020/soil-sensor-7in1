@@ -122,6 +122,16 @@ struct __attribute__((packed)) Config
     uint8_t kalmanEnabled;      // Фильтр Калмана (0=отключен, 1=включен)
     uint8_t adaptiveFiltering;  // Адаптивная фильтрация (0=отключена, 1=включена)
 
+    // v3.10.1: СИСТЕМА КАЛИБРОВКИ (28 байт)
+    float temperatureOffset;    // Смещение температуры (°C)
+    float humidityOffset;       // Смещение влажности (%)
+    float npkSlopeN;           // Коэффициент наклона для азота
+    float npkOffsetN;          // Смещение для азота (мг/кг)
+    float npkSlopeP;           // Коэффициент наклона для фосфора
+    float npkOffsetP;          // Смещение для фосфора (мг/кг)
+    float npkSlopeK;           // Коэффициент наклона для калия
+    float npkOffsetK;          // Смещение для калия (мг/кг)
+
     // Битовые поля для boolean флагов (экономия 4 байта)
     struct __attribute__((packed))
     {

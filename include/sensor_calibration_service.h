@@ -78,6 +78,8 @@ class SensorCalibrationService
     // Добавление калибровочных точек
     bool addPHCalibrationPoint(float expected, float measured);
     bool addECCalibrationPoint(float expected, float measured);
+    bool addTemperatureCalibrationPoint(float expected, float measured);
+    bool addHumidityCalibrationPoint(float expected, float measured);
     bool setNPKCalibrationPoint(float measured_n, float measured_p, float measured_k);
 
     // Расчёт калибровочных коэффициентов

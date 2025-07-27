@@ -13,22 +13,7 @@
 #include "../../include/sensor_types.h"
 #include "../../include/validation_utils.h"
 
-/**
- * @brief Коэффициенты Арчи для разных типов почвы
- *
- * Содержит коэффициенты для модели Арчи (1942)
- */
-struct ArchieCoefficients
-{
-    float m;  // Коэффициент цементации
-    float n;  // Коэффициент насыщенности
-    float a;  // Коэффициент пористости
 
-    ArchieCoefficients() : m(1.5F), n(2.0F), a(0.45F) {}
-    ArchieCoefficients(float cementation, float saturation, float porosity) : m(cementation), n(saturation), a(porosity)
-    {
-    }
-};
 
 /**
  * @brief Параметры почвы
@@ -75,14 +60,11 @@ struct NPKCoefficients
  * Реализует научные алгоритмы компенсации:
  * - Модель Арчи для EC
  * - Уравнение Нернста для pH
- * - Алгоритм FAO 56 для NPK
+ * - Алгоритм Delgado et al. (2020) для NPK
  */
 class SensorCompensationService : public ISensorCompensationService
 {
    private:
-    // Коэффициенты типов почвы
-    std::map<SoilType, ArchieCoefficients> archieCoefficients;
-
     // Параметры почвы для разных типов
     std::map<SoilType, SoilParameters> soilParameters;
 
@@ -152,7 +134,7 @@ class SensorCompensationService : public ISensorCompensationService
     float correctPH(float temperature, float phRaw) override;
 
     /**
-     * @brief Компенсирует NPK по алгоритму FAO 56
+     * @brief Компенсирует NPK по алгоритму Delgado et al. (2020)
      *
      * @param temperature Температура почвы
      * @param humidity Влажность почвы
@@ -187,13 +169,7 @@ class SensorCompensationService : public ISensorCompensationService
      */
     SoilParameters getSoilParameters(SoilType soilType) const;
 
-    /**
-     * @brief Получает коэффициенты Арчи для типа почвы
-     *
-     * @param soilType Тип почвы
-     * @return ArchieCoefficients Коэффициенты Арчи
-     */
-    ArchieCoefficients getArchieCoefficients(SoilType soilType) const;
+
 
     /**
      * @brief Получает коэффициенты NPK для типа почвы

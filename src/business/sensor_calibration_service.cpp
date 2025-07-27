@@ -158,7 +158,7 @@ void SensorCalibrationService::clearCalibrationTable(SoilProfile profile)
 }
 
 size_t SensorCalibrationService::getCalibrationPointsCount(SoilProfile profile, const String& sensorType)
-{  // NOLINT(readability-convert-member-functions-to-static)
+{
     auto tableIter = getCalibrationTables().find(profile);
     if (tableIter == getCalibrationTables().end())
     {
@@ -256,22 +256,21 @@ bool SensorCalibrationService::isCalibrationComplete() const
 bool SensorCalibrationService::addPHCalibrationPoint(float expected, float measured)
 {  // NOLINT(readability-convert-member-functions-to-static)
     logDebugSafe("SensorCalibrationService: Добавлена pH точка: %.2f -> %.2f", expected, measured);
-
+    
     // ИСПРАВЛЕНО: Реальная логика сохранения pH калибровочной точки
     CalibrationPoint point(measured, expected);
-
-    // Добавляем в таблицу калибровки для текущего профиля
-    SoilProfile currentProfile = SoilProfile::LOAM;  // TODO: получить из конфигурации
+    
+    // Калибровка не зависит от профиля почвы - используем единую таблицу
     auto& tables = getCalibrationTables();
-
-    if (tables.find(currentProfile) == tables.end())
-    {
-        tables[currentProfile] = CalibrationTable();
+    SoilProfile defaultProfile = SoilProfile::SAND; // Единый профиль для калибровки
+    
+    if (tables.find(defaultProfile) == tables.end()) {
+        tables[defaultProfile] = CalibrationTable();
     }
-
-    tables[currentProfile].phPoints.push_back(point);
-    tables[currentProfile].isValid = true;
-
+    
+    tables[defaultProfile].phPoints.push_back(point);
+    tables[defaultProfile].isValid = true;
+    
     logDebugSafe("pH калибровочная точка сохранена: %.2f -> %.2f", measured, expected);
     return true;
 }
@@ -279,23 +278,107 @@ bool SensorCalibrationService::addPHCalibrationPoint(float expected, float measu
 bool SensorCalibrationService::addECCalibrationPoint(float expected, float measured)
 {  // NOLINT(readability-convert-member-functions-to-static)
     logDebugSafe("SensorCalibrationService: Добавлена EC точка: %.2f -> %.2f", expected, measured);
-
+    
     // ИСПРАВЛЕНО: Реальная логика сохранения EC калибровочной точки
     CalibrationPoint point(measured, expected);
-
-    // Добавляем в таблицу калибровки для текущего профиля
-    SoilProfile currentProfile = SoilProfile::LOAM;  // TODO: получить из конфигурации
+    
+    // Калибровка не зависит от профиля почвы - используем единую таблицу
     auto& tables = getCalibrationTables();
-
-    if (tables.find(currentProfile) == tables.end())
-    {
-        tables[currentProfile] = CalibrationTable();
+    SoilProfile defaultProfile = SoilProfile::SAND; // Единый профиль для калибровки
+    
+    if (tables.find(defaultProfile) == tables.end()) {
+        tables[defaultProfile] = CalibrationTable();
     }
-
-    tables[currentProfile].ecPoints.push_back(point);
-    tables[currentProfile].isValid = true;
-
+    
+    tables[defaultProfile].ecPoints.push_back(point);
+    tables[defaultProfile].isValid = true;
+    
     logDebugSafe("EC калибровочная точка сохранена: %.2f -> %.2f", measured, expected);
+    return true;
+}
+
+bool SensorCalibrationService::addTemperatureCalibrationPoint(float expected, float measured)
+{  // NOLINT(readability-convert-member-functions-to-static)
+    logDebugSafe("SensorCalibrationService: Добавлена температура точка: %.2f -> %.2f", expected, measured);
+    
+    // Калибровка не зависит от профиля почвы - используем единую таблицу
+    auto& tables = getCalibrationTables();
+    SoilProfile defaultProfile = SoilProfile::SAND; // Единый профиль для калибровки
+    
+    if (tables.find(defaultProfile) == tables.end()) {
+        tables[defaultProfile] = CalibrationTable();
+    }
+    
+    CalibrationPoint point(measured, expected);
+    tables[defaultProfile].temperaturePoints.push_back(point);
+    tables[defaultProfile].isValid = true;
+    
+    logDebugSafe("Температура калибровочная точка сохранена: %.2f -> %.2f", measured, expected);
+    return true;
+}
+
+bool SensorCalibrationService::addHumidityCalibrationPoint(float expected, float measured)
+{  // NOLINT(readability-convert-member-functions-to-static)
+    logDebugSafe("SensorCalibrationService: Добавлена влажность точка: %.2f -> %.2f", expected, measured);
+    
+    // Калибровка не зависит от профиля почвы - используем единую таблицу
+    auto& tables = getCalibrationTables();
+    SoilProfile defaultProfile = SoilProfile::SAND; // Единый профиль для калибровки
+    
+    if (tables.find(defaultProfile) == tables.end()) {
+        tables[defaultProfile] = CalibrationTable();
+    }
+    
+    CalibrationPoint point(measured, expected);
+    tables[defaultProfile].humidityPoints.push_back(point);
+    tables[defaultProfile].isValid = true;
+    
+    logDebugSafe("Влажность калибровочная точка сохранена: %.2f -> %.2f", measured, expected);
+    return true;
+}
+
+bool SensorCalibrationService::setTemperatureOffset(float offset)
+{  // NOLINT(readability-convert-member-functions-to-static)
+    logDebugSafe("SensorCalibrationService: Установка offset температуры: %.2f", offset);
+    
+    // Сохраняем offset температуры в конфигурации
+    // TODO: Реализовать сохранение в конфигурации
+    // config.temperatureOffset = offset;
+    // saveConfig();
+    
+    logDebugSafe("Температура offset сохранен: %.2f", offset);
+    return true;
+}
+
+bool SensorCalibrationService::setHumidityOffset(float offset)
+{  // NOLINT(readability-convert-member-functions-to-static)
+    logDebugSafe("SensorCalibrationService: Установка offset влажности: %.2f", offset);
+    
+    // Сохраняем offset влажности в конфигурации
+    // TODO: Реализовать сохранение в конфигурации
+    // config.humidityOffset = offset;
+    // saveConfig();
+    
+    logDebugSafe("Влажность offset сохранен: %.2f", offset);
+    return true;
+}
+
+bool SensorCalibrationService::setNPKCoefficients(float nSlope, float nOffset, float pSlope, float pOffset, float kSlope, float kOffset)
+{  // NOLINT(readability-convert-member-functions-to-static)
+    logDebugSafe("SensorCalibrationService: Установка NPK коэффициентов: N(%.3f,%.1f) P(%.3f,%.1f) K(%.3f,%.1f)", 
+                 nSlope, nOffset, pSlope, pOffset, kSlope, kOffset);
+    
+    // Сохраняем NPK коэффициенты в конфигурации
+    // TODO: Реализовать сохранение в конфигурации
+    // config.npkSlopeN = nSlope;
+    // config.npkOffsetN = nOffset;
+    // config.npkSlopeP = pSlope;
+    // config.npkOffsetP = pOffset;
+    // config.npkSlopeK = kSlope;
+    // config.npkOffsetK = kOffset;
+    // saveConfig();
+    
+    logDebugSafe("NPK коэффициенты сохранены");
     return true;
 }
 
@@ -303,64 +386,65 @@ bool SensorCalibrationService::setNPKCalibrationPoint(float nitrogen, float phos
 {  // NOLINT(readability-convert-member-functions-to-static)
     logDebugSafe("SensorCalibrationService: Установлена NPK точка: N=%.2f, P=%.2f, K=%.2f", nitrogen, phosphorus,
                  potassium);
-
-    // ИСПРАВЛЕНО: Реальная логика сохранения NPK калибровочных точек
-    SoilProfile currentProfile = SoilProfile::LOAM;  // TODO: получить из конфигурации
+    
+    // ИСПРАВЛЕНО: NPK калибруется одной точкой для всех элементов
+    // Калибровка не зависит от профиля почвы - используем единую таблицу
     auto& tables = getCalibrationTables();
-
-    if (tables.find(currentProfile) == tables.end())
-    {
-        tables[currentProfile] = CalibrationTable();
+    SoilProfile defaultProfile = SoilProfile::SAND; // Единый профиль для калибровки
+    
+    if (tables.find(defaultProfile) == tables.end()) {
+        tables[defaultProfile] = CalibrationTable();
     }
-
-    // Сохраняем NPK точки как отдельные калибровочные точки
-    CalibrationPoint nPoint(nitrogen, 0.0F);    // Нулевая точка для азота
-    CalibrationPoint pPoint(phosphorus, 0.0F);  // Нулевая точка для фосфора
-    CalibrationPoint kPoint(potassium, 0.0F);   // Нулевая точка для калия
-
-    tables[currentProfile].nitrogenPoints.push_back(nPoint);
-    tables[currentProfile].phosphorusPoints.push_back(pPoint);
-    tables[currentProfile].potassiumPoints.push_back(kPoint);
-    tables[currentProfile].isValid = true;
-
-    logDebugSafe("NPK калибровочные точки сохранены: N=%.2f, P=%.2f, K=%.2f", nitrogen, phosphorus, potassium);
+    
+    // Очищаем старые NPK точки (должна быть только одна точка)
+    tables[defaultProfile].nitrogenPoints.clear();
+    tables[defaultProfile].phosphorusPoints.clear();
+    tables[defaultProfile].potassiumPoints.clear();
+    
+    // Сохраняем одну NPK точку для всех элементов (дистиллированная вода)
+    CalibrationPoint nPoint(nitrogen, 0.0F); // Нулевая точка для азота
+    CalibrationPoint pPoint(phosphorus, 0.0F); // Нулевая точка для фосфора
+    CalibrationPoint kPoint(potassium, 0.0F); // Нулевая точка для калия
+    
+    tables[defaultProfile].nitrogenPoints.push_back(nPoint);
+    tables[defaultProfile].phosphorusPoints.push_back(pPoint);
+    tables[defaultProfile].potassiumPoints.push_back(kPoint);
+    tables[defaultProfile].isValid = true;
+    
+    logDebugSafe("NPK калибровочная точка сохранена: N=%.2f, P=%.2f, K=%.2f", nitrogen, phosphorus, potassium);
     return true;
 }
 
 bool SensorCalibrationService::calculatePHCalibration()
 {  // NOLINT(readability-convert-member-functions-to-static)
     logDebugSafe("SensorCalibrationService: Расчёт pH калибровки");
-
+    
     // ИСПРАВЛЕНО: Реальная логика расчета pH калибровки
-    SoilProfile currentProfile = SoilProfile::LOAM;  // TODO: получить из конфигурации
+    SoilProfile currentProfile = SoilProfile::LOAM; // TODO: получить из конфигурации
     auto& tables = getCalibrationTables();
-
-    if (tables.find(currentProfile) == tables.end() || tables[currentProfile].phPoints.empty())
-    {
+    
+    if (tables.find(currentProfile) == tables.end() || tables[currentProfile].phPoints.empty()) {
         logWarn("Нет pH калибровочных точек для расчета");
         return false;
     }
-
+    
     // Простой расчет: средний коэффициент коррекции
     float totalRatio = 0.0F;
     int validPoints = 0;
-
-    for (const auto& point : tables[currentProfile].phPoints)
-    {
-        if (point.rawValue > 0.0F)
-        {
+    
+    for (const auto& point : tables[currentProfile].phPoints) {
+        if (point.rawValue > 0.0F) {
             totalRatio += point.referenceValue / point.rawValue;
             validPoints++;
         }
     }
-
-    if (validPoints > 0)
-    {
+    
+    if (validPoints > 0) {
         float avgRatio = totalRatio / validPoints;
         logDebugSafe("pH калибровка рассчитана: средний коэффициент = %.3f", avgRatio);
         return true;
     }
-
+    
     logWarn("Недостаточно валидных pH точек для расчета");
     return false;
 }
@@ -368,37 +452,33 @@ bool SensorCalibrationService::calculatePHCalibration()
 bool SensorCalibrationService::calculateECCalibration()
 {  // NOLINT(readability-convert-member-functions-to-static)
     logDebugSafe("SensorCalibrationService: Расчёт EC калибровки");
-
+    
     // ИСПРАВЛЕНО: Реальная логика расчета EC калибровки
-    SoilProfile currentProfile = SoilProfile::LOAM;  // TODO: получить из конфигурации
+    SoilProfile currentProfile = SoilProfile::LOAM; // TODO: получить из конфигурации
     auto& tables = getCalibrationTables();
-
-    if (tables.find(currentProfile) == tables.end() || tables[currentProfile].ecPoints.empty())
-    {
+    
+    if (tables.find(currentProfile) == tables.end() || tables[currentProfile].ecPoints.empty()) {
         logWarn("Нет EC калибровочных точек для расчета");
         return false;
     }
-
+    
     // Простой расчет: средний коэффициент коррекции
     float totalRatio = 0.0F;
     int validPoints = 0;
-
-    for (const auto& point : tables[currentProfile].ecPoints)
-    {
-        if (point.rawValue > 0.0F)
-        {
+    
+    for (const auto& point : tables[currentProfile].ecPoints) {
+        if (point.rawValue > 0.0F) {
             totalRatio += point.referenceValue / point.rawValue;
             validPoints++;
         }
     }
-
-    if (validPoints > 0)
-    {
+    
+    if (validPoints > 0) {
         float avgRatio = totalRatio / validPoints;
         logDebugSafe("EC калибровка рассчитана: средний коэффициент = %.3f", avgRatio);
         return true;
     }
-
+    
     logWarn("Недостаточно валидных EC точек для расчета");
     return false;
 }

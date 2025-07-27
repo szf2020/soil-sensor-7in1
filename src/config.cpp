@@ -181,6 +181,16 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
         config.exponentialAlpha = EXPONENTIAL_ALPHA_DEFAULT;
     }
 
+    // v3.10.1: СИСТЕМА КАЛИБРОВКИ - загрузка значений
+    config.temperatureOffset = preferences.getFloat("tempOffset", 0.0F);
+    config.humidityOffset = preferences.getFloat("humOffset", 0.0F);
+    config.npkSlopeN = preferences.getFloat("npkSlopeN", 1.0F);
+    config.npkOffsetN = preferences.getFloat("npkOffsetN", 0.0F);
+    config.npkSlopeP = preferences.getFloat("npkSlopeP", 1.0F);
+    config.npkOffsetP = preferences.getFloat("npkOffsetP", 0.0F);
+    config.npkSlopeK = preferences.getFloat("npkSlopeK", 1.0F);
+    config.npkOffsetK = preferences.getFloat("npkOffsetK", 0.0F);
+
     if (config.outlierThreshold < OUTLIER_THRESHOLD_MIN || config.outlierThreshold > OUTLIER_THRESHOLD_MAX)
     {
         logWarn("Некорректный outlierThreshold: " + String(config.outlierThreshold, 2) + ", сбрасываем к умолчанию");
@@ -301,6 +311,16 @@ void saveConfig()  // NOLINT(misc-use-internal-linkage)
     preferences.putUChar("envType", config.environmentType);
     preferences.putBool("seasonAdj", config.flags.seasonalAdjustEnabled);
     preferences.putBool("autoOTA", config.flags.autoOtaEnabled);
+
+    // v3.10.1: СИСТЕМА КАЛИБРОВКИ - сохранение значений
+    preferences.putFloat("tempOffset", config.temperatureOffset);
+    preferences.putFloat("humOffset", config.humidityOffset);
+    preferences.putFloat("npkSlopeN", config.npkSlopeN);
+    preferences.putFloat("npkOffsetN", config.npkOffsetN);
+    preferences.putFloat("npkSlopeP", config.npkSlopeP);
+    preferences.putFloat("npkOffsetP", config.npkOffsetP);
+    preferences.putFloat("npkSlopeK", config.npkSlopeK);
+    preferences.putFloat("npkOffsetK", config.npkOffsetK);
 
     preferences.end();
 
