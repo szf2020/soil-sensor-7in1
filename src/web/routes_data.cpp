@@ -192,23 +192,36 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     doc["raw_phosphorus"] = format_npk(sensorData.raw_phosphorus);
     doc["raw_potassium"] = format_npk(sensorData.raw_potassium);
     doc["irrigation"] = sensorData.recentIrrigation;
-    // Более гибкая валидация - считаем валидными данные если большинство параметров в норме
-    auto validationResult = validateFullSensorData(sensorData);
-    int validParams = 0;
-    int totalParams = 7; // temp, hum, ec, ph, n, p, k
+    // ПРАВИЛЬНАЯ ЛОГИКА ВАЛИДАЦИИ - проверяем условия измерения
+    bool isDataValid = true;
+    String validationStatus = "optimal"; // optimal, suboptimal, irrigation, error
     
-    // Проверяем каждый параметр отдельно
-    if (sensorData.temperature >= SENSOR_TEMP_MIN && sensorData.temperature <= SENSOR_TEMP_MAX) validParams++;
-    if (sensorData.humidity >= SENSOR_HUMIDITY_MIN && sensorData.humidity <= SENSOR_HUMIDITY_MAX) validParams++;
-    if (sensorData.ec >= SENSOR_EC_MIN && sensorData.ec <= SENSOR_EC_MAX) validParams++;
-    if (sensorData.ph >= SENSOR_PH_MIN && sensorData.ph <= SENSOR_PH_MAX) validParams++;
-    if (sensorData.nitrogen >= SENSOR_NPK_MIN && sensorData.nitrogen <= SENSOR_NPK_MAX) validParams++;
-    if (sensorData.phosphorus >= SENSOR_NPK_MIN && sensorData.phosphorus <= SENSOR_NPK_MAX) validParams++;
-    if (sensorData.potassium >= SENSOR_NPK_MIN && sensorData.potassium <= SENSOR_NPK_MAX) validParams++;
+    // 🔴 Красный: Ошибки датчика (выход за физические пределы JXCT)
+    if (sensorData.temperature < SENSOR_TEMP_MIN || sensorData.temperature > SENSOR_TEMP_MAX ||
+        sensorData.humidity < SENSOR_HUMIDITY_MIN || sensorData.humidity > SENSOR_HUMIDITY_MAX ||
+        sensorData.ec < SENSOR_EC_MIN || sensorData.ec > SENSOR_EC_MAX ||
+        sensorData.ph < SENSOR_PH_MIN || sensorData.ph > SENSOR_PH_MAX ||
+        sensorData.nitrogen < SENSOR_NPK_MIN || sensorData.nitrogen > SENSOR_NPK_MAX ||
+        sensorData.phosphorus < SENSOR_NPK_MIN || sensorData.phosphorus > SENSOR_NPK_MAX ||
+        sensorData.potassium < SENSOR_NPK_MIN || sensorData.potassium > SENSOR_NPK_MAX) {
+        isDataValid = false;
+        validationStatus = "error";
+    }
+    // 🔵 Синий: Полив активен (временная невалидность)
+    else if (sensorData.recentIrrigation) {
+        validationStatus = "irrigation";
+    }
+    // 🟠 Оранжевый: Неоптимальные условия измерения
+    else if (sensorData.humidity < 25.0F || sensorData.temperature < 5.0F || sensorData.temperature > 40.0F) {
+        validationStatus = "suboptimal";
+    }
+    // 🟢 Зеленый: Оптимальные условия измерения
+    else {
+        validationStatus = "optimal";
+    }
     
-    // Данные считаются валидными если 80% параметров в норме (6 из 7)
-    doc["valid"] = (validParams >= 6);
-    doc["validation_score"] = (validParams * 100) / totalParams;  // Процент валидных параметров
+    doc["valid"] = isDataValid;
+    doc["measurement_status"] = validationStatus;
 
     const RecValues rec = computeRecommendations();
     doc["rec_temperature"] = format_temperature(rec.t);
