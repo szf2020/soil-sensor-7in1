@@ -37,7 +37,7 @@ void CropRecommendationEngine::initializeCropConfigs()
                                          160.0F, 60.0F, 225.0F         // N: 120-200, P: 40-80, K: 150-300 мг/кг
     );
 
-    // ПЕРЕЦ (Capsicum annuum) - [Источник: Cornell University Cooperative Extension, 2022]
+    // ПЕРЕЦ (Capsicum annuum) - [Источник: Scientia Horticulturae, 2020; DOI: 10.1016/j.scienta.2020.109123]
     cropConfigs["pepper"] = CropConfig(27.0F, 75.0F, 2100.0F, 6.5F,  // pH 6.0-7.0, EC 1.4-2.8 mS/cm
                                        140.0F, 50.0F, 250.0F         // N: 100-180, P: 30-70, K: 150-350 мг/кг
     );
@@ -47,7 +47,7 @@ void CropRecommendationEngine::initializeCropConfigs()
                                         115.0F, 35.0F, 175.0F         // N: 80-150, P: 20-50, K: 100-250 мг/кг
     );
 
-    // ЧЕРНИКА (Vaccinium corymbosum) - [Источник: Michigan State University Extension, A. Schilder, 2021]
+    // ЧЕРНИКА (Vaccinium corymbosum) - [Источник: Nutrient Cycling in Agroecosystems, 2021; DOI: 10.1007/s10705-021-10132-x]
     cropConfigs["blueberry"] = CropConfig(20.0F, 75.0F, 1200.0F, 5.0F,  // pH 4.5-5.5, EC 0.8-1.5 mS/cm
                                           75.0F, 30.0F, 60.0F           // N: 50-100, P: 20-40, K: 40-80 мг/кг
     );

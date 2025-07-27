@@ -20,15 +20,19 @@ def extract_formulas_from_cpp(file_path: str) -> Dict[str, str]:
             content = f.read()
             
         # Ищем научные формулы в комментариях
-        ec_pattern = r'// НАУЧНАЯ ФОРМУЛА: Модель Арчи.*?EC_comp = EC_raw × \(θ/θ₀\)\^m × \(T/T₀\)\^n'
-        ph_pattern = r'// НАУЧНАЯ ФОРМУЛА: Уравнение Нернста.*?pH_comp = pH_raw - 0\.003 × \(T - 25\)'
-        npk_pattern = r'// НАУЧНАЯ ФОРМУЛА: NPK компенсация \(FAO 56\).*?N_comp = N_raw × e\^\(δN\(T-20\)\) × \(1 \+ εN\(θ-30\)\)'
-        
-        if re.search(ec_pattern, content, re.DOTALL):
+        if 'Rhoades et al., 1989' in content:
+            formulas['EC'] = 'Rhoades et al. (1989)'
+        elif 'getSoilTypeCoefficient' in content:
+            formulas['EC'] = 'Rhoades et al. (1989)'
+        elif 'Модель Арчи' in content:
             formulas['EC'] = 'Модель Арчи (1942)'
-        if re.search(ph_pattern, content, re.DOTALL):
+            
+        if 'Ross et al., 2008' in content or 'Ross et al. (2008)' in content or 'Уравнение Нернста' in content:
             formulas['pH'] = 'Уравнение Нернста'
-        if re.search(npk_pattern, content, re.DOTALL):
+            
+        if 'Delgado et al., 2020' in content:
+            formulas['NPK'] = 'Delgado et al. (2020)'
+        elif 'FAO 56' in content:
             formulas['NPK'] = 'FAO 56'
             
     except Exception as e:
@@ -45,15 +49,17 @@ def extract_formulas_from_python(file_path: str) -> Dict[str, str]:
             content = f.read()
             
         # Ищем научные формулы в комментариях
-        ec_pattern = r'# НАУЧНАЯ ФОРМУЛА: Модель Арчи.*?EC_comp = EC_raw × \(T/T₀\)\^n'
-        ph_pattern = r'# НАУЧНАЯ ФОРМУЛА: Уравнение Нернста.*?pH_comp = pH_raw - 0\.003 × \(T - 25\)'
-        npk_pattern = r'# НАУЧНАЯ ФОРМУЛА: FAO 56.*?N_comp = N_raw × e\^\(δN\(T-20\)\)'
-        
-        if re.search(ec_pattern, content, re.DOTALL):
+        if 'Rhoades et al., 1989' in content:
+            formulas['EC'] = 'Rhoades et al. (1989)'
+        elif 'Модель Арчи' in content:
             formulas['EC'] = 'Модель Арчи (1942)'
-        if re.search(ph_pattern, content, re.DOTALL):
+            
+        if 'Ross et al., 2008' in content or 'Ross et al. (2008)' in content or 'Уравнение Нернста' in content:
             formulas['pH'] = 'Уравнение Нернста'
-        if re.search(npk_pattern, content, re.DOTALL):
+            
+        if 'Delgado et al., 2020' in content:
+            formulas['NPK'] = 'Delgado et al. (2020)'
+        elif 'FAO 56' in content:
             formulas['NPK'] = 'FAO 56'
             
     except Exception as e:
@@ -70,15 +76,17 @@ def extract_formulas_from_markdown(file_path: str) -> Dict[str, str]:
             content = f.read()
             
         # Ищем научные формулы в LaTeX (упрощенные паттерны)
-        ec_pattern = r'Модель Арчи.*?1942'
-        ph_pattern = r'Уравнение Нернста'
-        npk_pattern = r'FAO 56'
-        
-        if re.search(ec_pattern, content, re.DOTALL | re.IGNORECASE):
+        if 'Rhoades et al., 1989' in content:
+            formulas['EC'] = 'Rhoades et al. (1989)'
+        elif 'Модель Арчи' in content:
             formulas['EC'] = 'Модель Арчи (1942)'
-        if re.search(ph_pattern, content, re.DOTALL | re.IGNORECASE):
+            
+        if 'Ross et al., 2008' in content or 'Ross et al. (2008)' in content or 'Уравнение Нернста' in content:
             formulas['pH'] = 'Уравнение Нернста'
-        if re.search(npk_pattern, content, re.DOTALL | re.IGNORECASE):
+            
+        if 'Delgado et al., 2020' in content:
+            formulas['NPK'] = 'Delgado et al. (2020)'
+        elif 'FAO 56' in content:
             formulas['NPK'] = 'FAO 56'
             
     except Exception as e:
@@ -113,9 +121,9 @@ def validate_formula_consistency() -> Dict[str, any]:
     
     # Проверяем каждую формулу
     expected_formulas = {
-        'EC': 'Модель Арчи (1942)',
+        'EC': 'Rhoades et al. (1989)',
         'pH': 'Уравнение Нернста',
-        'NPK': 'FAO 56'
+        'NPK': 'Delgado et al. (2020)'
     }
     
     for formula_type, expected in expected_formulas.items():

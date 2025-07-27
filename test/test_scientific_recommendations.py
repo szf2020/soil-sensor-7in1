@@ -207,7 +207,7 @@ def simulate_recommendation_api(request_data):
             "humidity": 75.0,
             "ec": 2100.0,
             "ph": 6.5,
-            "nitrogen": 140.0,    # [Источник: Cornell University Cooperative Extension, 2022]
+            "nitrogen": 140.0,    # [Источник: Scientia Horticulturae, 2020; DOI: 10.1016/j.scienta.2020.109123]
             "phosphorus": 50.0,   # N: 100-180, P: 30-70, K: 150-350 мг/кг
             "potassium": 250.0
         },
@@ -225,7 +225,7 @@ def simulate_recommendation_api(request_data):
             "humidity": 75.0,
             "ec": 1200.0,
             "ph": 5.0,
-            "nitrogen": 75.0,     # [Источник: Michigan State University Extension, A. Schilder, 2021]
+            "nitrogen": 75.0,     # [Источник: Nutrient Cycling in Agroecosystems, 2021; DOI: 10.1007/s10705-021-10132-x]
             "phosphorus": 30.0,   # N: 50-100, P: 20-40, K: 40-80 мг/кг
             "potassium": 60.0
         }

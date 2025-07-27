@@ -80,7 +80,7 @@ struct NPKCoefficients
 class SensorCompensationService : public ISensorCompensationService
 {
    private:
-    // Коэффициенты Арчи для разных типов почвы
+    // Коэффициенты типов почвы
     std::map<SoilType, ArchieCoefficients> archieCoefficients;
 
     // Параметры почвы для разных типов
@@ -94,8 +94,8 @@ class SensorCompensationService : public ISensorCompensationService
     static constexpr float F = 96485.0F;  // Постоянная Фарадея (Кл/моль)
     static constexpr float T0 = 298.15F;  // Стандартная температура (25°C в Кельвинах)
 
-    // Инициализация коэффициентов Арчи
-    void initializeArchieCoefficients();
+    // Инициализация коэффициентов типов почвы
+    void initializeSoilTypeCoefficients();
 
     // Инициализация параметров почвы
     void initializeSoilParameters();
@@ -140,7 +140,7 @@ class SensorCompensationService : public ISensorCompensationService
      * @param humidity Влажность почвы
      * @return float Скомпенсированное значение EC
      */
-    float correctEC(float ec25, SoilType soilType, float temperature, float humidity) override;
+    float correctEC(float ec25, SoilType soilType, float temperature) override;
 
     /**
      * @brief Компенсирует pH по уравнению Нернста
@@ -161,13 +161,7 @@ class SensorCompensationService : public ISensorCompensationService
      */
     void correctNPK(float temperature, float humidity, SoilType soilType, NPKReferences& npk) override;
 
-    /**
-     * @brief Получает коэффициент Арчи для типа почвы
-     *
-     * @param soilType Тип почвы
-     * @return float Коэффициент Арчи
-     */
-    float getArchieCoefficient(SoilType soilType) const override;
+
 
     /**
      * @brief Получает пористость для типа почвы

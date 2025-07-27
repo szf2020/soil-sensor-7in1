@@ -76,8 +76,8 @@ void processSensorData(SensorData& sensorData, const Config& config) {
         
         const SoilType soil = getSoilType(config.soilProfile);
         
-        // EC: консервативная температурная компенсация
-        sensorData.ec = gCompensationService.correctEC(sensorData.ec, soil, sensorData.temperature, sensorData.humidity);
+        // EC: температурная компенсация (Rhoades et al., 1989)
+        sensorData.ec = gCompensationService.correctEC(sensorData.ec, soil, sensorData.temperature);
 
         // pH: температурная поправка по уравнению Нернста
         sensorData.ph = gCompensationService.correctPH(sensorData.temperature, sensorData.ph);

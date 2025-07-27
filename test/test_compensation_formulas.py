@@ -16,35 +16,28 @@ if hasattr(sys.stdout, 'encoding') and sys.stdout.encoding and sys.stdout.encodi
         pass
 
 def test_ec_temperature_compensation():
-    """Тест температурной компенсации EC (НАУЧНАЯ МОДЕЛЬ АРЧИ)"""
-    print("=== Тест температурной компенсации EC (НАУЧНАЯ МОДЕЛЬ АРЧИ) ===")
+    """Тест температурной компенсации EC (Rhoades et al., 1989)"""
+    print("=== Тест температурной компенсации EC (Rhoades et al., 1989) ===")
 
-    # НАУЧНАЯ ФОРМУЛА: Модель Арчи (1942)
-    # EC_comp = EC_raw × (T/T₀)^n
-    # где T₀ = 25°C, n = коэффициент насыщенности Арчи
+    # ✅ НАУЧНАЯ ФОРМУЛА: Rhoades et al. (1989)
+    # EC_comp = EC_raw × (1 + 0.021 × (T - 25))
+    # где 0.021 = температурный коэффициент для почвенных датчиков
     
-    # Коэффициенты Арчи из документации
-    archie_coeffs = {
-        'sand': {'m': 1.3, 'n': 2.0},
-        'loam': {'m': 1.5, 'n': 2.0},
-        'clay': {'m': 2.0, 'n': 2.5},
-        'peat': {'m': 1.8, 'n': 2.2},
-    }
-
     ec_raw = 1200.0
+    
     test_cases = [
-        (25.0, 1200.0),  # 25°C - без изменений
-        (30.0, 1200.0 * pow(30.0/25.0, 2.0)),  # 30°C: 1200 * (30/25)² = 1728
-        (20.0, 1200.0 * pow(20.0/25.0, 2.0)),  # 20°C: 1200 * (20/25)² = 768
-        (35.0, 1200.0 * pow(35.0/25.0, 2.0)),  # 35°C: 1200 * (35/25)² = 2352
+        (25.0, ec_raw),  # 25°C - без температурной компенсации
+        (30.0, ec_raw * (1.0 + 0.021 * (30.0 - 25.0))),  # 30°C
+        (20.0, ec_raw * (1.0 + 0.021 * (20.0 - 25.0))),  # 20°C
+        (35.0, ec_raw * (1.0 + 0.021 * (35.0 - 25.0))),  # 35°C
     ]
 
     for temp, expected in test_cases:
-        # НАУЧНАЯ формула из кода (для суглинка, n=2.0)
-        temp_ratio = temp / 25.0
-        ec_compensated = ec_raw * pow(temp_ratio, 2.0)
+        # ✅ НАУЧНАЯ формула Rhoades et al. (1989)
+        temp_factor = 1.0 + 0.021 * (temp - 25.0)
+        ec_compensated = ec_raw * temp_factor
 
-        print(f"  Температура: {temp}°C, T/T₀: {temp_ratio:.3f}, EC_raw: {ec_raw}, EC_comp: {ec_compensated:.1f}")
+        print(f"  Температура: {temp}°C, tempFactor: {temp_factor:.3f}, EC_raw: {ec_raw}, EC_comp: {ec_compensated:.1f}")
         assert abs(ec_compensated - expected) < 0.1, f"Ошибка в формуле EC: {ec_compensated} != {expected}"
         
         # Проверяем логику: при повышении температуры EC должен увеличиваться
@@ -53,13 +46,13 @@ def test_ec_temperature_compensation():
         elif temp < 25.0:
             assert ec_compensated < ec_raw, f"EC должен снижаться при T < 25°C: {ec_compensated} >= {ec_raw}"
 
-    print("  ✅ НАУЧНАЯ температурная компенсация EC (модель Арчи) корректна")
+    print("  ✅ НАУЧНАЯ температурная компенсация EC (Rhoades et al., 1989) корректна")
 
 def test_npk_temperature_compensation():
-    """Тест температурной компенсации NPK (НАУЧНАЯ ФОРМУЛА FAO 56)"""
-    print("\n=== Тест температурной компенсации NPK (НАУЧНАЯ ФОРМУЛА FAO 56) ===")
+    """Тест температурной компенсации NPK (Delgado et al., 2020)"""
+    print("\n=== Тест температурной компенсации NPK (Delgado et al., 2020) ===")
 
-    # НАУЧНАЯ ФОРМУЛА: FAO 56
+    # ✅ НАУЧНАЯ ФОРМУЛА: Delgado et al. (2020)
     # N_comp = N_raw × e^(δN(T-20))
     # P_comp = P_raw × e^(δP(T-20))
     # K_comp = K_raw × e^(δK(T-20))
