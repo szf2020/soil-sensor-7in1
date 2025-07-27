@@ -5,14 +5,14 @@
  */
 #include "fake_sensor.h"
 #include <Arduino.h>
+#include "business/sensor_calibration_service.h"
+#include "business/sensor_compensation_service.h"
 #include "debug.h"  // ✅ Добавляем систему условной компиляции
 #include "jxct_config_vars.h"
 #include "logger.h"  // ✅ Добавляем для logDebugSafe
 #include "modbus_sensor.h"
-#include "business/sensor_compensation_service.h"
-#include "business/sensor_calibration_service.h"
-#include "sensor_types.h"  // Для SoilProfile
-#include "sensor_processing.h"    // Общая логика обработки
+#include "sensor_processing.h"  // Общая логика обработки
+#include "sensor_types.h"       // Для SoilProfile
 // Глобальные экземпляры бизнес-сервисов объявлены в business_instances.cpp
 extern SensorCalibrationService gCalibrationService;
 extern SensorCompensationService gCompensationService;
@@ -68,8 +68,6 @@ void fakeSensorTask(void* parameters)
 
             // Применяем единую логику обработки данных датчика
             SensorProcessing::processSensorData(sensorData, config);
-
-
 
             DEBUG_PRINTLN("[fakeSensorTask] Сгенерированы тестовые данные датчика");
             iterationCounter = 0;  // Сброс счетчика

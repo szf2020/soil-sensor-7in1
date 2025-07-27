@@ -97,7 +97,7 @@ graph TD
     C --> D[🧪 ScientificValidationService]
     D --> E[🌱 CropRecommendationEngine]
     E --> F[🌐 Веб-интерфейс]
-    
+
     G[📋 Конфигурация] --> B
     G --> C
     G --> D
@@ -111,10 +111,10 @@ graph TD
 - **Применение**: ВСЕГДА (обязательно)
 - **Метод**: `applyCalibration(sensorData, soilProfile)`
 
-#### **SensorCompensationService** 
+#### **SensorCompensationService**
 - **Назначение**: Научные формулы компенсации
 - **Применение**: ТОЛЬКО если включено в настройках
-- **Методы**: 
+- **Методы**:
   - `correctEC(ec, soilType, temperature)`
   - `correctPH(temperature, ph)`
   - `correctNPK(temperature, humidity, soilType, npk)`
@@ -130,7 +130,7 @@ graph TD
 void processSensorData(SensorData& sensorData, const Config& config) {
     // 1. ВСЕГДА применяем калибровку
     gCalibrationService.applyCalibration(sensorData, profile);
-    
+
     // 2. Применяем компенсацию ТОЛЬКО если включена
     if (config.flags.compensationEnabled) {
         gCompensationService.correctEC(sensorData.ec, soil, sensorData.temperature);

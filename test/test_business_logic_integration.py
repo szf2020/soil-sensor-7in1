@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 # Импортируем бизнес-логику
 try:
     from validation_utils import (
-        validateTemperature, validateHumidity, validatePH, 
+        validateTemperature, validateHumidity, validatePH,
         validateEC, validateNPK, validateSensorData
     )
     from sensor_compensation import (
@@ -62,11 +62,11 @@ class BusinessLogicIntegrationTester:
     def __init__(self):
         self.test_scenarios = self._create_test_scenarios()
         self.results = []
-    
+
     def _create_test_scenarios(self) -> List[TestScenario]:
         """Создает тестовые сценарии для всех бизнес-процессов"""
         scenarios = []
-        
+
         # 1. Нормальные данные
         scenarios.append(TestScenario(
             name="normal_data_processing",
@@ -86,7 +86,7 @@ class BusinessLogicIntegrationTester:
             },
             description="Обработка нормальных данных датчика"
         ))
-        
+
         # 2. Граничные значения
         scenarios.append(TestScenario(
             name="boundary_values",
@@ -106,7 +106,7 @@ class BusinessLogicIntegrationTester:
             },
             description="Обработка граничных значений"
         ))
-        
+
         # 3. Некорректные данные
         scenarios.append(TestScenario(
             name="invalid_data_handling",
@@ -126,7 +126,7 @@ class BusinessLogicIntegrationTester:
             },
             description="Обработка некорректных данных"
         ))
-        
+
         # 4. Экстремальные условия
         scenarios.append(TestScenario(
             name="extreme_conditions",
@@ -146,13 +146,13 @@ class BusinessLogicIntegrationTester:
             },
             description="Обработка экстремальных условий"
         ))
-        
+
         return scenarios
-    
+
     def test_validation_pipeline(self, data: SensorData) -> Dict[str, Any]:
         """Тестирует весь пайплайн валидации"""
         results = {}
-        
+
         # Валидация отдельных параметров
         results["temperature"] = validateTemperature(data.temperature)
         results["humidity"] = validateHumidity(data.humidity)
@@ -161,29 +161,29 @@ class BusinessLogicIntegrationTester:
         results["nitrogen"] = validateNPK(data.nitrogen)
         results["phosphorus"] = validateNPK(data.phosphorus)
         results["potassium"] = validateNPK(data.potassium)
-        
+
         # Валидация полного набора данных
         results["full_validation"] = validateSensorData(data)
-        
+
         # Общий результат валидации
         all_valid = all(
-            result.get("isValid", True) 
-            for result in results.values() 
+            result.get("isValid", True)
+            for result in results.values()
             if isinstance(result, dict)
         )
-        
+
         results["overall_valid"] = all_valid
         return results
-    
+
     def test_compensation_pipeline(self, data: SensorData) -> Dict[str, Any]:
         """Тестирует пайплайн компенсации"""
         results = {}
-        
+
         # Применяем компенсацию
         original_ec = data.ec
         original_ph = data.ph
         original_npk = (data.nitrogen, data.phosphorus, data.potassium)
-        
+
         # EC компенсация
         compensated_ec = correctEC(data.ec, "LOAM", data.temperature, data.humidity)
         results["ec_compensation"] = {
@@ -191,7 +191,7 @@ class BusinessLogicIntegrationTester:
             "compensated": compensated_ec,
             "difference": compensated_ec - original_ec
         }
-        
+
         # pH компенсация
         compensated_ph = correctPH(data.temperature, data.ph)
         results["ph_compensation"] = {
@@ -199,7 +199,7 @@ class BusinessLogicIntegrationTester:
             "compensated": compensated_ph,
             "difference": compensated_ph - original_ph
         }
-        
+
         # NPK компенсация
         npk_data = {"nitrogen": data.nitrogen, "phosphorus": data.phosphorus, "potassium": data.potassium}
         compensated_npk = correctNPK(data.temperature, data.humidity, "LOAM", npk_data)
@@ -207,27 +207,27 @@ class BusinessLogicIntegrationTester:
             "original": original_npk,
             "compensated": (compensated_npk["nitrogen"], compensated_npk["phosphorus"], compensated_npk["potassium"])
         }
-        
+
         return results
-    
+
     def test_full_pipeline(self, scenario: TestScenario) -> Dict[str, Any]:
         """Тестирует полный пайплайн обработки данных"""
         print(f"🧪 Тестирование: {scenario.name}")
         print(f"   Описание: {scenario.description}")
-        
+
         start_time = time.time()
-        
+
         # Шаг 1: Валидация
         validation_results = self.test_validation_pipeline(scenario.input_data)
-        
+
         # Шаг 2: Компенсация (только если валидация прошла)
         compensation_results = {}
         if validation_results.get("overall_valid", False):
             compensation_results = self.test_compensation_pipeline(scenario.input_data)
-        
+
         # Шаг 3: Финальная проверка
         processing_time = time.time() - start_time
-        
+
         results = {
             "scenario": scenario.name,
             "description": scenario.description,
@@ -236,31 +236,31 @@ class BusinessLogicIntegrationTester:
             "processing_time": processing_time,
             "success": validation_results.get("overall_valid", False)
         }
-        
+
         # Проверяем соответствие ожиданиям
         expected = scenario.expected_output
         results["expectations_met"] = (
             results["success"] == expected.get("validation", True) and
             (not expected.get("compensation_applied", True) or bool(compensation_results))
         )
-        
+
         return results
-    
+
     def run_all_tests(self) -> List[Dict[str, Any]]:
         """Запускает все тесты"""
         print("🚀 Запуск интеграционных тестов бизнес-логики...")
         print("=" * 60)
-        
+
         results = []
-        
+
         for scenario in self.test_scenarios:
             try:
                 result = self.test_full_pipeline(scenario)
                 results.append(result)
-                
+
                 status = "✅" if result["success"] else "❌"
                 print(f"{status} {scenario.name}: {result['success']}")
-                
+
             except Exception as e:
                 print(f"❌ Ошибка в тесте {scenario.name}: {e}")
                 results.append({
@@ -268,15 +268,15 @@ class BusinessLogicIntegrationTester:
                     "error": str(e),
                     "success": False
                 })
-        
+
         return results
-    
+
     def generate_report(self, results: List[Dict[str, Any]]) -> str:
         """Генерирует отчет о тестировании"""
         total_tests = len(results)
         passed_tests = sum(1 for r in results if r.get("success", False))
         failed_tests = total_tests - passed_tests
-        
+
         report = f"""
 🧪 ОТЧЕТ ОБ ИНТЕГРАЦИОННОМ ТЕСТИРОВАНИИ БИЗНЕС-ЛОГИКИ
 ========================================================
@@ -287,37 +287,37 @@ class BusinessLogicIntegrationTester:
 
 ДЕТАЛЬНЫЕ РЕЗУЛЬТАТЫ:
 """
-        
+
         for result in results:
             status = "✅" if result.get("success", False) else "❌"
             report += f"\n{status} {result.get('scenario', 'unknown')}"
-            
+
             if "error" in result:
                 report += f" - ОШИБКА: {result['error']}"
             elif "processing_time" in result:
                 report += f" - {result['processing_time']:.3f} сек"
-        
+
         return report
 
 def main():
     tester = BusinessLogicIntegrationTester()
     results = tester.run_all_tests()
-    
+
     report = tester.generate_report(results)
     print("\n" + report)
-    
+
     # Сохраняем отчет
     report_file = "test_reports/business_logic_integration_report.txt"
     os.makedirs(os.path.dirname(report_file), exist_ok=True)
-    
+
     with open(report_file, 'w', encoding='utf-8') as f:
         f.write(report)
-    
+
     print(f"\n✅ Отчет сохранен: {report_file}")
-    
+
     # Возвращаем код выхода
     failed_tests = sum(1 for r in results if not r.get("success", False))
     return 1 if failed_tests > 0 else 0
 
 if __name__ == "__main__":
-    exit(main()) 
+    exit(main())

@@ -92,10 +92,13 @@ void setupMainRoutes()
                 {
                     int envType = webServer.arg("env_type").toInt();
                     // Валидация: поддерживаем значения 0-5
-                    if (envType >= 0 && envType <= 5) {
+                    if (envType >= 0 && envType <= 5)
+                    {
                         config.environmentType = envType;
-                    } else {
-                        config.environmentType = 0; // По умолчанию открытый грунт
+                    }
+                    else
+                    {
+                        config.environmentType = 0;  // По умолчанию открытый грунт
                     }
                 }
                 else
@@ -241,7 +244,8 @@ void handleRoot()
         html += "<div class='section'><h2>⚙️ Компенсация датчиков</h2>";
         const String compChecked = config.flags.compensationEnabled ? " checked" : "";
         html +=
-            "<div class='form-group'><label for='comp_enabled'>Включить научную компенсацию:</label><input type='checkbox' "
+            "<div class='form-group'><label for='comp_enabled'>Включить научную компенсацию:</label><input "
+            "type='checkbox' "
             "id='comp_enabled' name='comp_enabled'" +
             compChecked + "></div>";
         html +=
@@ -305,17 +309,21 @@ void handleRoot()
         const String selectedEnvHydroponics = config.environmentType == 3 ? " selected" : "";
         const String selectedEnvAeroponics = config.environmentType == 4 ? " selected" : "";
         const String selectedEnvOrganic = config.environmentType == 5 ? " selected" : "";
-        
-        html += "<div class='form-group'><label for='env_type'>Среда выращивания:</label><select id='env_type' name='env_type'>";
+
+        html +=
+            "<div class='form-group'><label for='env_type'>Среда выращивания:</label><select id='env_type' "
+            "name='env_type'>";
         html += String("<option value='0'") + selectedEnvOutdoor + ">Открытый грунт</option>";
         html += String("<option value='1'") + selectedEnvGreenhouse + ">Теплица</option>";
         html += String("<option value='2'") + selectedEnvIndoor + ">Комнатная</option>";
         html += String("<option value='3'") + selectedEnvHydroponics + ">Гидропоника ⚠️</option>";
         html += String("<option value='4'") + selectedEnvAeroponics + ">Аэропоника ❌</option>";
         html += String("<option value='5'") + selectedEnvOrganic + ">Органическое</option></select></div>";
-        
+
         // Информация о совместимости
-        html += "<div class='info-box' style='background: #f0f8ff; border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 5px;'>";
+        html +=
+            "<div class='info-box' style='background: #f0f8ff; border: 1px solid #ccc; padding: 10px; margin: 10px 0; "
+            "border-radius: 5px;'>";
         html += "<strong>ℹ️ Информация о совместимости:</strong><br>";
         html += "• <strong>Открытый грунт/Теплица/Органическое:</strong> Все измерения доступны<br>";
         html += "• <strong>Гидропоника:</strong> EC, pH, температура, влажность (NPK недоступны)<br>";

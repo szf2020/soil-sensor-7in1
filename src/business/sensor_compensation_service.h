@@ -161,8 +161,6 @@ class SensorCompensationService : public ISensorCompensationService
      */
     void correctNPK(float temperature, float humidity, SoilType soilType, NPKReferences& npk) override;
 
-
-
     /**
      * @brief Получает пористость для типа почвы
      *

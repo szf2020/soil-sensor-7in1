@@ -6,11 +6,12 @@
 
 #pragma once
 
-#include "modbus_sensor.h"  // Для SensorData
 #include "jxct_config_vars.h"  // Для Config
-#include "sensor_types.h"  // Для SoilType, SoilProfile
+#include "modbus_sensor.h"     // Для SensorData
+#include "sensor_types.h"      // Для SoilType, SoilProfile
 
-namespace SensorProcessing {
+namespace SensorProcessing
+{
 
 /**
  * @brief Получить тип почвы по индексу профиля
@@ -30,11 +31,11 @@ SoilProfile getSoilProfile(int profileIndex);
  * @brief Применить полную обработку данных датчика
  * @param sensorData Данные датчика для обработки
  * @param config Конфигурация системы
- * 
+ *
  * @details Применяет:
  * 1. Калибровку (ВСЕГДА) - расчет по точкам
  * 2. Компенсацию (если включена) - научные формулы
  */
 void processSensorData(SensorData& sensorData, const Config& config);
 
-} // namespace SensorProcessing 
+}  // namespace SensorProcessing

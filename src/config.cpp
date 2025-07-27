@@ -90,26 +90,29 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
     config.webUpdateInterval = preferences.getUInt("webInterval", WEB_UPDATE_INTERVAL);
 
     // ИСПРАВЛЕНО: Валидация интервалов - проверяем, что значения в допустимых пределах
-    if (config.sensorReadInterval < CONFIG_SENSOR_INTERVAL_MIN_SEC * 1000UL || 
-        config.sensorReadInterval > CONFIG_SENSOR_INTERVAL_MAX_SEC * 1000UL) {
+    if (config.sensorReadInterval < CONFIG_SENSOR_INTERVAL_MIN_SEC * 1000UL ||
+        config.sensorReadInterval > CONFIG_SENSOR_INTERVAL_MAX_SEC * 1000UL)
+    {
         logWarn("Некорректный sensorReadInterval: " + String(config.sensorReadInterval) + ", сбрасываем к умолчанию");
         config.sensorReadInterval = SENSOR_READ_INTERVAL;
     }
-    
-    if (config.mqttPublishInterval < CONFIG_MQTT_INTERVAL_MIN_MS || 
-        config.mqttPublishInterval > CONFIG_MQTT_INTERVAL_MAX_MS) {
+
+    if (config.mqttPublishInterval < CONFIG_MQTT_INTERVAL_MIN_MS ||
+        config.mqttPublishInterval > CONFIG_MQTT_INTERVAL_MAX_MS)
+    {
         logWarn("Некорректный mqttPublishInterval: " + String(config.mqttPublishInterval) + ", сбрасываем к умолчанию");
         config.mqttPublishInterval = MQTT_PUBLISH_INTERVAL;
     }
-    
-    if (config.thingSpeakInterval < CONFIG_THINGSPEAK_INTERVAL_MIN_MS || 
-        config.thingSpeakInterval > CONFIG_THINGSPEAK_INTERVAL_MAX_MS) {
+
+    if (config.thingSpeakInterval < CONFIG_THINGSPEAK_INTERVAL_MIN_MS ||
+        config.thingSpeakInterval > CONFIG_THINGSPEAK_INTERVAL_MAX_MS)
+    {
         logWarn("Некорректный thingSpeakInterval: " + String(config.thingSpeakInterval) + ", сбрасываем к умолчанию");
         config.thingSpeakInterval = THINGSPEAK_INTERVAL;
     }
-    
-    if (config.webUpdateInterval < CONFIG_WEB_INTERVAL_MIN_MS || 
-        config.webUpdateInterval > CONFIG_WEB_INTERVAL_MAX_MS) {
+
+    if (config.webUpdateInterval < CONFIG_WEB_INTERVAL_MIN_MS || config.webUpdateInterval > CONFIG_WEB_INTERVAL_MAX_MS)
+    {
         logWarn("Некорректный webUpdateInterval: " + String(config.webUpdateInterval) + ", сбрасываем к умолчанию");
         config.webUpdateInterval = WEB_UPDATE_INTERVAL;
     }
@@ -122,22 +125,26 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
     config.deltaNpk = preferences.getFloat("deltaNpk", DELTA_NPK);
 
     // ИСПРАВЛЕНО: Валидация дельта-фильтров
-    if (config.deltaHumidity < CONFIG_DELTA_HUMIDITY_MIN || config.deltaHumidity > CONFIG_DELTA_HUMIDITY_MAX) {
+    if (config.deltaHumidity < CONFIG_DELTA_HUMIDITY_MIN || config.deltaHumidity > CONFIG_DELTA_HUMIDITY_MAX)
+    {
         logWarn("Некорректный deltaHumidity: " + String(config.deltaHumidity, 2) + ", сбрасываем к умолчанию");
         config.deltaHumidity = DELTA_HUMIDITY;
     }
-    
-    if (config.deltaPh < CONFIG_DELTA_PH_MIN || config.deltaPh > CONFIG_DELTA_PH_MAX) {
+
+    if (config.deltaPh < CONFIG_DELTA_PH_MIN || config.deltaPh > CONFIG_DELTA_PH_MAX)
+    {
         logWarn("Некорректный deltaPh: " + String(config.deltaPh, 2) + ", сбрасываем к умолчанию");
         config.deltaPh = DELTA_PH;
     }
-    
-    if (config.deltaEc < CONFIG_DELTA_EC_MIN || config.deltaEc > CONFIG_DELTA_EC_MAX) {
+
+    if (config.deltaEc < CONFIG_DELTA_EC_MIN || config.deltaEc > CONFIG_DELTA_EC_MAX)
+    {
         logWarn("Некорректный deltaEc: " + String(config.deltaEc, 2) + ", сбрасываем к умолчанию");
         config.deltaEc = DELTA_EC;
     }
-    
-    if (config.deltaNpk < CONFIG_DELTA_NPK_MIN || config.deltaNpk > CONFIG_DELTA_NPK_MAX) {
+
+    if (config.deltaNpk < CONFIG_DELTA_NPK_MIN || config.deltaNpk > CONFIG_DELTA_NPK_MAX)
+    {
         logWarn("Некорректный deltaNpk: " + String(config.deltaNpk, 2) + ", сбрасываем к умолчанию");
         config.deltaNpk = DELTA_NPK;
     }
@@ -149,12 +156,14 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
     config.outlierFilterEnabled = preferences.getUChar("outlierFilter", 0);  // отключен для минимальной фильтрации
 
     // ИСПРАВЛЕНО: Валидация настроек скользящего среднего
-    if (config.movingAverageWindow < CONFIG_AVG_WINDOW_MIN || config.movingAverageWindow > CONFIG_AVG_WINDOW_MAX) {
+    if (config.movingAverageWindow < CONFIG_AVG_WINDOW_MIN || config.movingAverageWindow > CONFIG_AVG_WINDOW_MAX)
+    {
         logWarn("Некорректный movingAverageWindow: " + String(config.movingAverageWindow) + ", сбрасываем к умолчанию");
         config.movingAverageWindow = 5;
     }
-    
-    if (config.forcePublishCycles < CONFIG_FORCE_CYCLES_MIN || config.forcePublishCycles > CONFIG_FORCE_CYCLES_MAX) {
+
+    if (config.forcePublishCycles < CONFIG_FORCE_CYCLES_MIN || config.forcePublishCycles > CONFIG_FORCE_CYCLES_MAX)
+    {
         logWarn("Некорректный forcePublishCycles: " + String(config.forcePublishCycles) + ", сбрасываем к умолчанию");
         config.forcePublishCycles = FORCE_PUBLISH_CYCLES;
     }
@@ -166,12 +175,14 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
     config.adaptiveFiltering = preferences.getUChar("adaptiveFilter", 0);  // 0=отключена по умолчанию
 
     // ИСПРАВЛЕНО: Валидация улучшенной системы фильтрации
-    if (config.exponentialAlpha < EXPONENTIAL_ALPHA_MIN || config.exponentialAlpha > EXPONENTIAL_ALPHA_MAX) {
+    if (config.exponentialAlpha < EXPONENTIAL_ALPHA_MIN || config.exponentialAlpha > EXPONENTIAL_ALPHA_MAX)
+    {
         logWarn("Некорректный exponentialAlpha: " + String(config.exponentialAlpha, 2) + ", сбрасываем к умолчанию");
         config.exponentialAlpha = EXPONENTIAL_ALPHA_DEFAULT;
     }
-    
-    if (config.outlierThreshold < OUTLIER_THRESHOLD_MIN || config.outlierThreshold > OUTLIER_THRESHOLD_MAX) {
+
+    if (config.outlierThreshold < OUTLIER_THRESHOLD_MIN || config.outlierThreshold > OUTLIER_THRESHOLD_MAX)
+    {
         logWarn("Некорректный outlierThreshold: " + String(config.outlierThreshold, 2) + ", сбрасываем к умолчанию");
         config.outlierThreshold = OUTLIER_THRESHOLD_DEFAULT;
     }

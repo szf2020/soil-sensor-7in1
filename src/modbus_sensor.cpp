@@ -15,9 +15,9 @@
 #include "jxct_constants.h"  // ✅ Централизованные константы
 #include "jxct_device_info.h"
 #include "logger.h"
+#include "sensor_processing.h"  // Общая логика обработки
 #include "sensor_types.h"
 #include "validation_utils.h"  // Для централизованной валидации
-#include "sensor_processing.h"    // Общая логика обработки
 
 // Глобальные переменные (должны быть доступны через extern)
 // Внутренние переменные и функции — только для этой единицы трансляции

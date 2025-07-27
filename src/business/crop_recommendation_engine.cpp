@@ -47,7 +47,8 @@ void CropRecommendationEngine::initializeCropConfigs()
                                         115.0F, 35.0F, 175.0F         // N: 80-150, P: 20-50, K: 100-250 мг/кг
     );
 
-    // ЧЕРНИКА (Vaccinium corymbosum) - [Источник: Nutrient Cycling in Agroecosystems, 2021; DOI: 10.1007/s10705-021-10132-x]
+    // ЧЕРНИКА (Vaccinium corymbosum) - [Источник: Nutrient Cycling in Agroecosystems, 2021;
+    // DOI: 10.1007/s10705-021-10132-x]
     cropConfigs["blueberry"] = CropConfig(20.0F, 75.0F, 1200.0F, 5.0F,  // pH 4.5-5.5, EC 0.8-1.5 mS/cm
                                           75.0F, 30.0F, 60.0F           // N: 50-100, P: 20-40, K: 40-80 мг/кг
     );
@@ -294,20 +295,20 @@ CropConfig applyGrowingTypeAdjustments(const CropConfig& base, const String& gro
         // ⚠️ ГИДРОПОНИКА: ОГРАНИЧЕННАЯ СОВМЕСТИМОСТЬ С ПОЧВЕННЫМ ДАТЧИКОМ
         // Почвенный датчик может измерять только EC и pH в растворе
         // NPK измерения недоступны в жидкой среде
-        adjusted.ec += 500.0F;         // Высокая концентрация питательных веществ
-        adjusted.nitrogen = 0.0F;      // ❌ НЕ ИЗМЕРЯЕТСЯ в растворе
-        adjusted.phosphorus = 0.0F;    // ❌ НЕ ИЗМЕРЯЕТСЯ в растворе  
-        adjusted.potassium = 0.0F;     // ❌ НЕ ИЗМЕРЯЕТСЯ в растворе
+        adjusted.ec += 500.0F;       // Высокая концентрация питательных веществ
+        adjusted.nitrogen = 0.0F;    // ❌ НЕ ИЗМЕРЯЕТСЯ в растворе
+        adjusted.phosphorus = 0.0F;  // ❌ НЕ ИЗМЕРЯЕТСЯ в растворе
+        adjusted.potassium = 0.0F;   // ❌ НЕ ИЗМЕРЯЕТСЯ в растворе
     }
     else if (growingType == "aeroponics")
     {
         // ⚠️ АЭРОПОНИКА: НЕ СОВМЕСТИМА С ПОЧВЕННЫМ ДАТЧИКОМ
         // Датчик не может быть установлен в воздушной среде
         // Все измерения недоступны
-        adjusted.ec = 0.0F;            // ❌ НЕ ИЗМЕРЯЕТСЯ в воздухе
-        adjusted.nitrogen = 0.0F;      // ❌ НЕ ИЗМЕРЯЕТСЯ в воздухе
-        adjusted.phosphorus = 0.0F;    // ❌ НЕ ИЗМЕРЯЕТСЯ в воздухе
-        adjusted.potassium = 0.0F;     // ❌ НЕ ИЗМЕРЯЕТСЯ в воздухе
+        adjusted.ec = 0.0F;          // ❌ НЕ ИЗМЕРЯЕТСЯ в воздухе
+        adjusted.nitrogen = 0.0F;    // ❌ НЕ ИЗМЕРЯЕТСЯ в воздухе
+        adjusted.phosphorus = 0.0F;  // ❌ НЕ ИЗМЕРЯЕТСЯ в воздухе
+        adjusted.potassium = 0.0F;   // ❌ НЕ ИЗМЕРЯЕТСЯ в воздухе
     }
     else if (growingType == "organic")
     {

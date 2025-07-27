@@ -80,16 +80,39 @@ struct ModbusSensorData : public SensorData
     float raw_phosphorus;
     float raw_potassium;
     bool recentIrrigation;
-    
-    ModbusSensorData() : SensorData(), moisture(0.0F), conductivity(0.0F), 
-                        firmware_version(0), error_status(0), valid(false), isValid(false),
-                        last_update(0), timestamp(0), prev_temperature(0.0F), prev_humidity(0.0F),
-                        prev_ec(0.0F), prev_ph(0.0F), prev_nitrogen(0.0F), prev_phosphorus(0.0F),
-                        prev_potassium(0.0F), last_mqtt_publish(0), buffer_index(0), buffer_filled(0),
-                        raw_temperature(0.0F), raw_humidity(0.0F), raw_ec(0.0F), raw_ph(0.0F),
-                        raw_nitrogen(0.0F), raw_phosphorus(0.0F), raw_potassium(0.0F), recentIrrigation(false) {
+
+    ModbusSensorData()
+        : SensorData(),
+          moisture(0.0F),
+          conductivity(0.0F),
+          firmware_version(0),
+          error_status(0),
+          valid(false),
+          isValid(false),
+          last_update(0),
+          timestamp(0),
+          prev_temperature(0.0F),
+          prev_humidity(0.0F),
+          prev_ec(0.0F),
+          prev_ph(0.0F),
+          prev_nitrogen(0.0F),
+          prev_phosphorus(0.0F),
+          prev_potassium(0.0F),
+          last_mqtt_publish(0),
+          buffer_index(0),
+          buffer_filled(0),
+          raw_temperature(0.0F),
+          raw_humidity(0.0F),
+          raw_ec(0.0F),
+          raw_ph(0.0F),
+          raw_nitrogen(0.0F),
+          raw_phosphorus(0.0F),
+          raw_potassium(0.0F),
+          recentIrrigation(false)
+    {
         // Инициализация буферов
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 15; i++)
+        {
             temp_buffer[i] = 0.0F;
             hum_buffer[i] = 0.0F;
             ec_buffer[i] = 0.0F;

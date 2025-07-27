@@ -12,16 +12,16 @@ import calendar
 def determine_season_by_coordinates(month: int, latitude: float) -> str:
     """
     Определяет сезон по месяцу и координатам (широте)
-    
+
     Args:
         month: Месяц (1-12)
         latitude: Широта (положительная для северного полушария)
-    
+
     Returns:
         Сезон: "Весна", "Лето", "Осень", "Зима"
     """
     is_northern_hemisphere = latitude >= 0.0
-    
+
     if is_northern_hemisphere:
         # Северное полушарие: стандартные сезоны
         if month >= 3 and month <= 5:
@@ -45,14 +45,14 @@ def determine_season_by_coordinates(month: int, latitude: float) -> str:
 
 class TestSeasonDetermination(unittest.TestCase):
     """Тесты определения сезона по координатам"""
-    
+
     def test_northern_hemisphere_seasons(self):
         """Тест сезонов для северного полушария"""
         print("\n=== Тест сезонов для северного полушария ===")
-        
+
         # Москва (55.7558° N)
         latitude = 55.7558
-        
+
         test_cases = [
             (1, "Зима"),   # Январь
             (2, "Зима"),   # Февраль
@@ -67,20 +67,20 @@ class TestSeasonDetermination(unittest.TestCase):
             (11, "Осень"), # Ноябрь
             (12, "Зима"),  # Декабрь
         ]
-        
+
         for month, expected_season in test_cases:
             season = determine_season_by_coordinates(month, latitude)
             print(f"  Месяц {month}: {season}")
-            self.assertEqual(season, expected_season, 
+            self.assertEqual(season, expected_season,
                            f"Ошибка для месяца {month}: ожидалось {expected_season}, получено {season}")
-    
+
     def test_southern_hemisphere_seasons(self):
         """Тест сезонов для южного полушария"""
         print("\n=== Тест сезонов для южного полушария ===")
-        
+
         # Сидней (-33.8688° S)
         latitude = -33.8688
-        
+
         test_cases = [
             (1, "Лето"),   # Январь - лето в южном полушарии
             (2, "Лето"),   # Февраль - лето в южном полушарии
@@ -95,50 +95,50 @@ class TestSeasonDetermination(unittest.TestCase):
             (11, "Весна"), # Ноябрь - весна в южном полушарии
             (12, "Лето"),  # Декабрь - лето в южном полушарии
         ]
-        
+
         for month, expected_season in test_cases:
             season = determine_season_by_coordinates(month, latitude)
             print(f"  Месяц {month}: {season}")
-            self.assertEqual(season, expected_season, 
+            self.assertEqual(season, expected_season,
                            f"Ошибка для месяца {month}: ожидалось {expected_season}, получено {season}")
-    
+
     def test_equator_seasons(self):
         """Тест сезонов для экватора (северное полушарие по умолчанию)"""
         print("\n=== Тест сезонов для экватора ===")
-        
+
         # Экватор (0°)
         latitude = 0.0
-        
+
         test_cases = [
             (1, "Зима"),   # Январь
             (6, "Лето"),   # Июнь
             (12, "Зима"),  # Декабрь
         ]
-        
+
         for month, expected_season in test_cases:
             season = determine_season_by_coordinates(month, latitude)
             print(f"  Месяц {month}: {season}")
-            self.assertEqual(season, expected_season, 
+            self.assertEqual(season, expected_season,
                            f"Ошибка для месяца {month}: ожидалось {expected_season}, получено {season}")
-    
+
     def test_edge_cases(self):
         """Тест граничных случаев"""
         print("\n=== Тест граничных случаев ===")
-        
+
         # Северное полушарие
         self.assertEqual(determine_season_by_coordinates(3, 90.0), "Весна")   # Северный полюс
         self.assertEqual(determine_season_by_coordinates(6, 0.1), "Лето")     # Чуть севернее экватора
-        
+
         # Южное полушарие
         self.assertEqual(determine_season_by_coordinates(3, -90.0), "Осень")  # Южный полюс
         self.assertEqual(determine_season_by_coordinates(6, -0.1), "Зима")    # Чуть южнее экватора
-        
+
         print("  ✅ Граничные случаи обработаны корректно")
-    
+
     def test_real_world_examples(self):
         """Тест реальных примеров городов"""
         print("\n=== Тест реальных примеров городов ===")
-        
+
         cities = [
             ("Москва", 55.7558, 1, "Зима"),
             ("Нью-Йорк", 40.7128, 7, "Лето"),
@@ -147,22 +147,22 @@ class TestSeasonDetermination(unittest.TestCase):
             ("Буэнос-Айрес", -34.6118, 7, "Зима"),
             ("Кейптаун", -33.9249, 12, "Лето"),
         ]
-        
+
         for city, lat, month, expected_season in cities:
             season = determine_season_by_coordinates(month, lat)
             print(f"  {city} (широта {lat}°): месяц {month} = {season}")
-            self.assertEqual(season, expected_season, 
+            self.assertEqual(season, expected_season,
                            f"Ошибка для {city}: ожидалось {expected_season}, получено {season}")
 
 def main():
     """Главная функция"""
     print("🌍 ТЕСТ ОПРЕДЕЛЕНИЯ СЕЗОНА ПО КООРДИНАТАМ")
     print("=" * 50)
-    
+
     # Запускаем тесты
     unittest.main(argv=[''], exit=False, verbosity=2)
-    
+
     print("\n✅ Все тесты определения сезона пройдены успешно!")
 
 if __name__ == "__main__":
-    main() 
+    main()

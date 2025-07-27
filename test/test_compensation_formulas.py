@@ -22,9 +22,9 @@ def test_ec_temperature_compensation():
     # ✅ НАУЧНАЯ ФОРМУЛА: Rhoades et al. (1989)
     # EC_comp = EC_raw × (1 + 0.021 × (T - 25))
     # где 0.021 = температурный коэффициент для почвенных датчиков
-    
+
     ec_raw = 1200.0
-    
+
     test_cases = [
         (25.0, ec_raw),  # 25°C - без температурной компенсации
         (30.0, ec_raw * (1.0 + 0.021 * (30.0 - 25.0))),  # 30°C
@@ -39,7 +39,7 @@ def test_ec_temperature_compensation():
 
         print(f"  Температура: {temp}°C, tempFactor: {temp_factor:.3f}, EC_raw: {ec_raw}, EC_comp: {ec_compensated:.1f}")
         assert abs(ec_compensated - expected) < 0.1, f"Ошибка в формуле EC: {ec_compensated} != {expected}"
-        
+
         # Проверяем логику: при повышении температуры EC должен увеличиваться
         if temp > 25.0:
             assert ec_compensated > ec_raw, f"EC должен увеличиваться при T > 25°C: {ec_compensated} <= {ec_raw}"
@@ -56,7 +56,7 @@ def test_npk_temperature_compensation():
     # N_comp = N_raw × e^(δN(T-20))
     # P_comp = P_raw × e^(δP(T-20))
     # K_comp = K_raw × e^(δK(T-20))
-    
+
     # Коэффициенты из кода (для суглинка)
     delta_N = 0.0038
     delta_P = 0.0049
@@ -104,7 +104,7 @@ def test_npk_humidity_compensation():
     # N_comp = N_raw × (1 + εN(θ-30))
     # P_comp = P_raw × (1 + εP(θ-30))
     # K_comp = K_raw × (1 + εK(θ-30))
-    
+
     # Коэффициенты из кода (для суглинка)
     epsilon_N = 0.009
     epsilon_P = 0.007
@@ -151,7 +151,7 @@ def test_ec_humidity_compensation():
     # НАУЧНАЯ ФОРМУЛА: Модель Арчи (1942)
     # EC_comp = EC_raw × (θ/θ₀)^m
     # где θ = текущая влажность, θ₀ = полевая влагоемкость, m = коэффициент цементации
-    
+
     # Полевая влагоемкость для разных почв (из документации)
     field_capacities = {
         'sand': 10.0,      # 10%
@@ -180,14 +180,14 @@ def test_ec_humidity_compensation():
     for soil_type, humidity, expected_factor in test_cases:
         field_capacity = field_capacities[soil_type]
         m_coeff = archie_coeffs[soil_type]['m']
-        
+
         # НАУЧНАЯ формула из кода
         humidity_ratio = humidity / field_capacity
         humidity_factor = pow(humidity_ratio, m_coeff)
 
         print(f"  Почва: {soil_type}, влажность: {humidity}%, θ/θ₀: {humidity_ratio:.3f}, фактор: {humidity_factor:.3f}")
         assert abs(humidity_factor - expected_factor) < 0.001, f"Ошибка в формуле влажности: {humidity_factor} != {expected_factor}"
-        
+
         # Проверяем логику: при повышении влажности фактор должен увеличиваться
         if humidity > field_capacity:
             assert humidity_factor > 1.0, f"Фактор должен быть > 1.0 при влажности > θ₀: {humidity_factor}"
@@ -202,7 +202,7 @@ def test_ec_combined_compensation():
 
     # НАУЧНАЯ ФОРМУЛА: Модель Арчи (1942)
     # EC_comp = EC_raw × (θ/θ₀)^m × (T/T₀)^n
-    
+
     ec_raw = 1200.0
     temp = 30.0
     humidity = 25.0
@@ -228,7 +228,7 @@ def test_ec_combined_compensation():
 
     # Проверяем, что результат разумный
     assert 2000.0 < ec_compensated < 3000.0, f"EC должен быть в разумных пределах: {ec_compensated}"
-    
+
     # Проверяем, что компенсация соответствует научной модели
     compensation_ratio = ec_compensated / ec_raw
     expected_ratio = temp_factor * humidity_factor
@@ -242,7 +242,7 @@ def test_ph_compensation():
 
     # НАУЧНАЯ ФОРМУЛА: Уравнение Нернста
     # pH_comp = pH_raw - 0.003 × (T - 25)
-    
+
     test_cases = [
         (25.0, 7.0, 7.0),      # 25°C - без изменений
         (30.0, 7.0, 7.0 - 0.003 * 5),  # 30°C: 7.0 - 0.015 = 6.985
@@ -257,7 +257,7 @@ def test_ph_compensation():
 
         print(f"  Температура: {temp}°C, pH_raw: {ph_raw}, поправка: {temp_correction:.3f}, pH_comp: {ph_compensated:.3f}")
         assert abs(ph_compensated - expected) < 0.001, f"Ошибка в формуле pH: {ph_compensated} != {expected}"
-        
+
         # Проверяем логику: при повышении температуры pH должен снижаться
         if temp > 25.0:
             assert ph_compensated < ph_raw, f"pH должен снижаться при T > 25°C: {ph_compensated} >= {ph_raw}"
@@ -340,7 +340,7 @@ def test_real_world_scenarios():
     m_coeff = 1.5  # коэффициент цементации
     n_coeff = 2.0  # коэффициент насыщенности
     field_capacity = 20.0  # полевая влагоемкость для суглинка
-    
+
     # NPK: FAO 56
     delta_N = 0.0038
     delta_P = 0.0049

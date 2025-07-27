@@ -123,8 +123,9 @@ void setupConfigRoutes()
                     "' value='" + String(config.mqttPublishInterval / CONVERSION_MIN_TO_MS) + "' required>";
             html += "<div class='help'>" + String(CONFIG_MQTT_INTERVAL_MIN_MIN) + "-" +
                     String(CONFIG_MQTT_INTERVAL_MAX_MIN) +
-                    " мин. Текущее: " + String(config.mqttPublishInterval / CONVERSION_MIN_TO_MS) + 
-                    " мин (по умолчанию: " + String(MQTT_PUBLISH_INTERVAL / CONVERSION_MIN_TO_MS) + " мин = 30 мин)</div></div>";
+                    " мин. Текущее: " + String(config.mqttPublishInterval / CONVERSION_MIN_TO_MS) +
+                    " мин (по умолчанию: " + String(MQTT_PUBLISH_INTERVAL / CONVERSION_MIN_TO_MS) +
+                    " мин = 30 мин)</div></div>";
 
             html += "<div class='form-group'><label for='ts_interval'>Интервал ThingSpeak (мин):</label>";
             html += "<input type='number' id='ts_interval' name='ts_interval' min='" +
@@ -133,7 +134,7 @@ void setupConfigRoutes()
                     String(config.thingSpeakInterval / CONVERSION_MIN_TO_MS) + "' required>";
             html += "<div class='help'>" + String(CONFIG_THINGSPEAK_INTERVAL_MIN_MIN) + "-" +
                     String(CONFIG_THINGSPEAK_INTERVAL_MAX_MIN) +
-                    " мин. Текущее: " + String(config.thingSpeakInterval / CONVERSION_MIN_TO_MS) + 
+                    " мин. Текущее: " + String(config.thingSpeakInterval / CONVERSION_MIN_TO_MS) +
                     " мин (по умолчанию: " + String(THINGSPEAK_INTERVAL / CONVERSION_MIN_TO_MS) + " мин)</div></div>";
 
             html +=
@@ -143,7 +144,7 @@ void setupConfigRoutes()
                     "' value='" + String(config.webUpdateInterval / CONVERSION_SEC_TO_MS) + "' required>";
             html +=
                 "<div class='help'>" + String(CONFIG_WEB_INTERVAL_MIN_SEC) + "-" + String(CONFIG_WEB_INTERVAL_MAX_SEC) +
-                " сек. Текущее: " + String(config.webUpdateInterval / CONVERSION_SEC_TO_MS) + 
+                " сек. Текущее: " + String(config.webUpdateInterval / CONVERSION_SEC_TO_MS) +
                 " сек (по умолчанию: " + String(WEB_UPDATE_INTERVAL / CONVERSION_SEC_TO_MS) + " сек)</div></div></div>";
 
             html += "<div class='section'><h2>🎯 Пороги дельта-фильтра</h2>";
@@ -251,7 +252,9 @@ void setupConfigRoutes()
             html += generateButton(ButtonType::PRIMARY, ButtonConfig{UI_ICON_SAVE, "Сохранить настройки", ""});
             html += "</form>";
             html += "<div style='margin-top: 15px;'>";
-            html += "<a href='/reset_intervals' class='btn btn-secondary' onclick='return confirm(\"Сбросить все настройки интервалов к значениям по умолчанию?\")'>";
+            html +=
+                "<a href='/reset_intervals' class='btn btn-secondary' onclick='return confirm(\"Сбросить все настройки "
+                "интервалов к значениям по умолчанию?\")'>";
             html += UI_ICON_RESET " Сбросить к умолчанию (1 сек + мин. фильтрация)";
             html += "</a>";
             html += "</div>";
@@ -399,27 +402,27 @@ void setupConfigRoutes()
                          return;
                      }
 
-                                     // Сбрасываем к умолчанию (ПРАВИЛЬНЫЕ ЗНАЧЕНИЯ)
-                config.sensorReadInterval = SENSOR_READ_INTERVAL;           // 2000 мс (2 сек)
-                config.mqttPublishInterval = MQTT_PUBLISH_INTERVAL;         // 1800000 мс (30 мин)
-                config.thingSpeakInterval = THINGSPEAK_INTERVAL;            // 600000 мс (10 мин)
-                config.webUpdateInterval = WEB_UPDATE_INTERVAL;             // 3000 мс (3 сек)
-                     
+                     // Сбрасываем к умолчанию (ПРАВИЛЬНЫЕ ЗНАЧЕНИЯ)
+                     config.sensorReadInterval = SENSOR_READ_INTERVAL;    // 2000 мс (2 сек)
+                     config.mqttPublishInterval = MQTT_PUBLISH_INTERVAL;  // 1800000 мс (30 мин)
+                     config.thingSpeakInterval = THINGSPEAK_INTERVAL;     // 600000 мс (10 мин)
+                     config.webUpdateInterval = WEB_UPDATE_INTERVAL;      // 3000 мс (3 сек)
+
                      // Дельта-фильтры (правильные значения)
-                     config.deltaTemperature = DEFAULT_DELTA_TEMPERATURE;        // 0.5°C
-                     config.deltaHumidity = DEFAULT_DELTA_HUMIDITY;              // 2.0%
-                     config.deltaPh = DEFAULT_DELTA_PH;                          // 0.1 pH
-                     config.deltaEc = DEFAULT_DELTA_EC;                          // 50 µS/cm
-                     config.deltaNpk = DEFAULT_DELTA_NPK;                        // 10 mg/kg
-                     
+                     config.deltaTemperature = DEFAULT_DELTA_TEMPERATURE;  // 0.5°C
+                     config.deltaHumidity = DEFAULT_DELTA_HUMIDITY;        // 2.0%
+                     config.deltaPh = DEFAULT_DELTA_PH;                    // 0.1 pH
+                     config.deltaEc = DEFAULT_DELTA_EC;                    // 50 µS/cm
+                     config.deltaNpk = DEFAULT_DELTA_NPK;                  // 10 mg/kg
+
                      // Фильтрация (минимальная)
-                     config.movingAverageWindow = MOVING_AVERAGE_WINDOW_DEFAULT; // 5
-                     config.forcePublishCycles = DEFAULT_FORCE_PUBLISH_CYCLES;   // 10
-                     config.filterAlgorithm = 0;                                 // среднее
-                     config.outlierFilterEnabled = 0;                            // отключен
-                     config.adaptiveFiltering = 0;                               // отключена
-                     config.exponentialAlpha = EXPONENTIAL_ALPHA_DEFAULT;        // 0.3
-                     config.outlierThreshold = OUTLIER_THRESHOLD_DEFAULT;        // 2.5
+                     config.movingAverageWindow = MOVING_AVERAGE_WINDOW_DEFAULT;  // 5
+                     config.forcePublishCycles = DEFAULT_FORCE_PUBLISH_CYCLES;    // 10
+                     config.filterAlgorithm = 0;                                  // среднее
+                     config.outlierFilterEnabled = 0;                             // отключен
+                     config.adaptiveFiltering = 0;                                // отключена
+                     config.exponentialAlpha = EXPONENTIAL_ALPHA_DEFAULT;         // 0.3
+                     config.outlierThreshold = OUTLIER_THRESHOLD_DEFAULT;         // 2.5
 
                      saveConfig();
 

@@ -12,10 +12,10 @@ class RealScientificSearch:
     def __init__(self):
         self.real_sources = []
         self.search_results = {}
-        
+
     def search_soil_sensor_compensation(self) -> List[Dict]:
         """Поиск реальных источников по компенсации почвенных датчиков"""
-        
+
         # РЕАЛЬНЫЕ НАУЧНЫЕ ИСТОЧНИКИ (проверены вручную)
         real_sources = [
             # 1. EC КОМПЕНСАЦИЯ - РЕАЛЬНЫЕ ИСТОЧНИКИ
@@ -36,12 +36,12 @@ class RealScientificSearch:
                     "reference_temp": 25.0
                 }
             },
-            
+
             # 2. pH КОМПЕНСАЦИЯ - РЕАЛЬНЫЙ ИСТОЧНИК
             {
                 "title": "Temperature Effects on Soil pH Measurement",
                 "authors": ["Ross, D.S.", "Bartlett, R.J.", "Magdoff, F.R."],
-                "journal": "Soil Science Society of America Journal", 
+                "journal": "Soil Science Society of America Journal",
                 "year": 2008,
                 "volume": 72,
                 "pages": "1169-1173",
@@ -55,7 +55,7 @@ class RealScientificSearch:
                     "reference_temp": 25.0
                 }
             },
-            
+
             # 3. NPK КОМПЕНСАЦИЯ - РЕАЛЬНЫЕ ИСТОЧНИКИ
             {
                 "title": "Nutrient Availability in Soils: Temperature and Moisture Effects",
@@ -63,7 +63,7 @@ class RealScientificSearch:
                 "journal": "European Journal of Soil Science",
                 "year": 2020,
                 "volume": 71,
-                "pages": "567-578", 
+                "pages": "567-578",
                 "doi": "10.1007/s42729-020-00215-4",
                 "topic": "NPK temperature and humidity compensation",
                 "relevance": "high",
@@ -80,7 +80,7 @@ class RealScientificSearch:
                     "reference_humidity": 30.0
                 }
             },
-            
+
             # 4. ОБЩИЕ ИСТОЧНИКИ ПО КАЛИБРОВКЕ
             {
                 "title": "Soil Sensor Calibration Methods for Precision Agriculture",
@@ -99,7 +99,7 @@ class RealScientificSearch:
                     "temperature_range": "10-40°C"
                 }
             },
-            
+
             # 5. ДОПОЛНИТЕЛЬНЫЕ ИСТОЧНИКИ
             {
                 "title": "Soil Electrical Conductivity: Theory and Applications",
@@ -119,12 +119,12 @@ class RealScientificSearch:
                 }
             }
         ]
-        
+
         return real_sources
-    
+
     def search_jxct_specific_sources(self) -> List[Dict]:
         """Поиск специфичных для JXCT источников"""
-        
+
         jxct_sources = [
             {
                 "title": "JXCT 7-in-1 Soil Sensor Technical Specifications",
@@ -137,7 +137,7 @@ class RealScientificSearch:
                 "specifications": {
                     "ec_range": "0-10000 μS/cm",
                     "ph_range": "3.0-9.0",
-                    "temperature_range": "-45 to 115°C", 
+                    "temperature_range": "-45 to 115°C",
                     "humidity_range": "0-100%",
                     "npk_range": "0-1999 mg/kg",
                     "accuracy": "±2% F.S.",
@@ -162,12 +162,12 @@ class RealScientificSearch:
                 }
             }
         ]
-        
+
         return jxct_sources
-    
+
     def search_soil_type_coefficients(self) -> Dict:
         """Поиск коэффициентов для разных типов почв"""
-        
+
         soil_coefficients = {
             "SAND": {
                 "source": "USDA Soil Survey Manual",
@@ -181,7 +181,7 @@ class RealScientificSearch:
                 }
             },
             "LOAM": {
-                "source": "USDA Soil Survey Manual", 
+                "source": "USDA Soil Survey Manual",
                 "verified": True,
                 "coefficients": {
                     "porosity": 0.45,
@@ -225,12 +225,12 @@ class RealScientificSearch:
                 }
             }
         }
-        
+
         return soil_coefficients
-    
+
     def generate_corrected_formulas(self) -> Dict:
         """Генерирует исправленные формулы на основе реальных источников"""
-        
+
         corrected_formulas = {
             "EC_compensation": {
                 "formula": "EC_comp = EC_raw × (1 + 0.021 × (T - 25))",
@@ -245,15 +245,15 @@ class RealScientificSearch:
                 float correctEC(float ec25, float temperature, SoilType soilType) {
                     // Линейная температурная компенсация (Rhoades et al., 1989)
                     float tempFactor = 1.0F + 0.021F * (temperature - 25.0F);
-                    
+
                     // Коэффициент типа почвы (консервативный)
                     float soilCoeff = getSoilTypeCoefficient(soilType);
-                    
+
                     return ec25 * tempFactor * soilCoeff;
                 }
                 """
             },
-            
+
             "pH_compensation": {
                 "formula": "pH_comp = pH_raw - 0.003 × (T - 25)",
                 "source": "Ross et al. (2008) - SSSAJ",
@@ -270,14 +270,14 @@ class RealScientificSearch:
                 }
                 """
             },
-            
+
             "NPK_compensation": {
                 "formula": "N_comp = N_raw × exp(δN × (T - 20)) × (1 + εN × (θ - 30))",
                 "source": "Delgado et al. (2020) - European Journal of Soil Science",
                 "verified": True,
                 "coefficients": {
                     "delta_N": 0.0041,
-                    "delta_P": 0.0053, 
+                    "delta_P": 0.0053,
                     "delta_K": 0.0032,
                     "epsilon_N": 0.010,
                     "epsilon_P": 0.008,
@@ -291,11 +291,11 @@ class RealScientificSearch:
                     float tempFactorN = exp(0.0041F * (temperature - 20.0F));
                     float tempFactorP = exp(0.0053F * (temperature - 20.0F));
                     float tempFactorK = exp(0.0032F * (temperature - 20.0F));
-                    
+
                     float moistureFactorN = 1.0F + 0.010F * (humidity - 30.0F);
                     float moistureFactorP = 1.0F + 0.008F * (humidity - 30.0F);
                     float moistureFactorK = 1.0F + 0.012F * (humidity - 30.0F);
-                    
+
                     npk.nitrogen *= (tempFactorN * moistureFactorN);
                     npk.phosphorus *= (tempFactorP * moistureFactorP);
                     npk.potassium *= (tempFactorK * moistureFactorK);
@@ -303,39 +303,39 @@ class RealScientificSearch:
                 """
             }
         }
-        
+
         return corrected_formulas
-    
+
     def run_comprehensive_search(self) -> Dict:
         """Запускает комплексный поиск всех источников"""
-        
+
         print("🔬 КОМПЛЕКСНЫЙ ПОИСК РЕАЛЬНЫХ НАУЧНЫХ ИСТОЧНИКОВ")
         print("=" * 60)
-        
+
         # 1. Поиск источников по компенсации
         print("\n📚 ПОИСК ИСТОЧНИКОВ ПО КОМПЕНСАЦИИ:")
         compensation_sources = self.search_soil_sensor_compensation()
         for source in compensation_sources:
             print(f"✅ {source['title']} ({source['year']}) - {source['topic']}")
-        
+
         # 2. Поиск JXCT-специфичных источников
         print("\n🔍 ПОИСК JXCT-СПЕЦИФИЧНЫХ ИСТОЧНИКОВ:")
         jxct_sources = self.search_jxct_specific_sources()
         for source in jxct_sources:
             print(f"✅ {source['title']} ({source['year']})")
-        
+
         # 3. Поиск коэффициентов типов почв
         print("\n🌱 ПОИСК КОЭФФИЦИЕНТОВ ТИПОВ ПОЧВ:")
         soil_coeffs = self.search_soil_type_coefficients()
         for soil_type, data in soil_coeffs.items():
             print(f"✅ {soil_type}: {data['source']}")
-        
+
         # 4. Генерация исправленных формул
         print("\n📝 ГЕНЕРАЦИЯ ИСПРАВЛЕННЫХ ФОРМУЛ:")
         corrected_formulas = self.generate_corrected_formulas()
         for formula_type, data in corrected_formulas.items():
             print(f"✅ {formula_type}: {data['source']}")
-        
+
         # 5. Формирование полного отчета
         full_report = {
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -351,44 +351,44 @@ class RealScientificSearch:
             },
             "recommendations": [
                 "✅ Использовать Rhoades et al. (1989) для EC компенсации",
-                "✅ Использовать Ross et al. (2008) для pH компенсации", 
+                "✅ Использовать Ross et al. (2008) для pH компенсации",
                 "✅ Использовать Delgado et al. (2020) для NPK компенсации",
                 "✅ Использовать USDA Soil Survey Manual для коэффициентов почв",
                 "⚠️ Проверить спецификации JXCT для точных параметров датчика"
             ]
         }
-        
+
         # Сохранение отчета
         with open("test_reports/real_scientific_sources_report.json", "w", encoding="utf-8") as f:
             json.dump(full_report, f, indent=2, ensure_ascii=False)
-        
+
         # Вывод результатов
         print("\n📊 РЕЗУЛЬТАТЫ ПОИСКА:")
         print(f"✅ Источников по компенсации: {full_report['summary']['total_compensation_sources']}")
         print(f"✅ JXCT-специфичных источников: {full_report['summary']['total_jxct_sources']}")
         print(f"✅ Типов почв покрыто: {full_report['summary']['soil_types_covered']}")
         print(f"✅ Формул исправлено: {full_report['summary']['formulas_corrected']}")
-        
+
         print("\n💡 РЕКОМЕНДАЦИИ:")
         for rec in full_report["recommendations"]:
             print(f"  {rec}")
-        
+
         print(f"\n📄 Отчет сохранен: test_reports/real_scientific_sources_report.json")
-        
+
         return full_report
 
 def main():
     """Главная функция"""
     searcher = RealScientificSearch()
     report = searcher.run_comprehensive_search()
-    
+
     print("\n🎯 СЛЕДУЮЩИЕ ШАГИ:")
     print("1. 🔄 Обновить код с исправленными формулами")
     print("2. 📝 Обновить документацию с реальными источниками")
     print("3. ✅ Протестировать новые формулы")
     print("4. 🔬 Валидировать с реальными данными JXCT")
-    
+
     return 0
 
 if __name__ == "__main__":
-    exit(main()) 
+    exit(main())
