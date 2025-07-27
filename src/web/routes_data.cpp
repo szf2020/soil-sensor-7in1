@@ -1088,6 +1088,12 @@ void setupDataRoutes()
                          return;
                      }
                      
+                     // Validate JXCT sensor temperature range (-45 to +115°C)
+                     if (expected < -45 || expected > 115 || measured < -45 || measured > 115) {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Temperature values out of JXCT sensor range (-45 to +115°C)\"}");
+                         return;
+                     }
+                     
                      bool success = gCalibrationService.addTemperatureCalibrationPoint(expected, measured);
                      
                      DynamicJsonDocument response(256);
@@ -1120,8 +1126,14 @@ void setupDataRoutes()
                      float measured = doc["measured"];
                      
                      // Валидация данных
-                     if (isnan(expected) || isnan(measured) || expected < 0 || expected > 100 || measured < 0 || measured > 100) {
-                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid humidity values (0-100%)\"}");
+                     if (isnan(expected) || isnan(measured)) {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid humidity values\"}");
+                         return;
+                     }
+                     
+                     // Validate JXCT sensor humidity range (0-100%RH)
+                     if (expected < 0 || expected > 100 || measured < 0 || measured > 100) {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Humidity values out of JXCT sensor range (0-100%RH)\"}");
                          return;
                      }
                      
@@ -1159,10 +1171,16 @@ void setupDataRoutes()
                      // ИСПРАВЛЕНО: Реальная реализация pH калибровки
                      bool success = false;
                      try {
-                         // Валидация входных данных
-                         if (expected < 0 || measured < 0) {
-                             logWarn("Отрицательные значения pH: expected=" + String(expected) + ", measured=" + String(measured));
-                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Negative values not allowed\"}");
+                         // Валидация входных данных согласно JXCT спецификации
+                         if (isnan(expected) || isnan(measured)) {
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid pH values\"}");
+                             return;
+                         }
+                         
+                         // Validate JXCT sensor pH range (3-9 pH)
+                         if (expected < 3 || expected > 9 || measured < 3 || measured > 9) {
+                             logWarn("pH вне диапазона JXCT: expected=" + String(expected) + ", measured=" + String(measured));
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"pH values out of JXCT sensor range (3-9 pH)\"}");
                              return;
                          }
                          
@@ -1211,10 +1229,16 @@ void setupDataRoutes()
                      // ИСПРАВЛЕНО: Реальная реализация EC калибровки
                      bool success = false;
                      try {
-                         // Валидация входных данных
-                         if (expected < 0 || measured < 0) {
-                             logWarn("Отрицательные значения EC: expected=" + String(expected) + ", measured=" + String(measured));
-                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Negative values not allowed\"}");
+                         // Валидация входных данных согласно JXCT спецификации
+                         if (isnan(expected) || isnan(measured)) {
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid EC values\"}");
+                             return;
+                         }
+                         
+                         // Validate JXCT sensor EC range (0-10000 µS/cm)
+                         if (expected < 0 || expected > 10000 || measured < 0 || measured > 10000) {
+                             logWarn("EC вне диапазона JXCT: expected=" + String(expected) + ", measured=" + String(measured));
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"EC values out of JXCT sensor range (0-10000 µS/cm)\"}");
                              return;
                          }
                          
@@ -1267,10 +1291,16 @@ void setupDataRoutes()
                      // ИСПРАВЛЕНО: Реальная реализация NPK калибровки
                      bool success = false;
                      try {
-                         // Валидация входных данных
-                         if (n < 0 || p < 0 || k < 0) {
-                             logWarn("Отрицательные значения NPK: N=" + String(n) + ", P=" + String(p) + ", K=" + String(k));
-                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Negative values not allowed\"}");
+                         // Валидация входных данных согласно JXCT спецификации
+                         if (isnan(n) || isnan(p) || isnan(k)) {
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid NPK values\"}");
+                             return;
+                         }
+                         
+                         // Validate JXCT sensor NPK range (0-1999 mg/kg)
+                         if (n < 0 || n > 1999 || p < 0 || p > 1999 || k < 0 || k > 1999) {
+                             logWarn("NPK вне диапазона JXCT: N=" + String(n) + ", P=" + String(p) + ", K=" + String(k));
+                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"NPK values out of JXCT sensor range (0-1999 mg/kg)\"}");
                              return;
                          }
                          
