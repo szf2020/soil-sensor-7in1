@@ -478,15 +478,15 @@ void setupDataRoutes()
                 "<tr><td>⚗️ pH</td><td><span id='ph_raw'></span></td><td><span id='ph'></span></td><td><span "
                 "id='ph_rec'></span></td></tr>";
             html +=
-                "<tr><td>🔴 Азот (N), мг/кг</td><td><span id='n_raw'></span></td><td><span "
+                "<tr><td>🌿 Азот (N), мг/кг</td><td><span id='n_raw'></span></td><td><span "
                 "id='n'></span></td><td><span id='n_rec'></span><span id='n_season' "
                 "class='season-adj'></span></td></tr>";
             html +=
-                "<tr><td>🟡 Фосфор (P), мг/кг</td><td><span id='p_raw'></span></td><td><span "
+                "<tr><td>🌱 Фосфор (P), мг/кг</td><td><span id='p_raw'></span></td><td><span "
                 "id='p'></span></td><td><span id='p_rec'></span><span id='p_season' "
                 "class='season-adj'></span></td></tr>";
             html +=
-                "<tr><td>🔵 Калий (K), мг/кг</td><td><span id='k_raw'></span></td><td><span "
+                "<tr><td>🍎 Калий (K), мг/кг</td><td><span id='k_raw'></span></td><td><span "
                 "id='k'></span></td><td><span id='k_rec'></span><span id='k_season' "
                 "class='season-adj'></span></td></tr>";
             html += "</tbody></table></div>";
@@ -574,7 +574,7 @@ void setupDataRoutes()
 
             // NPK калибровка
             html += "<div class='section'>";
-            html += "<h3>🌿🍎 NPK калибровка</h3>";
+            html += "<h3>🌿🌱🍎 NPK калибровка</h3>";
             html += "<p>Введите показания для дистиллированной воды (должны быть близки к нулю):</p>";
             html += "<div class='form-group'>";
             html += "<label for='npk_n'>🌿 N (мг/кг):</label>";
