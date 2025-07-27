@@ -370,11 +370,10 @@ void setupDataRoutes()
             html += "<ul style='margin:5px 0;padding-left:15px;'>";
             html += "<li>🌡️ <strong>Температура:</strong> без изменений</li>";
             html += "<li>💧 <strong>Влажность:</strong> без изменений</li>";
-            html += "<li>⚡ <strong>EC:</strong> температурная компенсация + модель Арчи (Archie, 1942)</li>";
-            html += "<li>⚗️ <strong>pH:</strong> температурная поправка по Нернсту (-0.003×ΔT)</li>";
+            html += "<li>⚡ <strong>EC:</strong> температурная компенсация (Rhoades et al., 1989)</li>";
+            html += "<li>⚗️ <strong>pH:</strong> температурная поправка по Нернсту (Nernst, 1889)</li>";
             html +=
-                "<li>🔴🟡🔵 <strong>NPK:</strong> коррекция по T, влажности и типу почвы (FAO 56 + Eur. J. Soil "
-                "Sci.)</li>";
+                "<li>🔴🟡🔵 <strong>NPK:</strong> экспоненциальная компенсация по T и влажности (Delgado et al., 2020)</li>";
             html += "</ul>";
             html += "</ul>";
             html += "</div>";
@@ -502,7 +501,7 @@ void setupDataRoutes()
             html += "</div>";
 
             // Температура и влажность (offset калибровка)
-            html += "<div class='section' style='background:#fff3cd;padding:15px;border-radius:8px;margin:15px 0;'>";
+            html += "<div class='section' style='background:#f8f9fa;padding:15px;border-radius:8px;margin:15px 0;'>";
             html += "<h3>🌡️💧 Температура и влажность (Offset калибровка)</h3>";
             html += "<p><strong>Инструкция:</strong> Сравните показания датчика с лабораторными приборами и введите поправку.</p>";
             
@@ -575,18 +574,18 @@ void setupDataRoutes()
 
             // NPK калибровка
             html += "<div class='section'>";
-            html += "<h3>🌱 NPK калибровка</h3>";
+            html += "<h3>🌿🍎 NPK калибровка</h3>";
             html += "<p>Введите показания для дистиллированной воды (должны быть близки к нулю):</p>";
             html += "<div class='form-group'>";
-            html += "<label for='npk_n'>N (мг/кг):</label>";
+            html += "<label for='npk_n'>🌿 N - стебель (мг/кг):</label>";
             html += "<input type='number' id='npk_n' step='0.1' min='0' placeholder='0.0'>";
             html += "</div>";
             html += "<div class='form-group'>";
-            html += "<label for='npk_p'>P (мг/кг):</label>";
+            html += "<label for='npk_p'>🌱 P - корень (мг/кг):</label>";
             html += "<input type='number' id='npk_p' step='0.1' min='0' placeholder='0.0'>";
             html += "</div>";
             html += "<div class='form-group'>";
-            html += "<label for='npk_k'>K (мг/кг):</label>";
+            html += "<label for='npk_k'>🍎 K - плод (мг/кг):</label>";
             html += "<input type='number' id='npk_k' step='0.1' min='0' placeholder='0.0'>";
             html += "</div>";
             html += "<button onclick='setNPKPoint()' class='btn btn-primary'>Установить NPK</button>";
@@ -764,7 +763,7 @@ void setupDataRoutes()
             html += "      statusHtml += '<h5>🌡️💧 Offset калибровки:</h5>';";
             html += "      statusHtml += '<p>🌡️ Температура: ' + (data.temperature && data.temperature.status ? data.temperature.status : '❌ Не настроена') + '</p>';";
             html += "      statusHtml += '<p>💧 Влажность: ' + (data.humidity && data.humidity.status ? data.humidity.status : '❌ Не настроена') + '</p>';";
-            html += "      statusHtml += '<h5>🌱 NPK:</h5>';";
+            html += "      statusHtml += '<h5>🌿🍎 NPK:</h5>';";
             html += "      statusHtml += '<p>' + (data.npk && data.npk.status ? data.npk.status : '❌ Не настроена') + '</p>';";
             html += "      statusHtml += '</div>';";
             html += "      statusHtml += '<div>';";
