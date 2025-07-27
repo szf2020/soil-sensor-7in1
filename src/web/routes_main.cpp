@@ -87,10 +87,16 @@ void setupMainRoutes()
                         sizeof(config.thingSpeakChannelId));
                 config.flags.useRealSensor = (uint8_t)webServer.hasArg("real_sensor");
                 config.flags.compensationEnabled = (uint8_t)webServer.hasArg("comp_enabled");
-                // Тип среды выращивания v2.6.1
+                // Тип среды выращивания v3.10.1 (расширенный)
                 if (webServer.hasArg("env_type"))
                 {
-                    config.environmentType = webServer.arg("env_type").toInt();
+                    int envType = webServer.arg("env_type").toInt();
+                    // Валидация: поддерживаем значения 0-5
+                    if (envType >= 0 && envType <= 5) {
+                        config.environmentType = envType;
+                    } else {
+                        config.environmentType = 0; // По умолчанию открытый грунт
+                    }
                 }
                 else
                 {
@@ -292,14 +298,29 @@ void handleRoot()
         html += String("<option value='conifer'") + (strcmp(config.cropId, "conifer") == 0 ? " selected" : "") +
                 ">Хвойные деревья</option>";
         html += "</select></div>";
-        // Тип среды выращивания v2.6.1
+        // Тип среды выращивания v3.10.1 (расширенный)
         const String selectedEnvOutdoor = config.environmentType == 0 ? " selected" : "";
         const String selectedEnvGreenhouse = config.environmentType == 1 ? " selected" : "";
         const String selectedEnvIndoor = config.environmentType == 2 ? " selected" : "";
-        html += "<div class='form-group'><label for='env_type'>Среда:</label><select id='env_type' name='env_type'>";
+        const String selectedEnvHydroponics = config.environmentType == 3 ? " selected" : "";
+        const String selectedEnvAeroponics = config.environmentType == 4 ? " selected" : "";
+        const String selectedEnvOrganic = config.environmentType == 5 ? " selected" : "";
+        
+        html += "<div class='form-group'><label for='env_type'>Среда выращивания:</label><select id='env_type' name='env_type'>";
         html += String("<option value='0'") + selectedEnvOutdoor + ">Открытый грунт</option>";
         html += String("<option value='1'") + selectedEnvGreenhouse + ">Теплица</option>";
-        html += String("<option value='2'") + selectedEnvIndoor + ">Комнатная</option></select></div>";
+        html += String("<option value='2'") + selectedEnvIndoor + ">Комнатная</option>";
+        html += String("<option value='3'") + selectedEnvHydroponics + ">Гидропоника ⚠️</option>";
+        html += String("<option value='4'") + selectedEnvAeroponics + ">Аэропоника ❌</option>";
+        html += String("<option value='5'") + selectedEnvOrganic + ">Органическое</option></select></div>";
+        
+        // Информация о совместимости
+        html += "<div class='info-box' style='background: #f0f8ff; border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 5px;'>";
+        html += "<strong>ℹ️ Информация о совместимости:</strong><br>";
+        html += "• <strong>Открытый грунт/Теплица/Органическое:</strong> Все измерения доступны<br>";
+        html += "• <strong>Гидропоника:</strong> EC, pH, температура, влажность (NPK недоступны)<br>";
+        html += "• <strong>Аэропоника:</strong> Несовместима с почвенным датчиком<br>";
+        html += "</div>";
 
         // Сезонные коэффициенты
         const String seasonalChecked = config.flags.seasonalAdjustEnabled ? " checked" : "";

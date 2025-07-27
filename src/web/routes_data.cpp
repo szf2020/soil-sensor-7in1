@@ -61,14 +61,17 @@ RecValues computeRecommendations()
         SoilProfile::SANDPEAT  // 4
     }};
 
-    static const std::array<EnvironmentType, 3> envTypes = {{
-        EnvironmentType::OUTDOOR,     // 0
-        EnvironmentType::GREENHOUSE,  // 1
-        EnvironmentType::INDOOR       // 2
+    static const std::array<EnvironmentType, 6> envTypes = {{
+        EnvironmentType::OUTDOOR,     // 0 - Открытый грунт
+        EnvironmentType::GREENHOUSE,  // 1 - Теплица
+        EnvironmentType::INDOOR,      // 2 - Комнатная
+        EnvironmentType::OUTDOOR,     // 3 - Гидропоника (используем OUTDOOR как базовый)
+        EnvironmentType::OUTDOOR,     // 4 - Аэропоника (используем OUTDOOR как базовый)
+        EnvironmentType::OUTDOOR      // 5 - Органическое (используем OUTDOOR как базовый)
     }};
 
     const int soilIndex = (config.soilProfile >= 0 && config.soilProfile < 5) ? config.soilProfile : 0;
-    const int envIndex = (config.environmentType >= 0 && config.environmentType < 3) ? config.environmentType : 0;
+    const int envIndex = (config.environmentType >= 0 && config.environmentType < 6) ? config.environmentType : 0;
 
     soilProfile = soilProfiles[soilIndex];
     envType = envTypes[envIndex];
@@ -192,31 +195,47 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     }
 
     StaticJsonDocument<SENSOR_JSON_DOC_SIZE> doc;
-    doc["temperature"] = format_temperature(sensorData.temperature);
-    doc["humidity"] = format_moisture(sensorData.humidity);
-    doc["ec"] = format_ec(sensorData.ec);
-    doc["ph"] = format_ph(sensorData.ph);
-    doc["nitrogen"] = format_npk(sensorData.nitrogen);
-    doc["phosphorus"] = format_npk(sensorData.phosphorus);
-    doc["potassium"] = format_npk(sensorData.potassium);
-    doc["raw_temperature"] = format_temperature(sensorData.raw_temperature);
-    doc["raw_humidity"] = format_moisture(sensorData.raw_humidity);
-    doc["raw_ec"] = format_ec(sensorData.raw_ec);
-    doc["raw_ph"] = format_ph(sensorData.raw_ph);
-    doc["raw_nitrogen"] = format_npk(sensorData.raw_nitrogen);
-    doc["raw_phosphorus"] = format_npk(sensorData.raw_phosphorus);
-    doc["raw_potassium"] = format_npk(sensorData.raw_potassium);
+    
+    // Определяем совместимость с типом среды выращивания
+    bool npkAvailable = true;
+    bool allAvailable = true;
+    
+    if (config.environmentType == 3) {  // Гидропоника
+        npkAvailable = false;  // NPK недоступны в растворе
+    } else if (config.environmentType == 4) {  // Аэропоника
+        allAvailable = false;  // Все измерения недоступны
+    }
+    
+    // Основные измерения (всегда доступны для совместимых типов)
+    doc["temperature"] = allAvailable ? format_temperature(sensorData.temperature) : "—";
+    doc["humidity"] = allAvailable ? format_moisture(sensorData.humidity) : "—";
+    doc["ec"] = allAvailable ? format_ec(sensorData.ec) : "—";
+    doc["ph"] = allAvailable ? format_ph(sensorData.ph) : "—";
+    
+    // NPK измерения (доступны только для почвенных типов)
+    doc["nitrogen"] = npkAvailable ? format_npk(sensorData.nitrogen) : "—";
+    doc["phosphorus"] = npkAvailable ? format_npk(sensorData.phosphorus) : "—";
+    doc["potassium"] = npkAvailable ? format_npk(sensorData.potassium) : "—";
+    
+    // RAW измерения (то же правило совместимости)
+    doc["raw_temperature"] = allAvailable ? format_temperature(sensorData.raw_temperature) : "—";
+    doc["raw_humidity"] = allAvailable ? format_moisture(sensorData.raw_humidity) : "—";
+    doc["raw_ec"] = allAvailable ? format_ec(sensorData.raw_ec) : "—";
+    doc["raw_ph"] = allAvailable ? format_ph(sensorData.raw_ph) : "—";
+    doc["raw_nitrogen"] = npkAvailable ? format_npk(sensorData.raw_nitrogen) : "—";
+    doc["raw_phosphorus"] = npkAvailable ? format_npk(sensorData.raw_phosphorus) : "—";
+    doc["raw_potassium"] = npkAvailable ? format_npk(sensorData.raw_potassium) : "—";
     doc["irrigation"] = sensorData.recentIrrigation;
     doc["valid"] = validateSensorData(sensorData);  // Флаг валидности по лимитам датчика
 
     const RecValues rec = computeRecommendations();
-    doc["rec_temperature"] = format_temperature(rec.t);
-    doc["rec_humidity"] = format_moisture(rec.hum);
-    doc["rec_ec"] = format_ec(rec.ec);
-    doc["rec_ph"] = format_ph(rec.ph);
-    doc["rec_nitrogen"] = format_npk(rec.n);
-    doc["rec_phosphorus"] = format_npk(rec.p);
-    doc["rec_potassium"] = format_npk(rec.k);
+    doc["rec_temperature"] = allAvailable ? format_temperature(rec.t) : "—";
+    doc["rec_humidity"] = allAvailable ? format_moisture(rec.hum) : "—";
+    doc["rec_ec"] = allAvailable ? format_ec(rec.ec) : "—";
+    doc["rec_ph"] = allAvailable ? format_ph(rec.ph) : "—";
+    doc["rec_nitrogen"] = npkAvailable ? format_npk(rec.n) : "—";
+    doc["rec_phosphorus"] = npkAvailable ? format_npk(rec.p) : "—";
+    doc["rec_potassium"] = npkAvailable ? format_npk(rec.k) : "—";
 
     // ---- Дополнительная информация ----
     // Сезон по текущему месяцу
@@ -303,34 +322,39 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
         }
         alerts += n;
     };
-    // Физические пределы датчика
-    if (sensorData.temperature < TEMP_MIN_VALID || sensorData.temperature > TEMP_MAX_VALID)
-    {
-        append("T");
+    // Физические пределы датчика (только если измерения доступны)
+    if (allAvailable) {
+        if (sensorData.temperature < TEMP_MIN_VALID || sensorData.temperature > TEMP_MAX_VALID)
+        {
+            append("T");
+        }
+        if (sensorData.humidity < HUM_MIN_VALID || sensorData.humidity > HUM_MAX_VALID)
+        {
+            append("θ");
+        }
+        if (sensorData.ec < 0 || sensorData.ec > EC_MAX_VALID)
+        {
+            append("EC");
+        }
+        if (sensorData.ph < 3 || sensorData.ph > 9)
+        {
+            append("pH");
+        }
     }
-    if (sensorData.humidity < HUM_MIN_VALID || sensorData.humidity > HUM_MAX_VALID)
-    {
-        append("θ");
-    }
-    if (sensorData.ec < 0 || sensorData.ec > EC_MAX_VALID)
-    {
-        append("EC");
-    }
-    if (sensorData.ph < 3 || sensorData.ph > 9)
-    {
-        append("pH");
-    }
-    if (sensorData.nitrogen < 0 || sensorData.nitrogen > NPK_MAX_VALID)
-    {
-        append("N");
-    }
-    if (sensorData.phosphorus < 0 || sensorData.phosphorus > NPK_MAX_VALID)
-    {
-        append("P");
-    }
-    if (sensorData.potassium < 0 || sensorData.potassium > NPK_MAX_VALID)
-    {
-        append("K");
+    // Проверяем валидность NPK значений (только если доступны)
+    if (npkAvailable) {
+        if (sensorData.nitrogen < 0 || sensorData.nitrogen > NPK_MAX_VALID)
+        {
+            append("N");
+        }
+        if (sensorData.phosphorus < 0 || sensorData.phosphorus > NPK_MAX_VALID)
+        {
+            append("P");
+        }
+        if (sensorData.potassium < 0 || sensorData.potassium > NPK_MAX_VALID)
+        {
+            append("K");
+        }
     }
     doc["alerts"] = alerts;
 
