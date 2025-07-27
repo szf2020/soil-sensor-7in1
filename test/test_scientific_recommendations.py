@@ -250,9 +250,14 @@ def simulate_recommendation_api(request_data):
             "potassium": 1.22    # +22% качество плодов
         },
         "hydroponics": {
-            "nitrogen": 1.40,    # +40% точное питание [Источник: Hydroponic Crop Production, Acta Horticulturae, 2018]
-            "phosphorus": 1.30,  # +30% доступность
-            "potassium": 1.35    # +35% качество
+            "nitrogen": 0.0,     # ❌ НЕ ИЗМЕРЯЕТСЯ почвенным датчиком в растворе
+            "phosphorus": 0.0,   # ❌ НЕ ИЗМЕРЯЕТСЯ почвенным датчиком в растворе
+            "potassium": 0.0     # ❌ НЕ ИЗМЕРЯЕТСЯ почвенным датчиком в растворе
+        },
+        "aeroponics": {
+            "nitrogen": 0.0,     # ❌ НЕ СОВМЕСТИМО с почвенным датчиком
+            "phosphorus": 0.0,   # ❌ НЕ СОВМЕСТИМО с почвенным датчиком
+            "potassium": 0.0     # ❌ НЕ СОВМЕСТИМО с почвенным датчиком
         },
         "organic": {
             "nitrogen": 0.85,    # -15% органический азот [Источник: Organic Farming Guidelines, IFOAM, 2020]

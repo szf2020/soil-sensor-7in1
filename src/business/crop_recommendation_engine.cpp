@@ -291,21 +291,23 @@ CropConfig applyGrowingTypeAdjustments(const CropConfig& base, const String& gro
     }
     else if (growingType == "hydroponics")
     {
-        // Гидропоника: точный контроль питательных веществ [Источник: Hydroponic Crop Production, Acta Horticulturae,
-        // 2018]
+        // ⚠️ ГИДРОПОНИКА: ОГРАНИЧЕННАЯ СОВМЕСТИМОСТЬ С ПОЧВЕННЫМ ДАТЧИКОМ
+        // Почвенный датчик может измерять только EC и pH в растворе
+        // NPK измерения недоступны в жидкой среде
         adjusted.ec += 500.0F;         // Высокая концентрация питательных веществ
-        adjusted.nitrogen *= 1.40F;    // +40% точное питание
-        adjusted.phosphorus *= 1.30F;  // +30% доступность
-        adjusted.potassium *= 1.35F;   // +35% качество
+        adjusted.nitrogen = 0.0F;      // ❌ НЕ ИЗМЕРЯЕТСЯ в растворе
+        adjusted.phosphorus = 0.0F;    // ❌ НЕ ИЗМЕРЯЕТСЯ в растворе  
+        adjusted.potassium = 0.0F;     // ❌ НЕ ИЗМЕРЯЕТСЯ в растворе
     }
     else if (growingType == "aeroponics")
     {
-        // Аэропоника: максимальная эффективность [Источник: Aeroponic Systems, Journal of Agricultural Engineering,
-        // 2019]
-        adjusted.ec += 400.0F;
-        adjusted.nitrogen *= 1.35F;    // +35% эффективность
-        adjusted.phosphorus *= 1.25F;  // +25% развитие
-        adjusted.potassium *= 1.30F;   // +30% качество
+        // ⚠️ АЭРОПОНИКА: НЕ СОВМЕСТИМА С ПОЧВЕННЫМ ДАТЧИКОМ
+        // Датчик не может быть установлен в воздушной среде
+        // Все измерения недоступны
+        adjusted.ec = 0.0F;            // ❌ НЕ ИЗМЕРЯЕТСЯ в воздухе
+        adjusted.nitrogen = 0.0F;      // ❌ НЕ ИЗМЕРЯЕТСЯ в воздухе
+        adjusted.phosphorus = 0.0F;    // ❌ НЕ ИЗМЕРЯЕТСЯ в воздухе
+        adjusted.potassium = 0.0F;     // ❌ НЕ ИЗМЕРЯЕТСЯ в воздухе
     }
     else if (growingType == "organic")
     {
