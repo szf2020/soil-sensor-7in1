@@ -88,16 +88,57 @@ NPKCoefficients npkCoefficients = {
 
 ## 2. Архитектура процесса компенсации {#2-архитектура-процесса-компенсации}
 
-### 2.1 Блок-схема алгоритма
+### 2.1 Модульная архитектура v3.10.1
 
 ```mermaid
 graph TD
-    A[Сырые данные датчиков] --> B[Валидация входных данных]
-    B --> C{Данные валидны?}
-    C -->|Да| D[EC-компенсация]
-    C -->|Нет| E[Ошибка E102]
-    D --> F[pH-компенсация]
-    F --> G[NPK-компенсация]
+    A[📊 Сырые данные датчиков] --> B[🔧 SensorCalibrationService]
+    B --> C[🔬 SensorCompensationService]
+    C --> D[🧪 ScientificValidationService]
+    D --> E[🌱 CropRecommendationEngine]
+    E --> F[🌐 Веб-интерфейс]
+    
+    G[📋 Конфигурация] --> B
+    G --> C
+    G --> D
+    G --> E
+```
+
+### 2.2 Сервисы научной валидации
+
+#### **SensorCalibrationService**
+- **Назначение**: Применение калибровочных таблиц
+- **Применение**: ВСЕГДА (обязательно)
+- **Метод**: `applyCalibration(sensorData, soilProfile)`
+
+#### **SensorCompensationService** 
+- **Назначение**: Научные формулы компенсации
+- **Применение**: ТОЛЬКО если включено в настройках
+- **Методы**: 
+  - `correctEC(ec, soilType, temperature)`
+  - `correctPH(temperature, ph)`
+  - `correctNPK(temperature, humidity, soilType, npk)`
+
+#### **ScientificValidationService**
+- **Назначение**: Валидация всех формул и источников
+- **Проверки**: DOI, научные журналы, коэффициенты
+- **Методы**: `validateCompensationFormula()`, `validateSoilCoefficients()`
+
+### 2.3 Поток обработки данных
+
+```cpp
+void processSensorData(SensorData& sensorData, const Config& config) {
+    // 1. ВСЕГДА применяем калибровку
+    gCalibrationService.applyCalibration(sensorData, profile);
+    
+    // 2. Применяем компенсацию ТОЛЬКО если включена
+    if (config.flags.compensationEnabled) {
+        gCompensationService.correctEC(sensorData.ec, soil, sensorData.temperature);
+        gCompensationService.correctPH(sensorData.temperature, sensorData.ph);
+        gCompensationService.correctNPK(sensorData.temperature, sensorData.humidity, soil, npk);
+    }
+}
+```
     G --> H[Финальные скорректированные данные]
     E --> I[Логирование ошибки]
 ```
