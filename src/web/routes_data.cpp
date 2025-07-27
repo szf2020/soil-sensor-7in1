@@ -919,13 +919,10 @@ void setupDataRoutes()
     webServer.on("/api/calibration/status", HTTP_GET,
                  []()
                  {
-                     DynamicJsonDocument doc(512);
-                     doc["status"] = "Калибровка не настроена";  // Временно
-                     doc["complete"] = false;
-
-                     String response;
-                     serializeJson(doc, response);
-                     webServer.send(200, "application/json", response);
+                     logWebRequest("GET", "/api/calibration/status", webServer.client().remoteIP().toString());
+                     
+                     String statusJson = gCalibrationService.getCalibrationStatus();
+                     webServer.send(200, "application/json", statusJson);
                  });
 
     webServer.on("/api/calibration/ph/add", HTTP_POST,
