@@ -463,78 +463,159 @@ void setupDataRoutes()
                 "class='season-adj'></span></td></tr>";
             html += "</tbody></table></div>";
 
-            // ======= КАЛИБРОВКА =======
+            // ======= СОВРЕМЕННАЯ КАЛИБРОВКА =======
             html += "<div class='section'><h2>⚙️ Калибровка датчика</h2>";
 
             // Статус калибровки
             html += "<div style='background:#f8f9fa;padding:15px;border-radius:8px;margin:15px 0;'>";
-            html += "<h4>📊 Текущий статус калибровки</h4>";
-            html += "<div id='calibration-status'>Загрузка статуса...</div>";
+            html += "<h4>📊 Статус калибровки</h4>";
+            html += "<div id='calibration-status'>Загрузка...</div>";
             html += "</div>";
 
-            // pH калибровка
-            html += "<div class='section'>";
-            html += "<h3>🧪 pH калибровка</h3>";
-            html += "<p>Введите показания для буферных растворов pH:</p>";
+            // Температура и влажность (offset калибровка)
+            html += "<div class='section' style='background:#fff3cd;padding:15px;border-radius:8px;'>";
+            html += "<h3>🌡️ Температура и влажность (Offset калибровка)</h3>";
+            html += "<p><strong>Инструкция:</strong> Измерьте показания лабораторными приборами и введите разность.</p>";
+            
+            html += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:20px;'>";
+            
+            // Температура
+            html += "<div>";
+            html += "<h4>🌡️ Температура</h4>";
             html += "<div class='form-group'>";
-            html += "<label for='ph_expected'>Ожидаемое значение pH:</label>";
-            html += "<input type='number' id='ph_expected' step='0.1' min='0' max='14' placeholder='7.0'>";
+            html += "<label for='temp_lab'>Лабораторный термометр (°C):</label>";
+            html += "<input type='number' id='temp_lab' step='0.1' placeholder='25.0'>";
             html += "</div>";
             html += "<div class='form-group'>";
-            html += "<label for='ph_measured'>Измеренное значение pH:</label>";
-            html += "<input type='number' id='ph_measured' step='0.1' min='0' max='14' placeholder='6.8'>";
+            html += "<label for='temp_sensor'>Показание датчика (°C):</label>";
+            html += "<input type='number' id='temp_sensor' step='0.1' placeholder='24.5'>";
+            html += "</div>";
+            html += "<button onclick='calibrateTemperature()' class='btn btn-primary'>Калибровать температуру</button>";
+            html += "<div id='temp-status' style='margin-top:10px;font-size:14px;'></div>";
+            html += "</div>";
+            
+            // Влажность
+            html += "<div>";
+            html += "<h4>💧 Влажность</h4>";
+            html += "<div class='form-group'>";
+            html += "<label for='hum_lab'>Лабораторный гигрометр (%):</label>";
+            html += "<input type='number' id='hum_lab' step='0.1' placeholder='60.0'>";
+            html += "</div>";
+            html += "<div class='form-group'>";
+            html += "<label for='hum_sensor'>Показание датчика (%):</label>";
+            html += "<input type='number' id='hum_sensor' step='0.1' placeholder='58.5'>";
+            html += "</div>";
+            html += "<button onclick='calibrateHumidity()' class='btn btn-primary'>Калибровать влажность</button>";
+            html += "<div id='hum-status' style='margin-top:10px;font-size:14px;'></div>";
+            html += "</div>";
+            
+            html += "</div>";
+            html += "</div>";
+
+            // pH и EC (многоточечная калибровка)
+            html += "<div class='section' style='background:#d1ecf1;padding:15px;border-radius:8px;'>";
+            html += "<h3>🧪 pH и EC (Многоточечная калибровка)</h3>";
+            html += "<p><strong>Инструкция:</strong> Добавьте минимум 2 точки для каждого параметра, затем рассчитайте коэффициенты.</p>";
+            
+            html += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:20px;'>";
+            
+            // pH калибровка
+            html += "<div>";
+            html += "<h4>🧪 pH калибровка</h4>";
+            html += "<div class='form-group'>";
+            html += "<label for='ph_expected'>Буферный раствор pH:</label>";
+            html += "<select id='ph_expected'>";
+            html += "<option value='4.01'>pH 4.01 (кислый)</option>";
+            html += "<option value='7.00' selected>pH 7.00 (нейтральный)</option>";
+            html += "<option value='10.01'>pH 10.01 (щелочной)</option>";
+            html += "<option value=''>Другое значение</option>";
+            html += "</select>";
+            html += "</div>";
+            html += "<div class='form-group'>";
+            html += "<label for='ph_expected_custom'>Или введите значение:</label>";
+            html += "<input type='number' id='ph_expected_custom' step='0.01' min='0' max='14' placeholder='7.00'>";
+            html += "</div>";
+            html += "<div class='form-group'>";
+            html += "<label for='ph_measured'>Показание датчика:</label>";
+            html += "<input type='number' id='ph_measured' step='0.01' min='0' max='14' placeholder='6.85'>";
             html += "</div>";
             html += "<button onclick='addPHPoint()' class='btn btn-primary'>Добавить точку pH</button>";
+            html += "<button onclick='calculatePH()' class='btn btn-success' style='margin-left:10px;'>Рассчитать pH</button>";
             html += "<div id='ph-points' style='margin-top:10px;'></div>";
+            html += "<div id='ph-coefficients' style='margin-top:10px;background:#e7f3ff;padding:10px;border-radius:5px;display:none;'>";
+            html += "<h5>Коэффициенты pH:</h5>";
+            html += "<p>y = <span id='ph_slope'>1.000</span> × x + <span id='ph_intercept'>0.000</span></p>";
+            html += "<p>R² = <span id='ph_r_squared'>0.000</span> | Точек: <span id='ph_point_count'>0</span></p>";
             html += "</div>";
-
+            html += "</div>";
+            
             // EC калибровка
-            html += "<div class='section'>";
-            html += "<h3>⚡ EC калибровка</h3>";
-            html += "<p>Введите показания для стандартных растворов EC:</p>";
+            html += "<div>";
+            html += "<h4>⚡ EC калибровка</h4>";
             html += "<div class='form-group'>";
-            html += "<label for='ec_expected'>Ожидаемое значение EC (мСм/см):</label>";
-            html += "<input type='number' id='ec_expected' step='0.1' min='0' placeholder='1.0'>";
+            html += "<label for='ec_expected'>Стандартный раствор EC (µS/cm):</label>";
+            html += "<select id='ec_expected'>";
+            html += "<option value='84'>84 µS/cm (дист. вода)</option>";
+            html += "<option value='1413' selected>1413 µS/cm (стандарт)</option>";
+            html += "<option value='12880'>12880 µS/cm (высокий)</option>";
+            html += "<option value=''>Другое значение</option>";
+            html += "</select>";
             html += "</div>";
             html += "<div class='form-group'>";
-            html += "<label for='ec_measured'>Измеренное значение EC (мСм/см):</label>";
-            html += "<input type='number' id='ec_measured' step='0.1' min='0' placeholder='0.95'>";
+            html += "<label for='ec_expected_custom'>Или введите значение:</label>";
+            html += "<input type='number' id='ec_expected_custom' step='1' min='0' placeholder='1413'>";
+            html += "</div>";
+            html += "<div class='form-group'>";
+            html += "<label for='ec_measured'>Показание датчика (µS/cm):</label>";
+            html += "<input type='number' id='ec_measured' step='1' min='0' placeholder='1380'>";
             html += "</div>";
             html += "<button onclick='addECPoint()' class='btn btn-primary'>Добавить точку EC</button>";
+            html += "<button onclick='calculateEC()' class='btn btn-success' style='margin-left:10px;'>Рассчитать EC</button>";
             html += "<div id='ec-points' style='margin-top:10px;'></div>";
+            html += "<div id='ec-coefficients' style='margin-top:10px;background:#e7f3ff;padding:10px;border-radius:5px;display:none;'>";
+            html += "<h5>Коэффициенты EC:</h5>";
+            html += "<p>y = <span id='ec_slope'>1.000</span> × x + <span id='ec_intercept'>0.000</span></p>";
+            html += "<p>R² = <span id='ec_r_squared'>0.000</span> | Точек: <span id='ec_point_count'>0</span></p>";
+            html += "</div>";
+            html += "</div>";
+            
+            html += "</div>";
             html += "</div>";
 
-            // NPK калибровка
-            html += "<div class='section'>";
-            html += "<h3>🌱 NPK калибровка</h3>";
-            html += "<p>Введите показания для дистиллированной воды (должны быть близки к нулю):</p>";
+            // NPK калибровка (нулевая точка)
+            html += "<div class='section' style='background:#d4edda;padding:15px;border-radius:8px;'>";
+            html += "<h3>🌱 NPK (Нулевая точка по дистиллированной воде)</h3>";
+            html += "<p><strong>Инструкция:</strong> Поместите датчик в дистиллированную воду и введите показания. Ожидаемые значения близки к нулю.</p>";
+            
+            html += "<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;'>";
+            
             html += "<div class='form-group'>";
-            html += "<label for='npk_n'>N (мг/кг):</label>";
-            html += "<input type='number' id='npk_n' step='0.1' min='0' placeholder='0.0'>";
+            html += "<label for='npk_n'>🔴 Азот (N), мг/кг:</label>";
+            html += "<input type='number' id='npk_n' step='0.1' min='0' placeholder='2.1'>";
             html += "</div>";
             html += "<div class='form-group'>";
-            html += "<label for='npk_p'>P (мг/кг):</label>";
-            html += "<input type='number' id='npk_p' step='0.1' min='0' placeholder='0.0'>";
+            html += "<label for='npk_p'>🟡 Фосфор (P), мг/кг:</label>";
+            html += "<input type='number' id='npk_p' step='0.1' min='0' placeholder='1.8'>";
             html += "</div>";
             html += "<div class='form-group'>";
-            html += "<label for='npk_k'>K (мг/кг):</label>";
-            html += "<input type='number' id='npk_k' step='0.1' min='0' placeholder='0.0'>";
+            html += "<label for='npk_k'>🔵 Калий (K), мг/кг:</label>";
+            html += "<input type='number' id='npk_k' step='0.1' min='0' placeholder='3.2'>";
             html += "</div>";
-            html += "<button onclick='setNPKPoint()' class='btn btn-primary'>Установить NPK</button>";
+            
+            html += "</div>";
+            html += "<button onclick='setNPKZeroPoint()' class='btn btn-primary'>Установить нулевую точку NPK</button>";
+            html += "<div id='npk-status' style='margin-top:10px;font-size:14px;'></div>";
             html += "</div>";
 
-            // Действия
-            html += "<div class='section'>";
-            html += "<h3>⚙️ Действия</h3>";
-            html += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;'>";
-            html += "<button onclick='calculatePH()' class='btn btn-success'>Рассчитать pH</button>";
-            html += "<button onclick='calculateEC()' class='btn btn-success'>Рассчитать EC</button>";
+            // Управление калибровкой
+            html += "<div class='section' style='background:#f8f9fa;padding:15px;border-radius:8px;'>";
+            html += "<h3>⚙️ Управление калибровкой</h3>";
+            html += "<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:15px;'>";
+            html += "<button onclick='exportCalibration()' class='btn btn-info'>📤 Экспорт калибровки</button>";
+            html += "<button onclick='importCalibration()' class='btn btn-info'>📥 Импорт калибровки</button>";
+            html += "<button onclick='resetCalibration()' class='btn btn-danger'>🗑️ Сбросить всё</button>";
             html += "</div>";
-            html += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;'>";
-            html += "<button onclick='exportCalibration()' class='btn btn-info'>Экспорт</button>";
-            html += "<button onclick='importCalibration()' class='btn btn-info'>Импорт</button>";
-            html += "</div>";
-            html += "<button onclick='resetCalibration()' class='btn btn-danger'>Сбросить калибровку</button>";
+            html += "<input type='file' id='calibration-file' accept='.json' style='display:none;' onchange='loadCalibrationFile()'>";
             html += "</div>";
 
             // ======= ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ =======
@@ -680,17 +761,121 @@ void setupDataRoutes()
             html += "});";
             html += "}";
 
-            // Функции калибровки
+            // Обновление статуса калибровки
             html += "function updateCalibrationStatus() {";
             html += "  fetch('/api/calibration/status')";
-            html += "    .then(response => response.json())";
+            html += "    .then(response => {";
+            html += "      console.log('Status response:', response.status);";
+            html += "      return response.json();";
+            html += "    })";
             html += "    .then(data => {";
-            html += "      document.getElementById('calibration-status').innerHTML = data.status;";
+            html += "      console.log('Calibration status data:', data);";
+            html += "      if(data.error) {";
+            html += "        document.getElementById('calibration-status').innerHTML = '❌ ' + data.error;";
+            html += "        console.error('Calibration error:', data.error);";
+            html += "        return;";
+            html += "      }";
+            html += "      ";
+            html += "      let statusHtml = '<div style=\"display:grid;grid-template-columns:1fr 1fr;gap:20px;\">';";
+            html += "      ";
+            html += "      // Левая колонка";
+            html += "      statusHtml += '<div>';";
+            html += "      statusHtml += '<h5>🌡️💧 Offset калибровки:</h5>';";
+            html += "      statusHtml += '<p>🌡️ Температура: ' + (data.temperature && data.temperature.status ? data.temperature.status : '❌ Не настроена') + '</p>';";
+            html += "      statusHtml += '<p>💧 Влажность: ' + (data.humidity && data.humidity.status ? data.humidity.status : '❌ Не настроена') + '</p>';";
+            html += "      statusHtml += '<h5>🌱 NPK калибровка:</h5>';";
+            html += "      statusHtml += '<p>' + (data.npk && data.npk.status ? data.npk.status : '❌ Не настроена') + '</p>';";
+            html += "      statusHtml += '</div>';";
+            html += "      ";
+            html += "      // Правая колонка";
+            html += "      statusHtml += '<div>';";
+            html += "      statusHtml += '<h5>🧪⚡ Многоточечные:</h5>';";
+            html += "      statusHtml += '<p>🧪 pH: ' + (data.ph && data.ph.status ? data.ph.status : '❌ Не настроена') + '</p>';";
+            html += "      statusHtml += '<p>⚡ EC: ' + (data.ec && data.ec.status ? data.ec.status : '❌ Не настроена') + '</p>';";
+            html += "      statusHtml += '<h5>📊 Общий статус:</h5>';";
+            html += "      const completeIcon = data.is_complete ? '✅' : '⏳';";
+            html += "      const completeText = data.is_complete ? 'Полностью настроена' : 'Требует настройки';";
+            html += "      statusHtml += '<p><strong>' + completeIcon + ' ' + completeText + '</strong></p>';";
+            html += "      statusHtml += '</div>';";
+            html += "      ";
+            html += "      statusHtml += '</div>';";
+            html += "      ";
+            html += "      // Отладочная информация";
+            html += "      statusHtml += '<div style=\"margin-top:15px;font-size:12px;color:#666;\">';";
+            html += "      statusHtml += 'Обновлено: ' + new Date().toLocaleTimeString();";
+            html += "      statusHtml += ' | Данных получено: ' + Object.keys(data).length;";
+            html += "      statusHtml += '</div>';";
+            html += "      ";
+            html += "      document.getElementById('calibration-status').innerHTML = statusHtml;";
+            html += "    })";
+            html += "    .catch(err => {";
+            html += "      console.error('Fetch error:', err);";
+            html += "      document.getElementById('calibration-status').innerHTML = '❌ Ошибка загрузки статуса: ' + err.message;";
             html += "    });";
             html += "}";
+            // ========== НОВЫЕ ФУНКЦИИ КАЛИБРОВКИ ==========
+            
+            // Температура
+            html += "function calibrateTemperature() {";
+            html += "  const lab = parseFloat(document.getElementById('temp_lab').value);";
+            html += "  const sensor = parseFloat(document.getElementById('temp_sensor').value);";
+            html += "  if(isNaN(lab) || isNaN(sensor)) {";
+            html += "    alert('Введите корректные значения температуры');";
+            html += "    return;";
+            html += "  }";
+            html += "  fetch('/api/calibration/temperature/add', {";
+            html += "    method: 'POST',";
+            html += "    headers: {'Content-Type': 'application/json'},";
+            html += "    body: JSON.stringify({expected: lab, measured: sensor})";
+            html += "  }).then(response => response.json())";
+            html += "    .then(data => {";
+            html += "      if(data.success) {";
+            html += "        const offset = (lab - sensor).toFixed(2);";
+            html += "        document.getElementById('temp-status').innerHTML = '✅ Offset: ' + offset + '°C';";
+            html += "        updateCalibrationStatus();";
+            html += "      } else {";
+            html += "        document.getElementById('temp-status').innerHTML = '❌ Ошибка калибровки';";
+            html += "      }";
+            html += "    });";
+            html += "}";
+            
+            // Влажность
+            html += "function calibrateHumidity() {";
+            html += "  const lab = parseFloat(document.getElementById('hum_lab').value);";
+            html += "  const sensor = parseFloat(document.getElementById('hum_sensor').value);";
+            html += "  if(isNaN(lab) || isNaN(sensor)) {";
+            html += "    alert('Введите корректные значения влажности');";
+            html += "    return;";
+            html += "  }";
+            html += "  fetch('/api/calibration/humidity/add', {";
+            html += "    method: 'POST',";
+            html += "    headers: {'Content-Type': 'application/json'},";
+            html += "    body: JSON.stringify({expected: lab, measured: sensor})";
+            html += "  }).then(response => response.json())";
+            html += "    .then(data => {";
+            html += "      if(data.success) {";
+            html += "        const offset = (lab - sensor).toFixed(2);";
+            html += "        document.getElementById('hum-status').innerHTML = '✅ Offset: ' + offset + '%';";
+            html += "        updateCalibrationStatus();";
+            html += "      } else {";
+            html += "        document.getElementById('hum-status').innerHTML = '❌ Ошибка калибровки';";
+            html += "      }";
+            html += "    });";
+            html += "}";
+            
+            // pH калибровка
             html += "function addPHPoint() {";
-            html += "  const expected = parseFloat(document.getElementById('ph_expected').value);";
+            html += "  let expected = document.getElementById('ph_expected').value;";
+            html += "  if(expected === '') {";
+            html += "    expected = parseFloat(document.getElementById('ph_expected_custom').value);";
+            html += "  } else {";
+            html += "    expected = parseFloat(expected);";
+            html += "  }";
             html += "  const measured = parseFloat(document.getElementById('ph_measured').value);";
+            html += "  if(isNaN(expected) || isNaN(measured)) {";
+            html += "    alert('Введите корректные значения pH');";
+            html += "    return;";
+            html += "  }";
             html += "  fetch('/api/calibration/ph/add', {";
             html += "    method: 'POST',";
             html += "    headers: {'Content-Type': 'application/json'},";
@@ -698,15 +883,27 @@ void setupDataRoutes()
             html += "  }).then(response => response.json())";
             html += "    .then(data => {";
             html += "      if(data.success) {";
+            html += "        updatePHPoints();";
             html += "        updateCalibrationStatus();";
-            html += "        document.getElementById('ph_expected').value = '';";
             html += "        document.getElementById('ph_measured').value = '';";
+            html += "      } else {";
+            html += "        alert('Ошибка добавления точки pH');";
             html += "      }";
             html += "    });";
             html += "}";
+            // EC калибровка
             html += "function addECPoint() {";
-            html += "  const expected = parseFloat(document.getElementById('ec_expected').value);";
+            html += "  let expected = document.getElementById('ec_expected').value;";
+            html += "  if(expected === '') {";
+            html += "    expected = parseFloat(document.getElementById('ec_expected_custom').value);";
+            html += "  } else {";
+            html += "    expected = parseFloat(expected);";
+            html += "  }";
             html += "  const measured = parseFloat(document.getElementById('ec_measured').value);";
+            html += "  if(isNaN(expected) || isNaN(measured)) {";
+            html += "    alert('Введите корректные значения EC');";
+            html += "    return;";
+            html += "  }";
             html += "  fetch('/api/calibration/ec/add', {";
             html += "    method: 'POST',";
             html += "    headers: {'Content-Type': 'application/json'},";
@@ -714,16 +911,24 @@ void setupDataRoutes()
             html += "  }).then(response => response.json())";
             html += "    .then(data => {";
             html += "      if(data.success) {";
+            html += "        updateECPoints();";
             html += "        updateCalibrationStatus();";
-            html += "        document.getElementById('ec_expected').value = '';";
             html += "        document.getElementById('ec_measured').value = '';";
+            html += "      } else {";
+            html += "        alert('Ошибка добавления точки EC');";
             html += "      }";
             html += "    });";
             html += "}";
-            html += "function setNPKPoint() {";
+            
+            // NPK нулевая точка
+            html += "function setNPKZeroPoint() {";
             html += "  const n = parseFloat(document.getElementById('npk_n').value);";
             html += "  const p = parseFloat(document.getElementById('npk_p').value);";
             html += "  const k = parseFloat(document.getElementById('npk_k').value);";
+            html += "  if(isNaN(n) || isNaN(p) || isNaN(k)) {";
+            html += "    alert('Введите корректные значения NPK');";
+            html += "    return;";
+            html += "  }";
             html += "  fetch('/api/calibration/npk/set', {";
             html += "    method: 'POST',";
             html += "    headers: {'Content-Type': 'application/json'},";
@@ -731,79 +936,145 @@ void setupDataRoutes()
             html += "  }).then(response => response.json())";
             html += "    .then(data => {";
             html += "      if(data.success) {";
+            html += "        const offsetN = (0 - n).toFixed(2);";
+            html += "        const offsetP = (0 - p).toFixed(2);";
+            html += "        const offsetK = (0 - k).toFixed(2);";
+            html += "        document.getElementById('npk-status').innerHTML = ";
+            html += "          '✅ Offsets: N=' + offsetN + ', P=' + offsetP + ', K=' + offsetK;";
             html += "        updateCalibrationStatus();";
-            html += "        document.getElementById('npk_n').value = '';";
-            html += "        document.getElementById('npk_p').value = '';";
-            html += "        document.getElementById('npk_k').value = '';";
+            html += "      } else {";
+            html += "        document.getElementById('npk-status').innerHTML = '❌ Ошибка калибровки NPK';";
             html += "      }";
             html += "    });";
             html += "}";
+            
+            // Расчет pH калибровки
             html += "function calculatePH() {";
             html += "  fetch('/api/calibration/ph/calculate', {method: 'POST'})";
             html += "    .then(response => response.json())";
             html += "    .then(data => {";
             html += "      if(data.success) {";
             html += "        updateCalibrationStatus();";
-            html += "        alert('pH калибровка рассчитана! R² = ' + data.r_squared);";
+            html += "        document.getElementById('ph-coefficients').style.display = 'block';";
+            html += "        if(data.slope) document.getElementById('ph_slope').textContent = data.slope.toFixed(4);";
+            html += "        if(data.intercept) document.getElementById('ph_intercept').textContent = data.intercept.toFixed(4);";
+            html += "        if(data.r_squared) document.getElementById('ph_r_squared').textContent = data.r_squared.toFixed(4);";
+            html += "        alert('pH калибровка рассчитана! R² = ' + (data.r_squared || 0).toFixed(4));";
+            html += "      } else {";
+            html += "        alert('Ошибка расчета pH: ' + (data.error || 'Недостаточно точек'));";
             html += "      }";
             html += "    });";
             html += "}";
+            
+            // Расчет EC калибровки
             html += "function calculateEC() {";
             html += "  fetch('/api/calibration/ec/calculate', {method: 'POST'})";
             html += "    .then(response => response.json())";
             html += "    .then(data => {";
             html += "      if(data.success) {";
             html += "        updateCalibrationStatus();";
-            html += "        alert('EC калибровка рассчитана! R² = ' + data.r_squared);";
+            html += "        document.getElementById('ec-coefficients').style.display = 'block';";
+            html += "        if(data.slope) document.getElementById('ec_slope').textContent = data.slope.toFixed(4);";
+            html += "        if(data.intercept) document.getElementById('ec_intercept').textContent = data.intercept.toFixed(4);";
+            html += "        if(data.r_squared) document.getElementById('ec_r_squared').textContent = data.r_squared.toFixed(4);";
+            html += "        alert('EC калибровка рассчитана! R² = ' + (data.r_squared || 0).toFixed(4));";
+            html += "      } else {";
+            html += "        alert('Ошибка расчета EC: ' + (data.error || 'Недостаточно точек'));";
             html += "      }";
             html += "    });";
             html += "}";
+            // Вспомогательные функции для отображения точек
+            html += "function updatePHPoints() {";
+            html += "  fetch('/api/calibration/status')";
+            html += "    .then(response => response.json())";
+            html += "    .then(data => {";
+            html += "      if(data.ph && data.ph.point_count) {";
+            html += "        document.getElementById('ph_point_count').textContent = data.ph.point_count;";
+            html += "        const pointsDiv = document.getElementById('ph-points');";
+            html += "        pointsDiv.innerHTML = '<small>Добавлено точек: ' + data.ph.point_count + '</small>';";
+            html += "      }";
+            html += "    });";
+            html += "}";
+            
+            html += "function updateECPoints() {";
+            html += "  fetch('/api/calibration/status')";
+            html += "    .then(response => response.json())";
+            html += "    .then(data => {";
+            html += "      if(data.ec && data.ec.point_count) {";
+            html += "        document.getElementById('ec_point_count').textContent = data.ec.point_count;";
+            html += "        const pointsDiv = document.getElementById('ec-points');";
+            html += "        pointsDiv.innerHTML = '<small>Добавлено точек: ' + data.ec.point_count + '</small>';";
+            html += "      }";
+            html += "    });";
+            html += "}";
+            
+            // Функции управления калибровкой
             html += "function exportCalibration() {";
             html += "  fetch('/api/calibration/export')";
             html += "    .then(response => response.json())";
             html += "    .then(data => {";
+            html += "      const timestamp = new Date().toISOString().slice(0,19).replace(/:/g,'-');";
+            html += "      const filename = 'JXCT_calibration_' + timestamp + '.json';";
             html += "      const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});";
             html += "      const url = URL.createObjectURL(blob);";
             html += "      const a = document.createElement('a');";
             html += "      a.href = url;";
-            html += "      a.download = 'calibration.json';";
+            html += "      a.download = filename;";
             html += "      a.click();";
-            html += "    });";
+            html += "      URL.revokeObjectURL(url);";
+            html += "      alert('Калибровка экспортирована в файл: ' + filename);";
+            html += "    }).catch(err => alert('Ошибка экспорта: ' + err));";
             html += "}";
+            
             html += "function importCalibration() {";
-            html += "  const input = document.createElement('input');";
-            html += "  input.type = 'file';";
-            html += "  input.accept = '.json';";
-            html += "  input.onchange = function(e) {";
-            html += "    const file = e.target.files[0];";
-            html += "    const reader = new FileReader();";
-            html += "    reader.onload = function(e) {";
+            html += "  document.getElementById('calibration-file').click();";
+            html += "}";
+            
+            html += "function loadCalibrationFile() {";
+            html += "  const file = document.getElementById('calibration-file').files[0];";
+            html += "  if(!file) return;";
+            html += "  const reader = new FileReader();";
+            html += "  reader.onload = function(e) {";
+            html += "    try {";
+            html += "      const data = JSON.parse(e.target.result);";
             html += "      fetch('/api/calibration/import', {";
             html += "        method: 'POST',";
             html += "        headers: {'Content-Type': 'application/json'},";
-            html += "        body: e.target.result";
+            html += "        body: JSON.stringify(data)";
             html += "      }).then(response => response.json())";
-            html += "        .then(data => {";
-            html += "          if(data.success) {";
+            html += "        .then(result => {";
+            html += "          if(result.success) {";
             html += "            updateCalibrationStatus();";
-            html += "            alert('Калибровка импортирована!');";
+            html += "            alert('Калибровка успешно импортирована из файла: ' + file.name);";
+            html += "          } else {";
+            html += "            alert('Ошибка импорта: ' + (result.error || 'Неизвестная ошибка'));";
             html += "          }";
             html += "        });";
-            html += "    };";
-            html += "    reader.readAsText(file);";
+            html += "    } catch(err) {";
+            html += "      alert('Ошибка чтения файла: ' + err.message);";
+            html += "    }";
             html += "  };";
-            html += "  input.click();";
+            html += "  reader.readAsText(file);";
             html += "}";
+            
             html += "function resetCalibration() {";
-            html += "  if(confirm('Сбросить всю калибровку?')) {";
+            html += "  if(confirm('⚠️ ВНИМАНИЕ! Это действие удалит ВСЕ калибровочные данные.\\n\\nПродолжить?')) {";
             html += "    fetch('/api/calibration/reset', {method: 'POST'})";
             html += "      .then(response => response.json())";
             html += "      .then(data => {";
             html += "        if(data.success) {";
             html += "          updateCalibrationStatus();";
-            html += "          alert('Калибровка сброшена!');";
+            html += "          // Очищаем отображение коэффициентов";
+            html += "          document.getElementById('ph-coefficients').style.display = 'none';";
+            html += "          document.getElementById('ec-coefficients').style.display = 'none';";
+            html += "          document.getElementById('temp-status').innerHTML = '';";
+            html += "          document.getElementById('hum-status').innerHTML = '';";
+            html += "          document.getElementById('npk-status').innerHTML = '';";
+            html += "          alert('✅ Вся калибровка сброшена!');";
+            html += "        } else {";
+            html += "          alert('❌ Ошибка сброса калибровки');";
             html += "        }";
-            html += "      });";
+            html += "      }).catch(err => alert('Ошибка: ' + err));";
             html += "  }";
             html += "}";
 
@@ -919,13 +1190,10 @@ void setupDataRoutes()
     webServer.on("/api/calibration/status", HTTP_GET,
                  []()
                  {
-                     DynamicJsonDocument doc(512);
-                     doc["status"] = "Калибровка не настроена";  // Временно
-                     doc["complete"] = false;
-
-                     String response;
-                     serializeJson(doc, response);
-                     webServer.send(200, "application/json", response);
+                     logWebRequest("GET", "/api/calibration/status", webServer.client().remoteIP().toString());
+                     
+                     String statusJson = gCalibrationService.getCalibrationStatus();
+                     webServer.send(200, "application/json", statusJson);
                  });
 
     webServer.on("/api/calibration/ph/add", HTTP_POST,
@@ -1314,6 +1582,140 @@ void setupDataRoutes()
                          serializeJson(response, response_str);
                          webServer.send(500, "application/json", response_str);
                      }
+                 });
+
+    // Новые endpoints для температуры и влажности
+    webServer.on("/api/calibration/temperature/add", HTTP_POST,
+                 []()
+                 {
+                     logWebRequest("POST", "/api/calibration/temperature/add", webServer.client().remoteIP().toString());
+                     
+                     DynamicJsonDocument doc(512);
+                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
+
+                     if (error)
+                     {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
+                         return;
+                     }
+
+                     float expected = doc["expected"];
+                     float measured = doc["measured"];
+
+                     bool success = gCalibrationService.addTemperatureCalibrationPoint(expected, measured);
+
+                     DynamicJsonDocument response(256);
+                     response["success"] = success;
+                     if (!success)
+                     {
+                         response["error"] = "Failed to add temperature calibration point";
+                     } else {
+                         response["message"] = "Temperature calibration point added successfully";
+                         response["offset"] = expected - measured;
+                     }
+
+                     String response_str;
+                     serializeJson(response, response_str);
+                     webServer.send(200, "application/json", response_str);
+                 });
+
+    webServer.on("/api/calibration/humidity/add", HTTP_POST,
+                 []()
+                 {
+                     logWebRequest("POST", "/api/calibration/humidity/add", webServer.client().remoteIP().toString());
+                     
+                     DynamicJsonDocument doc(512);
+                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
+
+                     if (error)
+                     {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
+                         return;
+                     }
+
+                     float expected = doc["expected"];
+                     float measured = doc["measured"];
+
+                     bool success = gCalibrationService.addHumidityCalibrationPoint(expected, measured);
+
+                     DynamicJsonDocument response(256);
+                     response["success"] = success;
+                     if (!success)
+                     {
+                         response["error"] = "Failed to add humidity calibration point";
+                     } else {
+                         response["message"] = "Humidity calibration point added successfully";
+                         response["offset"] = expected - measured;
+                     }
+
+                     String response_str;
+                     serializeJson(response, response_str);
+                     webServer.send(200, "application/json", response_str);
+                 });
+
+    // Endpoints для прямой установки offset
+    webServer.on("/api/calibration/temperature/offset", HTTP_POST,
+                 []()
+                 {
+                     logWebRequest("POST", "/api/calibration/temperature/offset", webServer.client().remoteIP().toString());
+                     
+                     DynamicJsonDocument doc(512);
+                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
+
+                     if (error)
+                     {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
+                         return;
+                     }
+
+                     float offset = doc["offset"];
+                     bool success = gCalibrationService.setTemperatureOffset(offset);
+
+                     DynamicJsonDocument response(256);
+                     response["success"] = success;
+                     if (!success)
+                     {
+                         response["error"] = "Failed to set temperature offset";
+                     } else {
+                         response["message"] = "Temperature offset set successfully";
+                         response["offset"] = offset;
+                     }
+
+                     String response_str;
+                     serializeJson(response, response_str);
+                     webServer.send(200, "application/json", response_str);
+                 });
+
+    webServer.on("/api/calibration/humidity/offset", HTTP_POST,
+                 []()
+                 {
+                     logWebRequest("POST", "/api/calibration/humidity/offset", webServer.client().remoteIP().toString());
+                     
+                     DynamicJsonDocument doc(512);
+                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
+
+                     if (error)
+                     {
+                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
+                         return;
+                     }
+
+                     float offset = doc["offset"];
+                     bool success = gCalibrationService.setHumidityOffset(offset);
+
+                     DynamicJsonDocument response(256);
+                     response["success"] = success;
+                     if (!success)
+                     {
+                         response["error"] = "Failed to set humidity offset";
+                     } else {
+                         response["message"] = "Humidity offset set successfully";
+                         response["offset"] = offset;
+                     }
+
+                     String response_str;
+                     serializeJson(response, response_str);
+                     webServer.send(200, "application/json", response_str);
                  });
 
     logDebug("Маршруты данных настроены: /readings, /api/v1/sensor (json), /sensor_json [legacy], /api/calibration/*");
