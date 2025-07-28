@@ -41,7 +41,7 @@ def test_phase3_crops_implementation():
         },
         "raspberry": {
             "russian": "малина",
-            "display": "Малина (новая)",
+            "display": "Малина",
             "emoji": "🍇",
             "critical_nutrients": ["Fe", "Mn", "Zn"],
             "conditions": ["pH > 6.5F", "pH < 5.5F", "npk.phosphorus > 70.0F"],
@@ -124,7 +124,7 @@ def test_phase3_crops_implementation():
         
         # 4. Проверяем веб-интерфейс
         web_pattern = f"value='{crop_id}'"
-        web_display_pattern = f">{data['display']}<" if "новая" not in data['display'] else f">Малина (новая)<"
+        web_display_pattern = f">{data['display']}<"
         
         web_implemented = web_pattern in routes_content and web_display_pattern in routes_content
         print(f"  {'✅' if web_implemented else '❌'} Веб-интерфейс: {web_implemented}")

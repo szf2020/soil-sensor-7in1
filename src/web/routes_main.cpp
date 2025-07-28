@@ -328,8 +328,6 @@ void handleRoot()
         // НОВЫЕ КУЛЬТУРЫ (Фаза 3 - Завершающие, полное покрытие)
         html += String("<option value='kale'") + (strcmp(config.cropId, "kale") == 0 ? " selected" : "") +
                 ">Кале</option>";
-        html += String("<option value='raspberry'") + (strcmp(config.cropId, "raspberry") == 0 ? " selected" : "") +
-                ">Малина (новая)</option>";
         html += String("<option value='blackberry'") + (strcmp(config.cropId, "blackberry") == 0 ? " selected" : "") +
                 ">Ежевика</option>";
         html += String("<option value='soybean'") + (strcmp(config.cropId, "soybean") == 0 ? " selected" : "") +
