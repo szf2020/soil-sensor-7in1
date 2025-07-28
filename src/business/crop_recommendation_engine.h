@@ -15,6 +15,9 @@
 // Используем структуру SensorData из modbus_sensor.h
 #include "../modbus_sensor.h"
 
+// Для NPKReferences и SoilType
+#include "../../include/sensor_types.h"
+
 // Структуры для устранения проблемы с легко перепутываемыми параметрами (удалены - теперь в sensor_types.h)
 // CropCompensationParams и CropECCompensationParams определены в sensor_types.h
 
@@ -100,6 +103,12 @@ class CropRecommendationEngine : public ICropRecommendationEngine
                                      const EnvironmentType& envType) override;
 
     void applySeasonalCorrection(RecValues& rec, Season season, bool isGreenhouse) override;
+
+    // 🌱 Специфические рекомендации по культурам для неизмеряемых элементов
+    String generateCropSpecificRecommendations(const String& cropName, 
+                                             const NPKReferences& npk,
+                                             SoilType soilType, 
+                                             float pH);
 };
 
 #endif  // CROP_RECOMMENDATION_ENGINE_H

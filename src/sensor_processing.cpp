@@ -18,29 +18,45 @@ extern SensorCompensationService gCompensationService;
 namespace SensorProcessing {
 
 // Константы для маппинга профилей почвы
-static const std::array<SoilType, 5> SOIL_TYPES = {{
-    SoilType::SAND,     // 0
-    SoilType::LOAM,     // 1
-    SoilType::PEAT,     // 2
-    SoilType::CLAY,     // 3
-    SoilType::SANDPEAT  // 4
+static const std::array<SoilType, 13> SOIL_TYPES = {{
+    SoilType::SAND,        // 0
+    SoilType::LOAM,        // 1
+    SoilType::PEAT,        // 2
+    SoilType::CLAY,        // 3
+    SoilType::SANDPEAT,    // 4
+    SoilType::SILT,        // 5 - НОВЫЙ
+    SoilType::CLAY_LOAM,   // 6 - Глинистый суглинок - НОВЫЙ
+    SoilType::ORGANIC,     // 7 - НОВЫЙ
+    SoilType::SANDY_LOAM,  // 8 - Песчанистый суглинок - НОВЫЙ
+    SoilType::SILTY_LOAM,  // 9 - НОВЫЙ
+    SoilType::LOAMY_CLAY,  // 10 - Суглинистая глина - НОВЫЙ
+    SoilType::SALINE,      // 11 - НОВЫЙ
+    SoilType::ALKALINE     // 12 - НОВЫЙ
 }};
 
-static const std::array<SoilProfile, 5> SOIL_PROFILES = {{
-    SoilProfile::SAND,     // 0
-    SoilProfile::LOAM,     // 1
-    SoilProfile::PEAT,     // 2
-    SoilProfile::CLAY,     // 3
-    SoilProfile::SANDPEAT  // 4
+static const std::array<SoilProfile, 13> SOIL_PROFILES = {{
+    SoilProfile::SAND,        // 0
+    SoilProfile::LOAM,        // 1
+    SoilProfile::PEAT,        // 2
+    SoilProfile::CLAY,        // 3
+    SoilProfile::SANDPEAT,    // 4
+    SoilProfile::SILT,        // 5 - НОВЫЙ
+    SoilProfile::CLAY_LOAM,   // 6 - Суглинок - НОВЫЙ
+    SoilProfile::ORGANIC,     // 7 - НОВЫЙ
+    SoilProfile::SANDY_LOAM,  // 8 - Лёгкий суглинок - НОВЫЙ
+    SoilProfile::SILTY_LOAM,  // 9 - НОВЫЙ
+    SoilProfile::LOAMY_CLAY,  // 10 - Тяжелый суглинок - НОВЫЙ
+    SoilProfile::SALINE,      // 11 - НОВЫЙ
+    SoilProfile::ALKALINE     // 12 - НОВЫЙ
 }};
 
 /**
  * @brief Получить тип почвы по индексу профиля
- * @param profileIndex Индекс профиля почвы (0-4)
+ * @param profileIndex Индекс профиля почвы (0-12)
  * @return SoilType соответствующий профилю
  */
 SoilType getSoilType(int profileIndex) {
-    if (profileIndex < 0 || profileIndex >= 5) {
+    if (profileIndex < 0 || profileIndex >= 13) {
         profileIndex = 1; // По умолчанию LOAM
     }
     return SOIL_TYPES[profileIndex];
@@ -48,11 +64,11 @@ SoilType getSoilType(int profileIndex) {
 
 /**
  * @brief Получить профиль почвы по индексу
- * @param profileIndex Индекс профиля почвы (0-4)
+ * @param profileIndex Индекс профиля почвы (0-12)
  * @return SoilProfile соответствующий профилю
  */
 SoilProfile getSoilProfile(int profileIndex) {
-    if (profileIndex < 0 || profileIndex >= 5) {
+    if (profileIndex < 0 || profileIndex >= 13) {
         profileIndex = 1; // По умолчанию LOAM
     }
     return SOIL_PROFILES[profileIndex];

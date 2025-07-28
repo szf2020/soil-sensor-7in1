@@ -22,6 +22,7 @@
 #include "calibration_manager.h"
 #include "../../include/advanced_filters.h"
 #include "../business/sensor_calibration_service.h"
+#include "../../include/sensor_types.h"
 
 // Глобальный экземпляр сервиса калибровки
 extern SensorCalibrationService gCalibrationService;
@@ -53,12 +54,20 @@ RecValues computeRecommendations()
     EnvironmentType envType = EnvironmentType::OUTDOOR;
 
     // Используем массивы для устранения дублирования кода
-    static const std::array<SoilProfile, 5> soilProfiles = {{
-        SoilProfile::SAND,     // 0
-        SoilProfile::LOAM,     // 1
-        SoilProfile::PEAT,     // 2
-        SoilProfile::CLAY,     // 3
-        SoilProfile::SANDPEAT  // 4
+    static const std::array<SoilProfile, 13> soilProfiles = {{
+        SoilProfile::SAND,        // 0
+        SoilProfile::LOAM,        // 1
+        SoilProfile::PEAT,        // 2
+        SoilProfile::CLAY,        // 3
+        SoilProfile::SANDPEAT,    // 4
+        SoilProfile::SILT,        // 5 - НОВЫЙ
+        SoilProfile::CLAY_LOAM,   // 6 - НОВЫЙ
+        SoilProfile::ORGANIC,     // 7 - НОВЫЙ
+        SoilProfile::SANDY_LOAM,  // 8 - НОВЫЙ
+        SoilProfile::SILTY_LOAM,  // 9 - НОВЫЙ
+        SoilProfile::LOAMY_CLAY,  // 10 - НОВЫЙ
+        SoilProfile::SALINE,      // 11 - НОВЫЙ
+        SoilProfile::ALKALINE     // 12 - НОВЫЙ
     }};
 
     static const std::array<EnvironmentType, 3> envTypes = {{
@@ -67,7 +76,7 @@ RecValues computeRecommendations()
         EnvironmentType::INDOOR       // 2
     }};
 
-    const int soilIndex = (config.soilProfile >= 0 && config.soilProfile < 5) ? config.soilProfile : 0;
+    const int soilIndex = (config.soilProfile >= 0 && config.soilProfile < 13) ? config.soilProfile : 0;
     const int envIndex = (config.environmentType >= 0 && config.environmentType < 3) ? config.environmentType : 0;
 
     soilProfile = soilProfiles[soilIndex];
@@ -231,6 +240,37 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     doc["rec_nitrogen"] = format_npk(rec.n);
     doc["rec_phosphorus"] = format_npk(rec.p);
     doc["rec_potassium"] = format_npk(rec.k);
+
+    // ---- Рекомендации по взаимодействию питательных веществ ----
+    NPKReferences npk{sensorData.nitrogen, sensorData.phosphorus, sensorData.potassium};
+    SoilType soilType = static_cast<SoilType>(config.soilProfile);
+    
+    logDebugSafe("JSON API: soilProfile=%d, soilType=%d, cropId='%s' (len=%d)", 
+                 config.soilProfile, (int)soilType, config.cropId, strlen(config.cropId));
+    logDebugSafe("JSON API: NPK values N=%.1f P=%.1f K=%.1f pH=%.1f", 
+                 npk.nitrogen, npk.phosphorus, npk.potassium, sensorData.ph);
+    
+    // Получаем рекомендации по антагонизмам
+    String antagonismRecommendations = getNutrientInteractionService().generateAntagonismRecommendations(
+        npk, soilType, sensorData.ph);
+    doc["nutrient_interactions"] = antagonismRecommendations;
+    
+    logDebugSafe("JSON API: antagonismRecommendations='%s'", antagonismRecommendations.c_str());
+    
+    // Получаем специфические рекомендации по культурам
+    logDebugSafe("JSON API: checking crop - strlen=%d, strcmp=%d", 
+                 strlen(config.cropId), strcmp(config.cropId, "none"));
+    
+    if (strlen(config.cropId) > 0 && strcmp(config.cropId, "none") != 0) {
+        logDebugSafe("JSON API: generating recommendations for crop '%s'", config.cropId);
+        String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
+            String(config.cropId), npk, soilType, sensorData.ph);
+        doc["crop_specific_recommendations"] = cropRecommendations;
+        logDebugSafe("JSON API: cropRecommendations='%s'", cropRecommendations.c_str());
+    } else {
+        doc["crop_specific_recommendations"] = "";
+        logDebugSafe("JSON API: no crop selected - cropId='%s'", config.cropId);
+    }
 
     // ---- Дополнительная информация ----
     // Сезон по текущему месяцу
@@ -491,6 +531,27 @@ void setupDataRoutes()
                 "class='season-adj'></span></td></tr>";
             html += "</tbody></table></div>";
 
+            // ======= РЕКОМЕНДАЦИИ ПО ВЗАИМОДЕЙСТВИЮ ПИТАТЕЛЬНЫХ ВЕЩЕСТВ =======
+            html += "<div class='section'><h2>🔬 Рекомендации по взаимодействию питательных веществ</h2>";
+            
+            // Антагонизмы и синергизмы
+            html += "<div style='background:#f8f9fa;padding:15px;border-radius:8px;margin:15px 0;'>";
+            html += "<h4>⚠️ Антагонизмы и синергизмы</h4>";
+            html += "<div id='nutrient-interactions' style='font-size:14px;line-height:1.6;'>";
+            html += "<p><em>Загрузка рекомендаций...</em></p>";
+            html += "</div>";
+            html += "</div>";
+            
+            // Специфические рекомендации по культурам
+            html += "<div style='background:#e8f5e8;padding:15px;border-radius:8px;margin:15px 0;'>";
+            html += "<h4>🌱 Специфические рекомендации по культурам</h4>";
+            html += "<div id='crop-specific-recommendations' style='font-size:14px;line-height:1.6;'>";
+            html += "<p><em>Загрузка рекомендаций...</em></p>";
+            html += "</div>";
+            html += "</div>";
+            
+            html += "</div>";
+
             // ======= КАЛИБРОВКА =======
             html += "<div class='section'><h2>⚙️ Калибровка датчика</h2>";
 
@@ -501,7 +562,7 @@ void setupDataRoutes()
             html += "</div>";
 
             // Температура и влажность (offset калибровка)
-            html += "<div class='section' style='background:#f8f9fa;padding:15px;border-radius:8px;margin:15px 0;'>";
+            html += "<div class='section'>";
             html += "<h3>🌡️💧 Температура и влажность (Offset калибровка)</h3>";
             html += "<p><strong>Инструкция:</strong> Сравните показания датчика с лабораторными приборами и введите поправку.</p>";
             
@@ -642,10 +703,17 @@ void setupDataRoutes()
                 "if(cls){el.classList.add(cls);}else{el.classList.add('green');}}";
             html +=
                 "var "
-                "limits={temp:{min:-45,max:115},hum:{min:0,max:100},ec:{min:0,max:10000},ph:{min:3,max:9},n:{min:0,max:"
-                "1999},p:{min:0,max:1999},k:{min:0,max:1999}};";
+                "limits={temp:{min:5,max:40},hum:{min:25,max:60},ec:{min:1000,max:3000},ph:{min:6.0,max:7.0},n:{min:150,max:"
+                "350},p:{min:80,max:180},k:{min:180,max:450}};";
             html += "function updateSensor(){";
-            html += "fetch('/sensor_json').then(r=>r.json()).then(d=>{";
+            html += "fetch('/sensor_json')";
+            html += ".then(r => {";
+            html += "  if (!r.ok) throw new Error('HTTP ' + r.status);";
+            html += "  return r.json();";
+            html += "})";
+            html += ".then(d => {";
+            html += "  if (!d || typeof d !== 'object') throw new Error('Invalid data');";
+            html += "  console.log('Valid sensor data received:', d);";
             html += "set('temp_raw',d.raw_temperature);";
             html += "set('hum_raw',d.raw_humidity);";
             html += "set('ec_raw',d.raw_ec);";
@@ -698,14 +766,17 @@ void setupDataRoutes()
             html += "  const adj = adjustments[season] || { n: '', p: '', k: '' };";
             html += "  ['n', 'p', 'k'].forEach(elem => {";
             html += "    const span = document.getElementById(elem + '_season');";
-            html += "    if(span) {";
-            html += "      span.textContent = adj[elem] ? ` (${adj[elem]})` : '';";
-            html += "      span.className = 'season-adj ' + (adj[elem].startsWith('+') ? 'up' : 'down');";
+            html += "    if(span && adj && adj[elem]) {";
+            html += "      span.textContent = ` (${adj[elem]})`;";
+            html += "      span.className = 'season-adj ' + (adj[elem].charAt(0) === '+' ? 'up' : 'down');";
+            html += "    } else if(span) {";
+            html += "      span.textContent = '';";
+            html += "      span.className = 'season-adj';";
             html += "    }";
             html += "  });";
             html += "}";
 
-            html += R"(var invalid = d.irrigation || d.alerts.length>0 || d.humidity<25 || d.temperature<5 || )"
+            html += R"(var invalid = d.irrigation || (d.alerts && Array.isArray(d.alerts) && d.alerts.length>0) || d.humidity<25 || d.temperature<5 || )"
                     R"(d.temperature>40;)";
             html += R"(var statusHtml = invalid ? '<span class="red">Данные&nbsp;не&nbsp;валидны</span>' : '<span )"
                     R"(class="green">Данные&nbsp;валидны</span>';)";
@@ -714,6 +785,40 @@ void setupDataRoutes()
             html += R"(var seasonHtml=seasonColor?(`<span class=\"${seasonColor}\">${d.season}</span>`):d.season;)";
             html += "document.getElementById('statusInfo').innerHTML=statusHtml+' | Сезон: '+seasonHtml;";
             html += "updateSeasonalAdjustments(d.season);";
+            
+            // Обновление рекомендаций по взаимодействию питательных веществ
+            html += "console.log('Sensor data received:', d);";
+            html += "console.log('nutrient_interactions:', d.nutrient_interactions);";
+            html += "console.log('crop_specific_recommendations:', d.crop_specific_recommendations);";
+            html += "console.log('nutrient-interactions div exists:', !!document.getElementById('nutrient-interactions'));";
+            html += "console.log('crop-specific-recommendations div exists:', !!document.getElementById('crop-specific-recommendations'));";
+            
+            html += "const interactionsDiv = document.getElementById('nutrient-interactions');";
+            html += "if(interactionsDiv) {";
+            html += "  if(d.nutrient_interactions && typeof d.nutrient_interactions === 'string' && d.nutrient_interactions.length > 0) {";
+            html += "    interactionsDiv.innerHTML = d.nutrient_interactions.replace(/\\n/g, '<br>');";
+            html += "    console.log('Updated nutrient interactions');";
+            html += "  } else {";
+            html += "    interactionsDiv.innerHTML = '<p style=\"color:#28a745;\">✅ Антагонизмов питательных веществ не обнаружено</p>';";
+            html += "    console.log('No nutrient interactions found');";
+            html += "  }";
+            html += "} else {";
+            html += "  console.error('nutrient-interactions div not found');";
+            html += "}";
+            
+            html += "const cropDiv = document.getElementById('crop-specific-recommendations');";
+            html += "if(cropDiv) {";
+            html += "  if(d.crop_specific_recommendations && typeof d.crop_specific_recommendations === 'string' && d.crop_specific_recommendations.length > 0) {";
+            html += "    cropDiv.innerHTML = d.crop_specific_recommendations.replace(/\\n/g, '<br>');";
+            html += "    console.log('Updated crop recommendations');";
+            html += "  } else {";
+            html += "    cropDiv.innerHTML = '<p style=\"color:#6c757d;\">ℹ️ Выберите культуру для получения специфических рекомендаций</p>';";
+            html += "    console.log('No crop selected or no recommendations');";
+            html += "  }";
+            html += "} else {";
+            html += "  console.error('crop-specific-recommendations div not found');";
+            html += "}";
+            
             html +=
                 "var "
                 "tvr=parseFloat(d.raw_temperature);applyColor('temp_raw',colorRange(tvr,limits.temp.min,limits.temp."
@@ -731,22 +836,37 @@ void setupDataRoutes()
             html +=
                 "['temp','hum','ec','ph','n','p','k'].forEach(function(id){var "
                 "el=document.getElementById(id);if(el){el.classList.remove('red','orange','yellow','green');}});";
-            html += "var ct=parseFloat(d.temperature);";
-            html += "var ch=parseFloat(d.humidity);";
-            html += "var ce=parseFloat(d.ec);";
-            html += "var cph=parseFloat(d.ph);";
-            html += "var cn=parseFloat(d.nitrogen);";
-            html += "var cp=parseFloat(d.phosphorus);";
-            html += "var ck=parseFloat(d.potassium);";
-            html += "applyColor('temp_rec', colorDelta(ct, parseFloat(d.rec_temperature)));";
-            html += "applyColor('hum_rec',  colorDelta(ch, parseFloat(d.rec_humidity)));";
-            html += "applyColor('ec_rec',   colorDelta(ce, parseFloat(d.rec_ec)));";
-            html += "applyColor('ph_rec',   colorDelta(cph,parseFloat(d.rec_ph)));";
-            html += "applyColor('n_rec',    colorDelta(cn, parseFloat(d.rec_nitrogen)));";
-            html += "applyColor('p_rec',    colorDelta(cp, parseFloat(d.rec_phosphorus)));";
-            html += "applyColor('k_rec',    colorDelta(ck, parseFloat(d.rec_potassium)));";
+            html += "var ct=parseFloat(d.temperature||0);";
+            html += "var ch=parseFloat(d.humidity||0);";
+            html += "var ce=parseFloat(d.ec||0);";
+            html += "var cph=parseFloat(d.ph||0);";
+            html += "var cn=parseFloat(d.nitrogen||0);";
+            html += "var cp=parseFloat(d.phosphorus||0);";
+            html += "var ck=parseFloat(d.potassium||0);";
+            
+            // Компенсированные значения БЕЗ ПОКРАСКИ (как было раньше)
+            
+            // Применяем цвета к рекомендациям
+            html += "applyColor('temp_rec', colorDelta(ct, parseFloat(d.rec_temperature||0)));";
+            html += "applyColor('hum_rec',  colorDelta(ch, parseFloat(d.rec_humidity||0)));";
+            html += "applyColor('ec_rec',   colorDelta(ce, parseFloat(d.rec_ec||0)));";
+            html += "applyColor('ph_rec',   colorDelta(cph,parseFloat(d.rec_ph||0)));";
+            html += "applyColor('n_rec',    colorDelta(cn, parseFloat(d.rec_nitrogen||0)));";
+            html += "applyColor('p_rec',    colorDelta(cp, parseFloat(d.rec_phosphorus||0)));";
+            html += "applyColor('k_rec',    colorDelta(ck, parseFloat(d.rec_potassium||0)));";
+            
+            html += "}).catch(err => {";
+            html += "  console.error('Sensor data fetch error:', err);";
+            html += "  const interactionsDiv = document.getElementById('nutrient-interactions');";
+            html += "  if(interactionsDiv) interactionsDiv.innerHTML = '<p style=\"color:#dc3545;\">❌ Ошибка загрузки данных</p>';";
+            html += "  const cropDiv = document.getElementById('crop-specific-recommendations');";
+            html += "  if(cropDiv) cropDiv.innerHTML = '<p style=\"color:#dc3545;\">❌ Ошибка загрузки данных</p>';";
             html += "});";
             html += "}";
+            
+            // Добавляем автоматический запуск обновления
+            html += "updateSensor();";
+            html += "setInterval(updateSensor, 3000);";
 
             // Функции калибровки
             html += "function updateCalibrationStatus() {";

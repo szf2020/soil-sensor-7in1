@@ -6,8 +6,10 @@
 #include "business/crop_recommendation_engine.h"
 #include "business/sensor_calibration_service.h"
 #include "business/sensor_compensation_service.h"
+#include "business/nutrient_interaction_service.h"
 
 // Глобальные экземпляры бизнес-сервисов
 CropRecommendationEngine gCropEngine;            // NOLINT(misc-use-internal-linkage)
 SensorCalibrationService gCalibrationService;    // NOLINT(misc-use-internal-linkage)
 SensorCompensationService gCompensationService;  // NOLINT(misc-use-internal-linkage)
+NutrientInteractionService gNutrientInteractionService;  // NOLINT(misc-use-internal-linkage)

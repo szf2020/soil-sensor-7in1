@@ -127,7 +127,16 @@ void setupMainRoutes()
 
                 if (webServer.hasArg("soil_profile_sel"))
                 {
-                    config.soilProfile = webServer.arg("soil_profile_sel").toInt();
+                    int soilProfile = webServer.arg("soil_profile_sel").toInt();
+                    // Валидация: поддерживаем значения 0-12 (13 типов почв)
+                    if (soilProfile >= 0 && soilProfile <= 12)
+                    {
+                        config.soilProfile = soilProfile;
+                    }
+                    else
+                    {
+                        config.soilProfile = 1; // По умолчанию LOAM
+                    }
                 }
                 strlcpy(config.ntpServer, webServer.arg("ntp_server").c_str(), sizeof(config.ntpServer));
                 config.ntpUpdateInterval = webServer.arg("ntp_interval").toInt();
@@ -301,6 +310,33 @@ void handleRoot()
                 ">Виноград</option>";
         html += String("<option value='conifer'") + (strcmp(config.cropId, "conifer") == 0 ? " selected" : "") +
                 ">Хвойные деревья</option>";
+        
+        // НОВЫЕ КУЛЬТУРЫ (Фаза 1 - Приоритетные, научно обоснованные 2024)
+        html += String("<option value='spinach'") + (strcmp(config.cropId, "spinach") == 0 ? " selected" : "") +
+                ">Шпинат</option>";
+        html += String("<option value='basil'") + (strcmp(config.cropId, "basil") == 0 ? " selected" : "") +
+                ">Базилик</option>";
+        html += String("<option value='cannabis'") + (strcmp(config.cropId, "cannabis") == 0 ? " selected" : "") +
+                ">Конопля медицинская</option>";
+        
+        // НОВЫЕ КУЛЬТУРЫ (Фаза 2 - Важные, стратегические)
+        html += String("<option value='wheat'") + (strcmp(config.cropId, "wheat") == 0 ? " selected" : "") +
+                ">Пшеница</option>";
+        html += String("<option value='potato'") + (strcmp(config.cropId, "potato") == 0 ? " selected" : "") +
+                ">Картофель</option>";
+        
+        // НОВЫЕ КУЛЬТУРЫ (Фаза 3 - Завершающие, полное покрытие)
+        html += String("<option value='kale'") + (strcmp(config.cropId, "kale") == 0 ? " selected" : "") +
+                ">Кале</option>";
+        html += String("<option value='raspberry'") + (strcmp(config.cropId, "raspberry") == 0 ? " selected" : "") +
+                ">Малина (новая)</option>";
+        html += String("<option value='blackberry'") + (strcmp(config.cropId, "blackberry") == 0 ? " selected" : "") +
+                ">Ежевика</option>";
+        html += String("<option value='soybean'") + (strcmp(config.cropId, "soybean") == 0 ? " selected" : "") +
+                ">Соя</option>";
+        html += String("<option value='carrot'") + (strcmp(config.cropId, "carrot") == 0 ? " selected" : "") +
+                ">Морковь</option>";
+        
         html += "</select></div>";
         // Тип среды выращивания v3.10.1 (расширенный)
         const String selectedEnvOutdoor = config.environmentType == 0 ? " selected" : "";
@@ -343,14 +379,33 @@ void handleRoot()
         const char* selectedPeat = config.soilProfile == 2 ? " selected" : "";
         const char* selectedClay = config.soilProfile == 3 ? " selected" : "";
         const char* selectedSandPeat = config.soilProfile == 4 ? " selected" : "";
+        const char* selectedSilt = config.soilProfile == 5 ? " selected" : "";
+        const char* selectedClayLoam = config.soilProfile == 6 ? " selected" : "";
+        const char* selectedOrganic = config.soilProfile == 7 ? " selected" : "";
+        const char* selectedSandyLoam = config.soilProfile == 8 ? " selected" : "";
+        const char* selectedSiltyLoam = config.soilProfile == 9 ? " selected" : "";
+        const char* selectedLoamyClay = config.soilProfile == 10 ? " selected" : "";
+        const char* selectedSaline = config.soilProfile == 11 ? " selected" : "";
+        const char* selectedAlkaline = config.soilProfile == 12 ? " selected" : "";
+        
         html +=
             "<div class='form-group'><label for='soil_profile_sel'>Профиль почвы:</label><select id='soil_profile_sel' "
             "name='soil_profile_sel'>";
+        
         html += String("<option value='0'") + selectedSand + ">Песок</option>";
         html += String("<option value='1'") + selectedLoam + ">Суглинок</option>";
         html += String("<option value='2'") + selectedPeat + ">Торф</option>";
         html += String("<option value='3'") + selectedClay + ">Глина</option>";
-        html += String("<option value='4'") + selectedSandPeat + ">Песчано-торфяной</option>";
+        html += String("<option value='4'") + selectedSandPeat + ">Песчано-торфяная смесь</option>";
+        html += String("<option value='5'") + selectedSilt + ">Иловая почва</option>";
+        html += String("<option value='6'") + selectedClayLoam + ">Глинистый суглинок</option>";
+        html += String("<option value='7'") + selectedOrganic + ">Органическая почва</option>";
+        html += String("<option value='8'") + selectedSandyLoam + ">Песчанистый суглинок</option>";
+        html += String("<option value='9'") + selectedSiltyLoam + ">Иловатый суглинок</option>";
+        html += String("<option value='10'") + selectedLoamyClay + ">Суглинистая глина</option>";
+        html += String("<option value='11'") + selectedSaline + ">Засоленная почва</option>";
+        html += String("<option value='12'") + selectedAlkaline + ">Щелочная почва</option>";
+        
         html += "</select></div>";
 
         html += "</div>";  // конец секции агрорекомендаций

@@ -57,6 +57,20 @@ class ICropRecommendationEngine
      * @param isGreenhouse Признак теплицы
      */
     virtual void applySeasonalCorrection(RecValues& rec, Season season, bool isGreenhouse) = 0;
+
+    /**
+     * @brief Генерирует специфические рекомендации по культурам для неизмеряемых элементов
+     *
+     * @param cropName Название культуры
+     * @param npk NPK данные
+     * @param soilType Тип почвы
+     * @param pH Значение pH
+     * @return String Рекомендации
+     */
+    virtual String generateCropSpecificRecommendations(const String& cropName,
+                                                      const NPKReferences& npk,
+                                                      SoilType soilType,
+                                                      float pH) = 0;
 };
 
 #endif  // ICROP_RECOMMENDATION_ENGINE_H

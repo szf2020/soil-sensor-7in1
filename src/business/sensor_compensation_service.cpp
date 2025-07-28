@@ -146,6 +146,14 @@ bool SensorCompensationService::validateCompensationInputs(
         case SoilType::PEAT:
         case SoilType::CLAY:
         case SoilType::SANDPEAT:
+        case SoilType::SILT:
+        case SoilType::CLAY_LOAM:
+        case SoilType::ORGANIC:
+        case SoilType::SANDY_LOAM:
+        case SoilType::SILTY_LOAM:
+        case SoilType::LOAMY_CLAY:
+        case SoilType::SALINE:
+        case SoilType::ALKALINE:
             return true;
         default:
             return false;
@@ -166,8 +174,18 @@ void initializeSoilParameters(std::map<SoilType, SoilParameters>& soilParameters
     soilParameters[SoilType::PEAT] = SoilParameters(0.80F, 0.30F, 0.45F);
     soilParameters[SoilType::CLAY] = SoilParameters(0.50F, 1.20F, 0.35F);
     soilParameters[SoilType::SANDPEAT] = SoilParameters(0.60F, 0.80F, 0.30F);
+    
+    // Новые типы почв
+    soilParameters[SoilType::SILT] = SoilParameters(0.40F, 1.30F, 0.15F);           // Иловая почва
+    soilParameters[SoilType::CLAY_LOAM] = SoilParameters(0.55F, 1.25F, 0.25F);      // Глинистый суглинок
+    soilParameters[SoilType::ORGANIC] = SoilParameters(0.90F, 0.25F, 0.50F);        // Органическая почва
+    soilParameters[SoilType::SANDY_LOAM] = SoilParameters(0.30F, 1.50F, 0.12F);     // Песчанистый суглинок
+    soilParameters[SoilType::SILTY_LOAM] = SoilParameters(0.42F, 1.35F, 0.18F);     // Иловатый суглинок
+    soilParameters[SoilType::LOAMY_CLAY] = SoilParameters(0.60F, 1.15F, 0.30F);     // Суглинистая глина
+    soilParameters[SoilType::SALINE] = SoilParameters(0.35F, 1.45F, 0.20F);         // Засоленная почва
+    soilParameters[SoilType::ALKALINE] = SoilParameters(0.50F, 1.30F, 0.25F);       // Щелочная почва
 
-    logDebugSafe("SensorCompensationService: Параметры почвы инициализированы");
+    logDebugSafe("SensorCompensationService: Параметры почвы инициализированы (13 типов)");
 }
 }  // end anonymous namespace
 
@@ -186,8 +204,18 @@ void SensorCompensationService::initializeNPKCoefficients()
     npkCoefficients[SoilType::CLAY] = NPKCoefficients(0.0032F, 0.0042F, 0.0024F, 0.008F, 0.006F, 0.010F);
     npkCoefficients[SoilType::PEAT] = NPKCoefficients(0.0028F, 0.0035F, 0.0018F, 0.012F, 0.009F, 0.015F);
     npkCoefficients[SoilType::SANDPEAT] = NPKCoefficients(0.0040F, 0.0051F, 0.0031F, 0.010F, 0.008F, 0.012F);
+    
+    // Новые типы почв - коэффициенты NPK
+    npkCoefficients[SoilType::SILT] = NPKCoefficients(0.0035F, 0.0045F, 0.0027F, 0.009F, 0.007F, 0.011F);
+    npkCoefficients[SoilType::CLAY_LOAM] = NPKCoefficients(0.0030F, 0.0039F, 0.0022F, 0.008F, 0.006F, 0.010F);
+    npkCoefficients[SoilType::ORGANIC] = NPKCoefficients(0.0025F, 0.0032F, 0.0016F, 0.013F, 0.010F, 0.016F);
+    npkCoefficients[SoilType::SANDY_LOAM] = NPKCoefficients(0.0039F, 0.0050F, 0.0030F, 0.010F, 0.008F, 0.012F);
+    npkCoefficients[SoilType::SILTY_LOAM] = NPKCoefficients(0.0036F, 0.0047F, 0.0028F, 0.009F, 0.007F, 0.011F);
+    npkCoefficients[SoilType::LOAMY_CLAY] = NPKCoefficients(0.0028F, 0.0037F, 0.0021F, 0.008F, 0.006F, 0.010F);
+    npkCoefficients[SoilType::SALINE] = NPKCoefficients(0.0045F, 0.0058F, 0.0035F, 0.007F, 0.005F, 0.008F);
+    npkCoefficients[SoilType::ALKALINE] = NPKCoefficients(0.0033F, 0.0043F, 0.0026F, 0.009F, 0.007F, 0.011F);
 
-    logDebugSafe("SensorCompensationService: Коэффициенты NPK инициализированы");
+    logDebugSafe("SensorCompensationService: Коэффициенты NPK инициализированы (13 типов)");
 }
 
 SoilParameters SensorCompensationService::getSoilParameters(SoilType soilType) const

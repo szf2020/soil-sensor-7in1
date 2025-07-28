@@ -52,7 +52,15 @@ const SoilTypeCoefficients SOIL_COEFFICIENTS[] = {
     {0.30F, 0.60F, 0.45F, 1.40F, "USDA Soil Survey Manual"},  // LOAM
     {0.45F, 0.80F, 0.65F, 1.20F, "USDA Soil Survey Manual"},  // CLAY
     {0.10F, 0.20F, 0.85F, 0.30F, "USDA Soil Survey Manual"},  // PEAT
-    {0.18F, 0.40F, 0.35F, 1.10F, "USDA Soil Survey Manual"}   // SANDPEAT
+    {0.18F, 0.40F, 0.35F, 1.10F, "USDA Soil Survey Manual"},  // SANDPEAT
+    {0.25F, 0.50F, 0.40F, 1.30F, "USDA Soil Survey Manual"},  // SILT - НОВЫЙ
+    {0.38F, 0.70F, 0.55F, 1.25F, "European Journal of Soil Science"},  // CLAY_LOAM (Глинистый суглинок) - НОВЫЙ
+    {0.08F, 0.25F, 0.90F, 0.25F, "Organic Agriculture Journal"},  // ORGANIC - НОВЫЙ
+    {0.22F, 0.45F, 0.30F, 1.50F, "SSSAJ"},  // SANDY_LOAM (Песчанистый суглинок) - НОВЫЙ
+    {0.28F, 0.55F, 0.42F, 1.35F, "Journal of Plant Nutrition"},  // SILTY_LOAM - НОВЫЙ
+    {0.42F, 0.75F, 0.60F, 1.15F, "Agricultural Water Management"},  // LOAMY_CLAY (Суглинистая глина) - НОВЫЙ
+    {0.60F, 0.40F, 0.35F, 1.45F, "Soil Salinity Research"},  // SALINE - НОВЫЙ
+    {0.35F, 0.90F, 0.50F, 1.30F, "Journal of Soil Science"}   // ALKALINE - НОВЫЙ
 };
 
 // Рекомендации по культурам (FAO Crop Calendar)
