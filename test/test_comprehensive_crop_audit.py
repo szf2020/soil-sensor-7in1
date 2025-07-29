@@ -213,7 +213,7 @@ def test_crop_triggers():
     sensor_values = simulate_realistic_sensor_values()
     
     if crop_id not in SCIENTIFIC_CROP_DATA:
-        assert False, f"Культура {crop_id} не найдена в данных"
+        raise AssertionError(f"Культура {crop_id} не найдена в данных")
     
     crop_engine_path = "src/business/crop_recommendation_engine.cpp"
     with open(crop_engine_path, 'r', encoding='utf-8') as f:
@@ -224,7 +224,7 @@ def test_crop_triggers():
     match = re.search(pattern, content, re.DOTALL)
     
     if not match:
-        assert False, f"Секция культуры {crop_id} не найдена в коде"
+        raise AssertionError(f"Секция культуры {crop_id} не найдена в коде")
     
     crop_section = match.group(0)
     triggers = []

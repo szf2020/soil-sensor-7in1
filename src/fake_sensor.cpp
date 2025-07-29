@@ -37,11 +37,10 @@ void fakeSensorTask(void* parameters)
             sensorData.ph = 6.5F + static_cast<float>(random(-20, 20)) / 10.0F;            // 4.5..8.5
 
             // NPK в мг/кг (как в реальном датчике JXCT)
-            // ✅ ОТЛАДКА: Генерируем данные, которые гарантированно вызовут рекомендации для томатов
-            // Условия для томатов: K > 200 (магний), N > 150 && P < 100 (фосфор)
-            const float nitrogen_mgkg = 180.0F + static_cast<float>(random(-10, 10));   // 170..190 мг/кг (>150)
-            const float phosphorus_mgkg = 80.0F + static_cast<float>(random(-10, 10));  // 70..90 мг/кг (<100)
-            const float potassium_mgkg = 250.0F + static_cast<float>(random(-30, 30));  // 220..280 мг/кг (>200)
+            // ✅ Генерируем разнообразные данные для тестирования различных культур
+            const float nitrogen_mgkg = 100.0F + static_cast<float>(random(-50, 100));  // 50..200 мг/кг
+            const float phosphorus_mgkg = 60.0F + static_cast<float>(random(-30, 60));  // 30..120 мг/кг  
+            const float potassium_mgkg = 200.0F + static_cast<float>(random(-100, 150)); // 100..350 мг/кг
 
             // Данные уже в мг/кг, конверсия не нужна
             NPKReferences npk{nitrogen_mgkg, phosphorus_mgkg, potassium_mgkg};
