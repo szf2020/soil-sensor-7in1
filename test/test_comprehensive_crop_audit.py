@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 🔬 КОМПЛЕКСНЫЙ НАУЧНЫЙ АУДИТ: Все культуры в JXCT
 Проверяет научную обоснованность рекомендаций для всех поддерживаемых культур
@@ -205,10 +206,14 @@ def simulate_realistic_sensor_values():
         "potassium": 235.0   # Умеренно-высокий калий
     }
 
-def test_crop_triggers(crop_id, sensor_values):
+def test_crop_triggers():
     """Тестирование срабатывания условий для культуры"""
+    # Используем тестовые данные
+    crop_id = "tomato"
+    sensor_values = simulate_realistic_sensor_values()
+    
     if crop_id not in SCIENTIFIC_CROP_DATA:
-        return {"triggers": [], "should_trigger": False}
+        assert False, f"Культура {crop_id} не найдена в данных"
     
     crop_engine_path = "src/business/crop_recommendation_engine.cpp"
     with open(crop_engine_path, 'r', encoding='utf-8') as f:
@@ -219,7 +224,7 @@ def test_crop_triggers(crop_id, sensor_values):
     match = re.search(pattern, content, re.DOTALL)
     
     if not match:
-        return {"triggers": [], "should_trigger": False}
+        assert False, f"Секция культуры {crop_id} не найдена в коде"
     
     crop_section = match.group(0)
     triggers = []
@@ -257,7 +262,10 @@ def test_crop_triggers(crop_id, sensor_values):
             elif operator == ">=" and npk_value >= value:
                 triggers.append(f"{nutrient} {npk_value} >= {value}")
     
-    return {"triggers": triggers, "should_trigger": len(triggers) > 0}
+    result = {"triggers": triggers, "should_trigger": len(triggers) > 0}
+    assert isinstance(result, dict), "Результат должен быть словарем"
+    assert "triggers" in result, "Результат должен содержать ключ 'triggers'"
+    assert "should_trigger" in result, "Результат должен содержать ключ 'should_trigger'"
 
 def comprehensive_crop_audit():
     """Комплексный аудит всех культур"""

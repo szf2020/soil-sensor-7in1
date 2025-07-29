@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 E2E тесты веб-интерфейса JXCT
 Тестирует основные страницы и API endpoints

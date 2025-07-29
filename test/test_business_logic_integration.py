@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 🧪 JXCT Business Logic Integration Tests v1.0
 Интеграционные тесты для проверки всей бизнес-логики

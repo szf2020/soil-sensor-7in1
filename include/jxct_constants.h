@@ -433,4 +433,4 @@ constexpr unsigned long NTP_TIMESTAMP_2000 = 946684800;  // 2000-01-01 00:00:00 
 // Валидация сенсорных данных - теперь используется единая система выше
 
 // Размеры JSON документов
-constexpr size_t SENSOR_JSON_DOC_SIZE = 1024;  // Увеличено для рекомендаций по культурам
+constexpr size_t SENSOR_JSON_DOC_SIZE = 1536;  // ✅ БЕЗОПАСНЫЙ размер для ESP32

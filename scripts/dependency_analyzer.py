@@ -1,8 +1,19 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-🔍 JXCT Dependency Analyzer v1.0
-Анализ зависимостей между модулями для безопасного рефакторинга
+JXCT Dependency Analyzer v1.0
+Dependency analysis between modules for safe refactoring
 """
+import sys
+import os
+
+# Принудительно устанавливаем UTF-8 для вывода в Windows
+if sys.platform.startswith('win'):
+    import codecs
+    import io
+    # Перенаправляем stdout и stderr через UTF-8
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 import os
 import re
@@ -37,26 +48,26 @@ class DependencyAnalyzer:
         }
 
     def analyze_project(self) -> Dict:
-        """Полный анализ зависимостей проекта"""
-        print("🔍 Анализ зависимостей JXCT проекта...")
+        """Full dependency analysis of the project"""
+        print("[INFO] Analyzing JXCT project dependencies...")
 
-        # Сканируем все C++ файлы
+        # Scan all C++ files
         cpp_files = list(self.project_root.rglob("*.cpp"))
         h_files = list(self.project_root.rglob("*.h"))
 
-        # Анализируем зависимости
+        # Analyze dependencies
         for file_path in cpp_files + h_files:
             if "test/" in str(file_path) or "docs/" in str(file_path):
                 continue
             self._analyze_file(file_path)
 
-        # Строим граф зависимостей
+        # Build dependency graph
         dependency_graph = self._build_dependency_graph()
 
-        # Анализируем критические пути
+        # Analyze critical paths
         critical_paths = self._find_critical_paths()
 
-        # Генерируем отчет
+        # Generate report
         report = {
             "modules": {name: {
                 "path": info.path,
@@ -97,7 +108,7 @@ class DependencyAnalyzer:
             )
 
         except Exception as e:
-            print(f"⚠️ Ошибка анализа {file_path}: {e}")
+            print(f"[WARNING] Ошибка анализа {file_path}: {e}")
 
     def _determine_category(self, file_path: Path) -> str:
         """Определяет категорию модуля"""
@@ -194,18 +205,18 @@ class DependencyAnalyzer:
         # Анализ циклических зависимостей
         cycles = self._find_cycles()
         if cycles:
-            recommendations.append(f"⚠️ Обнаружены циклические зависимости: {cycles}")
+            recommendations.append(f"[WARNING] Обнаружены циклические зависимости: {cycles}")
 
         # Анализ критических модулей
         critical_count = sum(1 for m in self.modules.values() if m.critical_level >= 4)
         if critical_count > 5:
-            recommendations.append(f"⚠️ Много критических модулей ({critical_count}). Рассмотрите разделение.")
+            recommendations.append(f"[WARNING] Много критических модулей ({critical_count}). Рассмотрите разделение.")
 
         # Анализ размера модулей
         large_modules = [name for name, info in self.modules.items()
                         if len(info.dependencies) > 10]
         if large_modules:
-            recommendations.append(f"⚠️ Большие модули с множественными зависимостями: {large_modules}")
+            recommendations.append(f"[WARNING] Большие модули с множественными зависимостями: {large_modules}")
 
         return recommendations
 
@@ -225,12 +236,12 @@ def main():
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
 
-    print(f"✅ Отчет сохранен: {output_file}")
-    print(f"📊 Проанализировано модулей: {len(report['modules'])}")
-    print(f"🔗 Критических путей: {len(report['critical_paths'])}")
+    print(f"[SUCCESS] Отчет сохранен: {output_file}")
+    print(f"[INFO] Проанализировано модулей: {len(report['modules'])}")
+    print(f"[INFO] Критических путей: {len(report['critical_paths'])}")
 
     if report['recommendations']:
-        print("\n💡 РЕКОМЕНДАЦИИ:")
+        print("\n[INFO] РЕКОМЕНДАЦИИ:")
         for rec in report['recommendations']:
             print(f"  {rec}")
 
