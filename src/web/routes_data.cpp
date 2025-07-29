@@ -258,19 +258,50 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     logDebugSafe("JSON API: antagonismRecommendations='%s'", antagonismRecommendations.c_str());
     
     // Получаем специфические рекомендации по культурам
-    logDebugSafe("JSON API: checking crop - strlen=%d, strcmp=%d", 
-                 strlen(config.cropId), strcmp(config.cropId, "none"));
+    logDebugSafe("JSON API: checking crop - strlen=%d, strcmp=%d, cropId='%s'", 
+                 strlen(config.cropId), strcmp(config.cropId, "none"), config.cropId);
     
-    if (strlen(config.cropId) > 0 && strcmp(config.cropId, "none") != 0) {
-        logDebugSafe("JSON API: generating recommendations for crop '%s'", config.cropId);
+    // ✅ Дополнительная проверка: если cropId пустой, устанавливаем "none"
+    if (strlen(config.cropId) == 0) {
+        strlcpy(config.cropId, "none", sizeof(config.cropId));
+        logDebugSafe("JSON API: cropId was empty, set to 'none'");
+    }
+    
+    // ✅ Добавляем cropId в JSON для отладки  
+    doc["crop_id"] = String(config.cropId);
+    doc["crop_id_debug"] = String("len=") + String(strlen(config.cropId)) + ", strcmp=" + String(strcmp(config.cropId, "none"));
+    doc["crop_id_hex"] = "";
+    // Показываем первые 8 байт в hex для отладки
+    for(int i = 0; i < min(8, (int)strlen(config.cropId)); i++) {
+        char hex[4];
+        sprintf(hex, "%02X ", (unsigned char)config.cropId[i]);
+        doc["crop_id_hex"] = doc["crop_id_hex"].as<String>() + String(hex);
+    }
+    doc["crop_len_check"] = strlen(config.cropId) > 0;
+    doc["crop_str_check"] = strcmp(config.cropId, "none") != 0;
+    doc["debug_npk_n"] = npk.nitrogen;
+    doc["debug_npk_p"] = npk.phosphorus;
+    doc["debug_npk_k"] = npk.potassium;
+    doc["debug_ph"] = sensorData.ph;
+    doc["debug_soil_type"] = (int)soilType;
+    
+    // ✅ ОТЛАДКА: Проверяем каждое условие отдельно
+    bool lenCheck = strlen(config.cropId) > 0;
+    bool strCheck = strcmp(config.cropId, "none") != 0;
+    logDebugSafe("JSON API: lenCheck=%d, strCheck=%d", lenCheck, strCheck);
+    
+    if (lenCheck && strCheck) {
         String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
             String(config.cropId), npk, soilType, sensorData.ph);
         doc["crop_specific_recommendations"] = cropRecommendations;
-        logDebugSafe("JSON API: cropRecommendations='%s'", cropRecommendations.c_str());
+        
+        // ✅ ТОЛЬКО ОДНО логирование для отладки
+        logDebugSafe("JSON API: crop='%s', rec_len=%d", config.cropId, cropRecommendations.length());
     } else {
         doc["crop_specific_recommendations"] = "";
-        logDebugSafe("JSON API: no crop selected - cropId='%s'", config.cropId);
     }
+    
+
 
     // ---- Дополнительная информация ----
     // Сезон по текущему месяцу
@@ -808,6 +839,14 @@ void setupDataRoutes()
             
             html += "const cropDiv = document.getElementById('crop-specific-recommendations');";
             html += "if(cropDiv) {";
+            html += "  console.log('Crop recommendations data:', d.crop_specific_recommendations);";
+            html += "  console.log('Crop ID:', d.crop_id);";
+            html += "  console.log('Crop ID debug:', d.crop_id_debug);";
+            html += "  console.log('Crop ID hex:', d.crop_id_hex);";
+            html += "  console.log('Crop len check:', d.crop_len_check);";
+            html += "  console.log('Crop str check:', d.crop_str_check);";
+            html += "  console.log('DEBUG NPK - N:', d.debug_npk_n, 'P:', d.debug_npk_p, 'K:', d.debug_npk_k);";
+            html += "  console.log('DEBUG pH:', d.debug_ph, 'SoilType:', d.debug_soil_type);";
             html += "  if(d.crop_specific_recommendations && typeof d.crop_specific_recommendations === 'string' && d.crop_specific_recommendations.length > 0) {";
             html += "    cropDiv.innerHTML = d.crop_specific_recommendations.replace(/\\n/g, '<br>');";
             html += "    console.log('Updated crop recommendations');";

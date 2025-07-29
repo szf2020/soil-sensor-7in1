@@ -58,7 +58,7 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
     // Битовые поля boolean флагов
     config.flags.hassEnabled = preferences.getBool("hassEnabled", false);
     config.flags.useRealSensor =
-        preferences.getBool("useRealSensor", true);  // ИСПРАВЛЕНО: по умолчанию используем реальный датчик
+        preferences.getBool("useRealSensor", false);  // ✅ ИСПРАВЛЕНО: по умолчанию используем фейковый датчик для отладки
     config.flags.mqttEnabled = preferences.getBool("mqttEnabled", false);
     config.flags.thingSpeakEnabled = preferences.getBool("tsEnabled", false);
     config.flags.compensationEnabled = preferences.getBool("compEnabled", false);
@@ -202,6 +202,10 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
     config.latitude = preferences.getFloat("lat", 0.0F);
     config.longitude = preferences.getFloat("lon", 0.0F);
     preferences.getString("cropId", config.cropId, sizeof(config.cropId));
+    // ✅ Устанавливаем значение по умолчанию если cropId пустой
+    if (strlen(config.cropId) == 0) {
+        strlcpy(config.cropId, "none", sizeof(config.cropId));
+    }
     config.flags.isGreenhouse = preferences.getBool("greenhouse", false);
     config.irrigationSpikeThreshold = preferences.getFloat("irrigTh", 8.0F);
     config.irrigationHoldMinutes = preferences.getUShort("irrigHold", 5);
@@ -363,6 +367,7 @@ void resetConfig()  // NOLINT(misc-use-internal-linkage)
     strlcpy(config.manufacturer, "", sizeof(config.manufacturer));
     strlcpy(config.model, "", sizeof(config.model));
     strlcpy(config.swVersion, "", sizeof(config.swVersion));
+    strlcpy(config.cropId, "none", sizeof(config.cropId));  // ✅ Сброс cropId к "none"
 
     // ✅ Сброс числовых полей
     config.mqttQos = 0;

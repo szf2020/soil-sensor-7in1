@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 🔍 СИСТЕМНЫЙ АУДИТ: Выбор культуры в JXCT
 Проверяет всю цепочку: веб-форма → сохранение → передача → обработка
@@ -13,9 +14,7 @@ def test_web_form_crop_options():
     print("🌱 ТЕСТ 1: Опции культур в веб-форме")
     
     routes_main_path = "src/web/routes_main.cpp"
-    if not os.path.exists(routes_main_path):
-        print("❌ Файл routes_main.cpp не найден")
-        return False
+    assert os.path.exists(routes_main_path), "Файл routes_main.cpp не найден"
     
     with open(routes_main_path, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -32,12 +31,9 @@ def test_web_form_crop_options():
     required_crops = ['tomato', 'cucumber', 'pepper', 'lettuce', 'blueberry']
     
     missing_crops = [crop for crop in required_crops if crop not in crop_values]
-    if missing_crops:
-        print(f"❌ Отсутствуют культуры: {missing_crops}")
-        return False
+    assert not missing_crops, f"Отсутствуют культуры: {missing_crops}"
     
     print("✅ Все основные культуры присутствуют в веб-форме")
-    return True
 
 def test_crop_form_processing():
     """Тест 2: Проверка обработки формы с культурой"""
@@ -50,25 +46,18 @@ def test_crop_form_processing():
     # Ищем обработку параметра crop
     crop_processing = re.search(r'if \(webServer\.hasArg\("crop"\)\)\s*\{([^}]+)\}', content, re.DOTALL)
     
-    if not crop_processing:
-        print("❌ Обработка параметра 'crop' не найдена")
-        return False
+    assert crop_processing is not None, "Обработка параметра 'crop' не найдена"
     
     processing_code = crop_processing.group(1).strip()
     print(f"📋 Найдена обработка: {processing_code}")
     
     # Проверяем что используется strlcpy для безопасного копирования
-    if 'strlcpy(config.cropId' not in processing_code:
-        print("❌ Не используется strlcpy для config.cropId")
-        return False
+    assert 'strlcpy(config.cropId' in processing_code, "Не используется strlcpy для config.cropId"
     
     # Проверяем что вызывается saveConfig()
-    if 'saveConfig()' not in content:
-        print("❌ saveConfig() не вызывается после обработки формы")
-        return False
+    assert 'saveConfig()' in content, "saveConfig() не вызывается после обработки формы"
     
     print("✅ Обработка формы корректна")
-    return True
 
 def test_config_persistence():
     """Тест 3: Проверка сохранения/загрузки cropId"""
@@ -80,18 +69,13 @@ def test_config_persistence():
     
     # Проверяем загрузку cropId
     load_pattern = r'preferences\.getString\("cropId",\s*config\.cropId,\s*sizeof\(config\.cropId\)\)'
-    if not re.search(load_pattern, content):
-        print("❌ Загрузка cropId из preferences не найдена")
-        return False
+    assert re.search(load_pattern, content), "Загрузка cropId из preferences не найдена"
     
     # Проверяем сохранение cropId
     save_pattern = r'preferences\.putString\("cropId",\s*config\.cropId\)'
-    if not re.search(save_pattern, content):
-        print("❌ Сохранение cropId в preferences не найдено")
-        return False
+    assert re.search(save_pattern, content), "Сохранение cropId в preferences не найдено"
     
     print("✅ Сохранение/загрузка cropId реализованы корректно")
-    return True
 
 def test_json_api_crop_handling():
     """Тест 4: Проверка передачи cropId в JSON API"""
@@ -102,23 +86,16 @@ def test_json_api_crop_handling():
         content = f.read()
     
     # Проверяем логирование cropId
-    if 'logDebugSafe("JSON API: soilProfile=%d, soilType=%d, cropId=\'%s\' (len=%d)"' not in content:
-        print("❌ Логирование cropId в JSON API не найдено")
-        return False
+    assert 'logDebugSafe("JSON API: soilProfile=%d, soilType=%d, cropId=\'%s\' (len=%d)"' in content, "Логирование cropId в JSON API не найдено"
     
     # Проверяем условие проверки cropId
     crop_check_pattern = r'if \(strlen\(config\.cropId\) > 0 && strcmp\(config\.cropId, "none"\) != 0\)'
-    if not re.search(crop_check_pattern, content):
-        print("❌ Проверка cropId в JSON API не найдена")
-        return False
+    assert re.search(crop_check_pattern, content), "Проверка cropId в JSON API не найдена"
     
     # Проверяем вызов generateCropSpecificRecommendations
-    if 'getCropEngine().generateCropSpecificRecommendations(' not in content:
-        print("❌ Вызов generateCropSpecificRecommendations не найден")
-        return False
+    assert 'getCropEngine().generateCropSpecificRecommendations(' in content, "Вызов generateCropSpecificRecommendations не найден"
     
     print("✅ JSON API корректно обрабатывает cropId")
-    return True
 
 def test_crop_engine_integration():
     """Тест 5: Проверка интеграции с CropRecommendationEngine"""
@@ -129,9 +106,7 @@ def test_crop_engine_integration():
         content = f.read()
     
     # Проверяем функцию generateCropSpecificRecommendations
-    if 'String CropRecommendationEngine::generateCropSpecificRecommendations(' not in content:
-        print("❌ Функция generateCropSpecificRecommendations не найдена")
-        return False
+    assert 'String CropRecommendationEngine::generateCropSpecificRecommendations(' in content, "Функция generateCropSpecificRecommendations не найдена"
     
     # Проверяем поддержку основных культур
     supported_crops = ['tomato', 'cucumber', 'pepper', 'lettuce', 'blueberry']
@@ -141,12 +116,9 @@ def test_crop_engine_integration():
         if f'cropName == "{crop}"' not in content:
             missing_support.append(crop)
     
-    if missing_support:
-        print(f"❌ Отсутствует поддержка культур: {missing_support}")
-        return False
+    assert not missing_support, f"Отсутствует поддержка культур: {missing_support}"
     
     print("✅ CropRecommendationEngine поддерживает все основные культуры")
-    return True
 
 def test_config_structure():
     """Тест 6: Проверка структуры конфигурации"""
@@ -155,23 +127,22 @@ def test_config_structure():
     # Проверяем определение cropId в структуре
     config_files = ["include/jxct_config_vars.h", "src/config.cpp"]
     
+    cropId_found = False
     for config_file in config_files:
         if os.path.exists(config_file):
             with open(config_file, 'r', encoding='utf-8') as f:
                 content = f.read()
                 if 'cropId' in content:
                     print(f"✅ cropId найден в {config_file}")
+                    cropId_found = True
                     
                     # Проверяем размер буфера
                     size_match = re.search(r'cropId\[[^\]]+\]', content)
                     if size_match:
                         print(f"📋 Размер буфера: {size_match.group()}")
                     break
-    else:
-        print("❌ Определение cropId в структуре конфигурации не найдено")
-        return False
     
-    return True
+    assert cropId_found, "Определение cropId в структуре конфигурации не найдено"
 
 def diagnose_potential_issues():
     """Диагностика потенциальных проблем"""
