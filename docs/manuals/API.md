@@ -211,7 +211,7 @@ Endpoints для работы с научными алгоритмами:
 | `SensorCompensationService` | Компенсация показаний датчиков | Rhoades et al. (1989), Уравнение Нернста, Delgado et al. |
 | `ScientificValidationService` | Валидация научных формул | Проверка источников и коэффициентов |
 | `NutrientInteractionService` | Взаимодействие питательных веществ | Антагонизм/синергизм NPK |
-| `CropRecommendationEngine` | Рекомендации по культурам | 15 культур, 13 типов почв |
+| `CropRecommendationEngine` | Рекомендации по культурам | 24 культуры, 13 типов почв |
 
 ### Топики публикации MQTT {#Topiki-publikatsii}
 ```
