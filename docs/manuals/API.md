@@ -2,6 +2,7 @@
 
 **Дата:** Июль 2025
 **Версия API:** v3.10.1
+**Статус:** Актуально
 
 REST API для интеграции с JXCT Soil Sensor v3.10.1
 
@@ -14,11 +15,14 @@ REST API для интеграции с JXCT Soil Sensor v3.10.1
 
 ## 📋 Содержание {#Soderzhanie}
 
-  - [Связанная документация](#Svyazannaya-dokumentatsiya)
+- [Связанная документация](#Svyazannaya-dokumentatsiya)
 - [Содержание](#Soderzhanie)
+- [🆕 API v3.10.1 Endpoints](#api-v3.10.1-endpoints)
 - [Доступ к API](#Dostup-k-api)
   - [Таблица актуальных эндпоинтов (API v3.10.1)](#Tablitsa-aktualnyh-endpointov-api-v3.10.1)
   - [УстаревшиеDEPRECATED эндпоинты](#Ustarevshiedeprecated-endpointy)
+- [🆕 Калибровка и научные сервисы](#calibration-scientific-services)
+- [🆕 Отчеты и мониторинг](#reports-monitoring)
 - [Веб-страницы](#Veb-stranitsy)
   - [GET  - Настройки](#get-Nastroyki)
   - [GET readings - Мониторинг](#get-readings-Monitoring)
@@ -42,16 +46,60 @@ REST API для интеграции с JXCT Soil Sensor v3.10.1
 
 ---
 
-## 📖 Содержание {#Soderzhanie}
+## 🆕 API v3.10.1 Endpoints {#api-v3.10.1-endpoints}
 
-1. **🌐 Доступ к API**
-2. **📊 Основные endpoints**
-3. **🌐 Веб-страницы**
-4. **📝 Настройки**
-5. **🏠 MQTT интеграция**
-6. **📡 ThingSpeak интеграция**
-7. **🔄 Коды ошибок**
-8. **📱 CORS поддержка**
+### 🎯 **Основные API v3.10.1 маршруты**
+
+Новая архитектура API v3.10.1 с улучшенной структурой и функциональностью:
+
+| Endpoint | Метод | Описание | Статус |
+|----------|-------|----------|--------|
+| `/api/v3.10.1/sensor` | GET | Данные датчика с timestamp | ✅ Активен |
+| `/api/v3.10.1/system/health` | GET | Состояние системы | ✅ Активен |
+| `/api/v3.10.1/system/status` | GET | Статус сервисов | ✅ Активен |
+| `/api/v3.10.1/system/reset` | POST | Сброс настроек | ✅ Активен |
+| `/api/v3.10.1/system/reboot` | POST | Перезагрузка | ✅ Активен |
+| `/api/v3.10.1/config/export` | GET | Экспорт конфигурации | ✅ Активен |
+
+### 📊 **Структура ответа API v3.10.1**
+
+**GET /api/v3.10.1/sensor:**
+```json
+{
+  "timestamp": "2025-07-11T14:30:00Z",
+  "version": "3.10.0",
+  "sensor_data": {
+    "temperature": 24.5,
+    "humidity": 65.2,
+    "ec": 1850,
+    "ph": 6.8,
+    "nitrogen": 180,
+    "phosphorus": 75,
+    "potassium": 220
+  },
+  "compensated": true,
+  "calibrated": true,
+  "soil_type": "loam",
+  "status": "ok"
+}
+```
+
+**GET /api/v3.10.1/system/health:**
+```json
+{
+  "system": "healthy",
+  "uptime": 3600000,
+  "memory_free": 45632,
+  "wifi_signal": -45,
+  "services": {
+    "modbus": "active",
+    "mqtt": "connected", 
+    "calibration": "ready",
+    "compensation": "active"
+  },
+  "timestamp": "2025-07-11T14:30:00Z"
+}
+```
 
 ---
 
@@ -115,9 +163,57 @@ curl -X POST http://192.168.4.1/save \
 - `homeassistant_discovery` - включить HA Discovery (1/0)
 - `web_password` - пароль для веб-интерфейса
 
-## 🏠 MQTT интеграция {#mqtt-integratsiya}
+## 🆕 Калибровка и научные сервисы {#calibration-scientific-services}
 
-### Топики публикации {#Topiki-publikatsii}
+### 📊 **API калибровки**
+
+Новые endpoints для работы с системой калибровки:
+
+| Endpoint | Метод | Описание | Статус |
+|----------|-------|----------|--------|
+| `/api/calibration/status` | GET | Статус калибровки | ✅ Активен |
+| `/api/calibration/temperature/add` | POST | Добавить точку калибровки температуры | ✅ Активен |
+| `/api/calibration/humidity/add` | POST | Добавить точку калибровки влажности | ✅ Активен |
+| `/api/calibration/ec/add` | POST | Добавить точку калибровки EC | ✅ Активен |
+| `/api/calibration/ph/add` | POST | Добавить точку калибровки pH | ✅ Активен |
+| `/api/calibration/reset` | POST | Сброс калибровки | ✅ Активен |
+
+**GET /api/calibration/status:**
+```json
+{
+  "calibration_active": true,
+  "points": {
+    "temperature": 5,
+    "humidity": 3,
+    "ec": 7,
+    "ph": 4
+  },
+  "last_calibration": "2025-07-11T12:30:00Z",
+  "status": "ready"
+}
+```
+
+**POST /api/calibration/temperature/add:**
+```json
+{
+  "reference_value": 25.0,
+  "sensor_reading": 24.8,
+  "timestamp": "2025-07-11T14:30:00Z"
+}
+```
+
+### 🔬 **Научные сервисы**
+
+Endpoints для работы с научными алгоритмами:
+
+| Сервис | Описание | Алгоритм |
+|--------|----------|----------|
+| `SensorCompensationService` | Компенсация показаний датчиков | Rhoades et al. (1989), Уравнение Нернста, Delgado et al. |
+| `ScientificValidationService` | Валидация научных формул | Проверка источников и коэффициентов |
+| `NutrientInteractionService` | Взаимодействие питательных веществ | Антагонизм/синергизм NPK |
+| `CropRecommendationEngine` | Рекомендации по культурам | 15 культур, 13 типов почв |
+
+### Топики публикации MQTT {#Topiki-publikatsii}
 ```
 homeassistant/sensor/jxct_soil/temperature/state
 homeassistant/sensor/jxct_soil/humidity/state
@@ -150,6 +246,79 @@ mosquitto_pub -h mqtt.local -t "jxct/command" -m "publish_test"
 - Field5: Азот (mg/kg)
 - Field6: Фосфор (mg/kg)
 - Field7: Калий (mg/kg)
+
+## 🆕 Отчеты и мониторинг {#reports-monitoring}
+
+### 📈 **API отчетов**
+
+Новые endpoints для получения отчетов и метрик:
+
+| Endpoint | Метод | Описание | Статус |
+|----------|-------|----------|--------|
+| `/api/reports/test-summary` | GET | Сводка результатов тестирования | ✅ Активен |
+| `/api/reports/technical-debt` | GET | Отчет по техническому долгу | ✅ Активен |
+| `/api/reports/performance` | GET | Метрики производительности | ✅ Активен |
+| `/reports` | GET | HTML-страница отчетов | ✅ Активен |
+| `/reports/dashboard.html` | GET | Дашборд метрик | ✅ Активен |
+
+**GET /api/reports/test-summary:**
+```json
+{
+  "timestamp": "2025-07-11T14:30:00Z",
+  "total": 53,
+  "passed": 53,
+  "failed": 0,
+  "success_rate": 100.0,
+  "coverage": {
+    "python_tests": 50,
+    "native_tests": 3,
+    "total_coverage": "70.8%"
+  }
+}
+```
+
+**GET /api/reports/technical-debt:**
+```json
+{
+  "clang_tidy_warnings": 169,
+  "categories": {
+    "bugprone": 19,
+    "readability": 74,
+    "modernize": 38,
+    "misc": 38
+  },
+  "critical_files": [
+    "src/business/crop_recommendation_engine.cpp",
+    "src/modbus_sensor.cpp"
+  ],
+  "timestamp": "2025-07-11T14:30:00Z"
+}
+```
+
+### 🏠 **MQTT интеграция**
+
+### Топики публикации {#Topiki-publikatsii}
+```
+homeassistant/sensor/jxct_soil/temperature/state
+homeassistant/sensor/jxct_soil/humidity/state
+homeassistant/sensor/jxct_soil/ec/state
+homeassistant/sensor/jxct_soil/ph/state
+homeassistant/sensor/jxct_soil/nitrogen/state
+homeassistant/sensor/jxct_soil/phosphorus/state
+homeassistant/sensor/jxct_soil/potassium/state
+```
+
+### Команды управления {#Komandy-upravleniya}
+```bash
+# Перезагрузка устройства
+mosquitto_pub -h mqtt.local -t "jxct/command" -m "reboot"
+
+# Сброс настроек
+mosquitto_pub -h mqtt.local -t "jxct/command" -m "reset"
+
+# Тестовая публикация
+mosquitto_pub -h mqtt.local -t "jxct/command" -m "publish_test"
+```
 
 ## 🔄 Коды ошибок {#Kody-oshibok}
 
