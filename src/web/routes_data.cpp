@@ -760,6 +760,22 @@ void setupDataRoutes()
 
             html += "<script>";
             html += "function set(id,v){if(v!==undefined&&v!==null){document.getElementById(id).textContent=v;}}";
+            html += "function setRaw(id,v){";
+            html += "  if(v!==undefined&&v!==null){";
+            html += "    var precision = '';";
+            html += "    switch(id) {";
+            html += "      case 'temp_raw': precision = ' (±0.5°C)'; break;";
+            html += "      case 'hum_raw': precision = ' (±3%RH)'; break;";
+            html += "      case 'ph_raw': precision = ' (±0.3pH)'; break;";
+            html += "      case 'n_raw':";
+            html += "      case 'p_raw':";
+            html += "      case 'k_raw': precision = ' (2%)'; break;";
+            html += "      case 'ec_raw': precision = ' (±2-5%)'; break;";
+            html += "      default: precision = '';";
+            html += "    }";
+            html += "    document.getElementById(id).textContent = v + precision;";
+            html += "  }";
+            html += "}";
             html +=
                 "function colorDelta(a,b){var diff=Math.abs(a-b)/b*100;if(diff>30)return 'red';if(diff>20)return "
                 "'orange';if(diff>10)return 'yellow';return '';}";
@@ -767,6 +783,27 @@ void setupDataRoutes()
                 "function colorRange(v,min,max){var span=(max-min);if(span<=0)return '';if(v<min||v>max)return "
                 "'red';if(v<min+0.05*span||v>max-0.05*span)return 'orange';if(v<min+0.10*span||v>max-0.10*span)return "
                 "'yellow';return '';}";
+            // Функция для покраски RAW значений на основе диапазонов датчика JXCT
+            html +=
+                "function colorSensorRange(value, sensorType) {";
+            html += "  if(isNaN(value)) return '';";
+            html += "  switch(sensorType) {";
+            html += "    case 'temp':";
+            html += "      return (value >= -45 && value <= 115) ? 'green' : 'red';";
+            html += "    case 'hum':";
+            html += "      return (value >= 0 && value <= 100) ? 'green' : 'red';";
+            html += "    case 'ph':";
+            html += "      return (value >= 3 && value <= 9) ? 'green' : 'red';";
+            html += "    case 'n':";
+            html += "    case 'p':";
+            html += "    case 'k':";
+            html += "      return (value >= 0 && value <= 1999) ? 'green' : 'red';";
+            html += "    case 'ec':";
+            html += "      return (value >= 0 && value <= 10000) ? 'green' : 'red';";
+            html += "    default:";
+            html += "      return '';";
+            html += "  }";
+            html += "}";
             html +=
                 "function applyColor(spanId,cls){var "
                 "el=document.getElementById(spanId);if(!el)return;el.classList.remove('red','orange','yellow','green');"
@@ -784,13 +821,13 @@ void setupDataRoutes()
             html += ".then(d => {";
             html += "  if (!d || typeof d !== 'object') throw new Error('Invalid data');";
             html += "  console.log('Valid sensor data received:', d);";
-            html += "set('temp_raw',d.raw_temperature);";
-            html += "set('hum_raw',d.raw_humidity);";
-            html += "set('ec_raw',d.raw_ec);";
-            html += "set('ph_raw',d.raw_ph);";
-            html += "set('n_raw',d.raw_nitrogen);";
-            html += "set('p_raw',d.raw_phosphorus);";
-            html += "set('k_raw',d.raw_potassium);";
+            html += "setRaw('temp_raw',d.raw_temperature);";
+            html += "setRaw('hum_raw',d.raw_humidity);";
+            html += "setRaw('ec_raw',d.raw_ec);";
+            html += "setRaw('ph_raw',d.raw_ph);";
+            html += "setRaw('n_raw',d.raw_nitrogen);";
+            html += "setRaw('p_raw',d.raw_phosphorus);";
+            html += "setRaw('k_raw',d.raw_potassium);";
             html +=
                 "set('temp_rec',d.rec_temperature);set('hum_rec',d.rec_humidity);set('ec_rec',d.rec_ec);set('ph_rec',d."
                 "rec_ph);set('n_rec',d.rec_nitrogen);set('p_rec',d.rec_phosphorus);set('k_rec',d.rec_potassium);";
@@ -897,20 +934,18 @@ void setupDataRoutes()
             html += "  console.error('crop-specific-recommendations div not found');";
             html += "}";
             
+            // Покраска RAW значений на основе диапазонов датчика JXCT
             html +=
-                "var "
-                "tvr=parseFloat(d.raw_temperature);applyColor('temp_raw',colorRange(tvr,limits.temp.min,limits.temp."
-                "max));";
+                "var tvr=parseFloat(d.raw_temperature);applyColor('temp_raw',colorSensorRange(tvr,'temp'));";
             html +=
-                "var "
-                "hvr=parseFloat(d.raw_humidity);applyColor('hum_raw',colorRange(hvr,limits.hum.min,limits.hum.max));";
-            html += "var evr=parseFloat(d.raw_ec);applyColor('ec_raw',colorRange(evr,limits.ec.min,limits.ec.max));";
-            html += "var pvr=parseFloat(d.raw_ph);applyColor('ph_raw',colorRange(pvr,limits.ph.min,limits.ph.max));";
-            html += "var nvr=parseFloat(d.raw_nitrogen);applyColor('n_raw',colorRange(nvr,limits.n.min,limits.n.max));";
+                "var hvr=parseFloat(d.raw_humidity);applyColor('hum_raw',colorSensorRange(hvr,'hum'));";
+            html += "var evr=parseFloat(d.raw_ec);applyColor('ec_raw',colorSensorRange(evr,'ec'));";
+            html += "var pvr=parseFloat(d.raw_ph);applyColor('ph_raw',colorSensorRange(pvr,'ph'));";
+            html += "var nvr=parseFloat(d.raw_nitrogen);applyColor('n_raw',colorSensorRange(nvr,'n'));";
             html +=
-                "var p2r=parseFloat(d.raw_phosphorus);applyColor('p_raw',colorRange(p2r,limits.p.min,limits.p.max));";
+                "var p2r=parseFloat(d.raw_phosphorus);applyColor('p_raw',colorSensorRange(p2r,'p'));";
             html +=
-                "var kvr=parseFloat(d.raw_potassium);applyColor('k_raw',colorRange(kvr,limits.k.min,limits.k.max));";
+                "var kvr=parseFloat(d.raw_potassium);applyColor('k_raw',colorSensorRange(kvr,'k'));";
             html +=
                 "['temp','hum','ec','ph','n','p','k'].forEach(function(id){var "
                 "el=document.getElementById(id);if(el){el.classList.remove('red','orange','yellow','green');}});";
@@ -922,7 +957,14 @@ void setupDataRoutes()
             html += "var cp=parseFloat(d.phosphorus||0);";
             html += "var ck=parseFloat(d.potassium||0);";
             
-            // Компенсированные значения БЕЗ ПОКРАСКИ (как было раньше)
+            // Применяем цвета к компенсированным значениям (второй столбец)
+            html += "applyColor('temp', colorRange(ct, limits.temp.min, limits.temp.max));";
+            html += "applyColor('hum',  colorRange(ch, limits.hum.min, limits.hum.max));";
+            html += "applyColor('ec',   colorRange(ce, limits.ec.min, limits.ec.max));";
+            html += "applyColor('ph',   colorRange(cph, limits.ph.min, limits.ph.max));";
+            html += "applyColor('n',    colorRange(cn, limits.n.min, limits.n.max));";
+            html += "applyColor('p',    colorRange(cp, limits.p.min, limits.p.max));";
+            html += "applyColor('k',    colorRange(ck, limits.k.min, limits.k.max));";
             
             // Применяем цвета к рекомендациям
             html += "applyColor('temp_rec', colorDelta(ct, parseFloat(d.rec_temperature||0)));";
