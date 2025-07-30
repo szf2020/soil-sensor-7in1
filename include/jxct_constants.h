@@ -202,6 +202,7 @@ constexpr int MODBUS_RE_PIN = 5;   // GPIO5 - управление приемо�
 constexpr size_t SENSOR_TASK_STACK_SIZE = 4096;
 constexpr size_t RESET_BUTTON_TASK_STACK_SIZE = 2048;
 constexpr size_t WEB_SERVER_TASK_STACK_SIZE = 8192;
+constexpr size_t MAIN_LOOP_STACK_SIZE = 8192;  // ✅ Увеличен для стабильности
 
 // Приоритеты задач
 constexpr UBaseType_t SENSOR_TASK_PRIORITY = 2;

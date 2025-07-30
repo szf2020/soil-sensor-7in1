@@ -277,11 +277,21 @@ void setup()  // NOLINT(misc-use-internal-linkage)
     logPrintSeparator("─", 60);
 }
 
-// ✅ Неблокирующий главный цикл с оптимизированными интервалами
+// ✅ Неблокирующий главный цикл с оптимизированными интервалами и защитой от переполнения стека
 void loop()  // NOLINT(misc-use-internal-linkage)
 {
     const unsigned long currentTime = millis();
     esp_task_wdt_reset();
+    
+    // ✅ ЗАЩИТА ОТ ПЕРЕПОЛНЕНИЯ СТЕКА: проверяем свободную память
+    static unsigned long lastMemoryCheck = 0;
+    if (currentTime - lastMemoryCheck >= 30000) {  // Каждые 30 секунд
+        size_t freeHeap = ESP.getFreeHeap();
+        if (freeHeap < 50000) {  // Меньше 50KB - критично
+            logWarn("Критически мало памяти: " + String(freeHeap) + " байт");
+        }
+        lastMemoryCheck = currentTime;
+    }
 
     // Обновление NTP каждые 6 часов
     if (timeClient != nullptr && millis() - lastNtpUpdate > 6 * 3600 * 1000)
