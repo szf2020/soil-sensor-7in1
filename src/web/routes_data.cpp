@@ -436,7 +436,14 @@ void setupDataRoutes()
             html += "<div>";
             html += "<h4>🔧 Компенсация показаний</h4>";
             html += "<ul style='margin:0;padding-left:20px;'>";
-            html += "<li><strong>RAW</strong> - сырые данные с датчика</li>";
+            html += "<li><strong>RAW</strong> - сырые данные с датчика JXCT</li>";
+            html += "<ul style='margin:5px 0;padding-left:15px;'>";
+            html += "<li><strong>Цветовая индикация RAW:</strong></li>";
+            html += "<ul style='margin:5px 0;padding-left:15px;'>";
+            html += "<li>🟢 <strong>Зеленый:</strong> значение в рабочем диапазоне датчика</li>";
+            html += "<li>🔴 <strong>Красный:</strong> значение за пределами датчика</li>";
+            html += "</ul>";
+            html += "</ul>";
             html += "<li><strong>Компенс.</strong> - данные после математической компенсации:</li>";
             html += "<ul style='margin:5px 0;padding-left:15px;'>";
             html += "<li>🌡️ <strong>Температура:</strong> без изменений</li>";
@@ -445,6 +452,15 @@ void setupDataRoutes()
             html += "<li>⚗️ <strong>pH:</strong> температурная поправка по Нернсту (Nernst, 1889)</li>";
             html +=
                 "<li>🌿🌱🍎 <strong>NPK:</strong> экспоненциальная компенсация по T и влажности (Delgado et al., 2020)</li>";
+            html += "</ul>";
+            html += "<ul style='margin:5px 0;padding-left:15px;'>";
+            html += "<li><strong>Цветовая индикация Компенс.:</strong></li>";
+            html += "<ul style='margin:5px 0;padding-left:15px;'>";
+            html += "<li>🟢 <strong>Зеленый:</strong> отклонение от RAW ≤ ±5%</li>";
+            html += "<li>🟡 <strong>Желтый:</strong> отклонение от RAW ≤ ±10%</li>";
+            html += "<li>🟠 <strong>Оранжевый:</strong> отклонение от RAW ≤ ±15%</li>";
+            html += "<li>🔴 <strong>Красный:</strong> отклонение от RAW > ±15%</li>";
+            html += "</ul>";
             html += "</ul>";
             html += "</ul>";
             html += "</div>";
@@ -456,14 +472,17 @@ void setupDataRoutes()
             html += "<li><strong>Базовые нормы</strong> для выбранной культуры</li>";
             html += "<li><strong>Сезонные корректировки</strong> (весна/лето/осень/зима)</li>";
             html += "<li><strong>Тип среды</strong> (открытый грунт/теплица/помещение)</li>";
-            html += "<li><strong>Цветовая индикация:</strong></li>";
+            html += "<li><strong>Цветовая индикация Рекомендаций:</strong></li>";
             html += "<ul style='margin:5px 0;padding-left:15px;'>";
-            html += "<li>🟢 <strong>Зеленый:</strong> оптимальные условия измерения</li>";
-            html +=
-                "<li>🟠 <strong>Оранжевый:</strong> неоптимальные условия (влажность <25%, температура <5°C или "
-                ">40°C)</li>";
-            html += "<li>🔵 <strong>Синий:</strong> полив активен (временная невалидность)</li>";
-            html += "<li>🔴 <strong>Красный:</strong> ошибки датчика (выход за физические пределы)</li>";
+            html += "<li>🟢 <strong>Зеленый:</strong> отклонение от рекомендации ≤ ±10%</li>";
+            html += "<li>🟡 <strong>Желтый:</strong> отклонение от рекомендации ≤ ±20%</li>";
+            html += "<li>🟠 <strong>Оранжевый:</strong> отклонение от рекомендации ≤ ±30%</li>";
+            html += "<li>🔴 <strong>Красный:</strong> отклонение от рекомендации > ±30%</li>";
+            html += "</ul>";
+            html += "<li><strong>Цветовая индикация валидности данных:</strong></li>";
+            html += "<ul style='margin:5px 0;padding-left:15px;'>";
+            html += "<li>🟢 <strong>Зеленый:</strong> данные валидны</li>";
+            html += "<li>🔴 <strong>Красный:</strong> данные не валидны</li>";
             html += "</ul>";
             html += "</ul>";
             html += "</div>";
@@ -728,6 +747,32 @@ void setupDataRoutes()
                 "function colorRange(v,min,max){var span=(max-min);if(span<=0)return '';if(v<min||v>max)return "
                 "'red';if(v<min+0.05*span||v>max-0.05*span)return 'orange';if(v<min+0.10*span||v>max-0.10*span)return "
                 "'yellow';return '';}";
+            
+            // 🌈 НОВАЯ ЛОГИКА РАСКРАСКИ ДЛЯ JXCT ДАТЧИКА
+            html += "function colorSensorRange(value, sensorType) {";
+            html += "  const ranges = {";
+            html += "    temp: { min: -40, max: 80, precision: '±0.5°C' },";
+            html += "    hum: { min: 0, max: 100, precision: '±3%RH' },";
+            html += "    ph: { min: 3, max: 9, precision: '±0.3pH' },";
+            html += "    ec: { min: 0, max: 20000, precision: '±2-5%' },";
+            html += "    n: { min: 0, max: 1999, precision: '2%' },";
+            html += "    p: { min: 0, max: 1999, precision: '2%' },";
+            html += "    k: { min: 0, max: 1999, precision: '2%' }";
+            html += "  };";
+            html += "  const range = ranges[sensorType];";
+            html += "  if (!range) return '';";
+            html += "  if (value < range.min || value > range.max) return 'red';";
+            html += "  return 'green';"; // В рабочем диапазоне - зеленый
+            html += "}";
+            
+            html += "function colorCompensationDeviation(compensated, raw) {";
+            html += "  if (raw === 0) return '';";
+            html += "  const deviation = Math.abs((compensated - raw) / raw * 100);";
+            html += "  if (deviation <= 5) return 'green';";
+            html += "  if (deviation <= 10) return 'yellow';";
+            html += "  if (deviation <= 15) return 'orange';";
+            html += "  return 'red';";
+            html += "}";
             html +=
                 "function applyColor(spanId,cls){var "
                 "el=document.getElementById(spanId);if(!el)return;el.classList.remove('red','orange','yellow','green');"
@@ -858,20 +903,14 @@ void setupDataRoutes()
             html += "  console.error('crop-specific-recommendations div not found');";
             html += "}";
             
-            html +=
-                "var "
-                "tvr=parseFloat(d.raw_temperature);applyColor('temp_raw',colorRange(tvr,limits.temp.min,limits.temp."
-                "max));";
-            html +=
-                "var "
-                "hvr=parseFloat(d.raw_humidity);applyColor('hum_raw',colorRange(hvr,limits.hum.min,limits.hum.max));";
-            html += "var evr=parseFloat(d.raw_ec);applyColor('ec_raw',colorRange(evr,limits.ec.min,limits.ec.max));";
-            html += "var pvr=parseFloat(d.raw_ph);applyColor('ph_raw',colorRange(pvr,limits.ph.min,limits.ph.max));";
-            html += "var nvr=parseFloat(d.raw_nitrogen);applyColor('n_raw',colorRange(nvr,limits.n.min,limits.n.max));";
-            html +=
-                "var p2r=parseFloat(d.raw_phosphorus);applyColor('p_raw',colorRange(p2r,limits.p.min,limits.p.max));";
-            html +=
-                "var kvr=parseFloat(d.raw_potassium);applyColor('k_raw',colorRange(kvr,limits.k.min,limits.k.max));";
+            // 🌈 НОВАЯ РАСКРАСКА RAW ЗНАЧЕНИЙ ПО ДИАПАЗОНАМ JXCT
+            html += "var tvr=parseFloat(d.raw_temperature);applyColor('temp_raw',colorSensorRange(tvr,'temp'));";
+            html += "var hvr=parseFloat(d.raw_humidity);applyColor('hum_raw',colorSensorRange(hvr,'hum'));";
+            html += "var evr=parseFloat(d.raw_ec);applyColor('ec_raw',colorSensorRange(evr,'ec'));";
+            html += "var pvr=parseFloat(d.raw_ph);applyColor('ph_raw',colorSensorRange(pvr,'ph'));";
+            html += "var nvr=parseFloat(d.raw_nitrogen);applyColor('n_raw',colorSensorRange(nvr,'n'));";
+            html += "var p2r=parseFloat(d.raw_phosphorus);applyColor('p_raw',colorSensorRange(p2r,'p'));";
+            html += "var kvr=parseFloat(d.raw_potassium);applyColor('k_raw',colorSensorRange(kvr,'k'));";
             html +=
                 "['temp','hum','ec','ph','n','p','k'].forEach(function(id){var "
                 "el=document.getElementById(id);if(el){el.classList.remove('red','orange','yellow','green');}});";
@@ -883,7 +922,14 @@ void setupDataRoutes()
             html += "var cp=parseFloat(d.phosphorus||0);";
             html += "var ck=parseFloat(d.potassium||0);";
             
-            // Компенсированные значения БЕЗ ПОКРАСКИ (как было раньше)
+            // 🌈 РАСКРАСКА КОМПЕНСИРОВАННЫХ ЗНАЧЕНИЙ ПО ОТКЛОНЕНИЮ ОТ RAW
+            html += "applyColor('temp', colorCompensationDeviation(ct, parseFloat(d.raw_temperature||0)));";
+            html += "applyColor('hum',  colorCompensationDeviation(ch, parseFloat(d.raw_humidity||0)));";
+            html += "applyColor('ec',   colorCompensationDeviation(ce, parseFloat(d.raw_ec||0)));";
+            html += "applyColor('ph',   colorCompensationDeviation(cph, parseFloat(d.raw_ph||0)));";
+            html += "applyColor('n',    colorCompensationDeviation(cn, parseFloat(d.raw_nitrogen||0)));";
+            html += "applyColor('p',    colorCompensationDeviation(cp, parseFloat(d.raw_phosphorus||0)));";
+            html += "applyColor('k',    colorCompensationDeviation(ck, parseFloat(d.raw_potassium||0)));";
             
             // Применяем цвета к рекомендациям
             html += "applyColor('temp_rec', colorDelta(ct, parseFloat(d.rec_temperature||0)));";
