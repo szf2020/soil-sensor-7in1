@@ -26,9 +26,44 @@ void fakeSensorTask(void* parameters)
     const uint32_t dataGenerationInterval = 10;              // Генерация данных каждые 10 итераций
     uint32_t iterationCounter = 0;
 
+    // ✅ Генерируем данные сразу при запуске
+    sensorData.temperature = 22.0F + static_cast<float>(random(-50, 50)) / 10.0F;  // 17.0..27.0
+    sensorData.humidity = 50.0F + static_cast<float>(random(-200, 200)) / 10.0F;   // 30..70
+    sensorData.ec = 1000 + static_cast<float>(random(-200, 200));                  // 800..1200
+    sensorData.ph = 6.5F + static_cast<float>(random(-20, 20)) / 10.0F;            // 4.5..8.5
+
+    // NPK в мг/кг (как в реальном датчике JXCT)
+    const float nitrogen_mgkg = 100.0F + static_cast<float>(random(-50, 100));  // 50..200 мг/кг
+    const float phosphorus_mgkg = 60.0F + static_cast<float>(random(-30, 60));  // 30..120 мг/кг  
+    const float potassium_mgkg = 200.0F + static_cast<float>(random(-100, 150)); // 100..350 мг/кг
+
+    NPKReferences npk{nitrogen_mgkg, phosphorus_mgkg, potassium_mgkg};
+
+    sensorData.valid = true;
+    sensorData.last_update = millis();
+
+    // RAW значения до компенсации
+    sensorData.raw_temperature = sensorData.temperature;
+    sensorData.raw_humidity = sensorData.humidity;
+    sensorData.raw_ec = sensorData.ec;
+    sensorData.raw_ph = sensorData.ph;
+    sensorData.raw_nitrogen = npk.nitrogen;
+    sensorData.raw_phosphorus = npk.phosphorus;
+    sensorData.raw_potassium = npk.potassium;
+
+    // Сохраняем NPK данные в sensorData
+    sensorData.nitrogen = npk.nitrogen;
+    sensorData.phosphorus = npk.phosphorus;
+    sensorData.potassium = npk.potassium;
+
+    // Применяем единую логику обработки данных датчика
+    SensorProcessing::processSensorData(sensorData, config);
+
+    DEBUG_PRINTLN("[fakeSensorTask] Сгенерированы начальные тестовые данные датчика");
+
     for (;;)
     {
-        // Генерируем данные только каждые 10 секунд
+        // Генерируем данные каждые 10 секунд
         if (iterationCounter >= dataGenerationInterval)
         {
             sensorData.temperature = 22.0F + static_cast<float>(random(-50, 50)) / 10.0F;  // 17.0..27.0
