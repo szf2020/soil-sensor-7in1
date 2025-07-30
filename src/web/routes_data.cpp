@@ -532,6 +532,45 @@ void setupDataRoutes()
                 {
                     recHeader = "Смородина";
                 }
+                // НОВЫЕ КУЛЬТУРЫ (Фаза 1 - Приоритетные, научно обоснованные 2024)
+                else if (strcmp(cropId, "spinach") == 0)
+                {
+                    recHeader = "Шпинат";
+                }
+                else if (strcmp(cropId, "basil") == 0)
+                {
+                    recHeader = "Базилик";
+                }
+                else if (strcmp(cropId, "cannabis") == 0)
+                {
+                    recHeader = "Конопля";
+                }
+                // НОВЫЕ КУЛЬТУРЫ (Фаза 2 - Важные, стратегические)
+                else if (strcmp(cropId, "wheat") == 0)
+                {
+                    recHeader = "Пшеница";
+                }
+                else if (strcmp(cropId, "potato") == 0)
+                {
+                    recHeader = "Картофель";
+                }
+                // НОВЫЕ КУЛЬТУРЫ (Фаза 3 - Завершающие, полное покрытие)
+                else if (strcmp(cropId, "kale") == 0)
+                {
+                    recHeader = "Кале";
+                }
+                else if (strcmp(cropId, "blackberry") == 0)
+                {
+                    recHeader = "Ежевика";
+                }
+                else if (strcmp(cropId, "soybean") == 0)
+                {
+                    recHeader = "Соя";
+                }
+                else if (strcmp(cropId, "carrot") == 0)
+                {
+                    recHeader = "Морковь";
+                }
             }
 
             html += "<div class='section'><table class='data'><thead><tr><th></th><th>RAW</th><th>Компенс.</th><th>" +

@@ -1,0 +1,123 @@
+# JXCT Soil Sensor Project - PowerShell Profile
+# Оптимизирован для работы с ESP32, PlatformIO и Python
+
+# Цветовая схема для лучшей читаемости
+$Host.UI.RawUI.ForegroundColor = "White"
+$Host.UI.RawUI.BackgroundColor = "Black"
+
+# Алиасы для быстрого доступа к командам
+Set-Alias -Name pio -Value platformio
+Set-Alias -Name py -Value python
+
+# Функции для работы с JXCT проектом
+function Get-JXCTVersion {
+    Write-Host "🔍 Проверка версии JXCT..." -ForegroundColor Cyan
+    if (Test-Path "version.h") {
+        $version = Get-Content "version.h" | Select-String "VERSION" | ForEach-Object { $_.ToString().Split('"')[1] }
+        Write-Host "📦 Версия JXCT: $version" -ForegroundColor Green
+    } else {
+        Write-Host "❌ Файл version.h не найден" -ForegroundColor Red
+    }
+}
+
+function Sync-JXCTVersion {
+    Write-Host "🔄 Синхронизация версий..." -ForegroundColor Cyan
+    py scripts/sync_versions.py
+}
+
+function Test-JXCT {
+    Write-Host "🧪 Запуск тестов JXCT..." -ForegroundColor Cyan
+    py scripts/run_simple_tests.py
+}
+
+function Build-JXCT {
+    Write-Host "🔨 Сборка ESP32..." -ForegroundColor Cyan
+    pio run -e esp32dev
+}
+
+function Build-JXCT-Prod {
+    Write-Host "🏭 Production сборка ESP32..." -ForegroundColor Cyan
+    pio run -e esp32dev-production
+}
+
+function Analyze-JXCT {
+    Write-Host "🔍 Анализ кода clang-tidy..." -ForegroundColor Cyan
+    py scripts/run_clang_tidy_analysis.py
+}
+
+function Test-JXCT-Native {
+    Write-Host "🧪 Native тесты..." -ForegroundColor Cyan
+    pio test -e native
+}
+
+function Clean-JXCT {
+    Write-Host "🧹 Очистка проекта..." -ForegroundColor Cyan
+    pio run -t clean
+    Remove-Item -Path ".pio" -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Host "✅ Проект очищен" -ForegroundColor Green
+}
+
+function Update-JXCT {
+    Write-Host "🔄 Обновление зависимостей..." -ForegroundColor Cyan
+    pio update
+    py -m pip install --upgrade pytest
+}
+
+function Monitor-JXCT {
+    Write-Host "📡 Мониторинг ESP32..." -ForegroundColor Cyan
+    pio device monitor
+}
+
+function Flash-JXCT {
+    Write-Host "⚡ Прошивка ESP32..." -ForegroundColor Cyan
+    pio run -t upload
+}
+
+function Flash-JXCT-Monitor {
+    Write-Host "⚡ Прошивка и мониторинг ESP32..." -ForegroundColor Cyan
+    pio run -t upload -t monitor
+}
+
+# Функция для быстрого перехода в проект
+function cd-JXCT {
+    Set-Location "C:\Git\JXCT"
+    Write-Host "📁 Переход в проект JXCT" -ForegroundColor Green
+    Get-JXCTVersion
+}
+
+# Функция для проверки состояния проекта
+function Status-JXCT {
+    Write-Host "📊 Статус проекта JXCT:" -ForegroundColor Cyan
+    Write-Host "================================" -ForegroundColor Gray
+    
+    # Проверка git статуса
+    Write-Host "🔀 Git статус:" -ForegroundColor Yellow
+    git status --porcelain | ForEach-Object { Write-Host "  $_" -ForegroundColor White }
+    
+    # Проверка размера сборки
+    if (Test-Path ".pio\build\esp32dev\firmware.elf") {
+        $size = (Get-Item ".pio\build\esp32dev\firmware.elf").Length
+        Write-Host "📦 Размер прошивки: $([math]::Round($size/1MB, 2)) MB" -ForegroundColor Green
+    }
+    
+    # Проверка тестов
+    if (Test-Path "test_reports\simple-test-report.json") {
+        Write-Host "✅ Тесты выполнены" -ForegroundColor Green
+    } else {
+        Write-Host "⚠️ Тесты не выполнены" -ForegroundColor Yellow
+    }
+}
+
+# Приветственное сообщение
+Write-Host "🚀 JXCT Environment Loaded!" -ForegroundColor Green
+Write-Host "📋 Доступные команды:" -ForegroundColor Cyan
+Write-Host "  Get-JXCTVersion    - Проверить версию" -ForegroundColor White
+Write-Host "  Sync-JXCTVersion   - Синхронизировать версии" -ForegroundColor White
+Write-Host "  Test-JXCT          - Запустить тесты" -ForegroundColor White
+Write-Host "  Build-JXCT         - Собрать ESP32" -ForegroundColor White
+Write-Host "  Analyze-JXCT       - Анализ кода" -ForegroundColor White
+Write-Host "  Clean-JXCT         - Очистить проект" -ForegroundColor White
+Write-Host "  Monitor-JXCT       - Мониторинг ESP32" -ForegroundColor White
+Write-Host "  Flash-JXCT         - Прошить ESP32" -ForegroundColor White
+Write-Host "  Status-JXCT        - Статус проекта" -ForegroundColor White
+Write-Host "  cd-JXCT            - Перейти в проект" -ForegroundColor White 
