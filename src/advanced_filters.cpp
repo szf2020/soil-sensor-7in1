@@ -1,7 +1,7 @@
 /**
  * @file advanced_filters.cpp
  * @brief Улучшенные алгоритмы фильтрации для снижения зашумленности данных
- * @version 3.10.0
+ * @version 3.12.0
  * @author JXCT Development Team
  */
 

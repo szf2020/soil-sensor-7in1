@@ -168,7 +168,7 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
         config.forcePublishCycles = FORCE_PUBLISH_CYCLES;
     }
 
-    // v3.10.0: УЛУЧШЕННАЯ СИСТЕМА ФИЛЬТРАЦИИ
+    // v3.12.0: УЛУЧШЕННАЯ СИСТЕМА ФИЛЬТРАЦИИ
     config.exponentialAlpha = preferences.getFloat("expAlpha", EXPONENTIAL_ALPHA_DEFAULT);
     config.outlierThreshold = preferences.getFloat("outlierThresh", OUTLIER_THRESHOLD_DEFAULT);
     config.kalmanEnabled = preferences.getUChar("kalmanEnabled", 0);       // 0=отключен по умолчанию
@@ -181,7 +181,7 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
         config.exponentialAlpha = EXPONENTIAL_ALPHA_DEFAULT;
     }
 
-    // v3.10.1: СИСТЕМА КАЛИБРОВКИ - загрузка значений
+    // v3.12.0: СИСТЕМА КАЛИБРОВКИ - загрузка значений
     config.temperatureOffset = preferences.getFloat("tempOffset", 0.0F);
     config.humidityOffset = preferences.getFloat("humOffset", 0.0F);
     config.npkSlopeN = preferences.getFloat("npkSlopeN", 1.0F);
@@ -296,7 +296,7 @@ void saveConfig()  // NOLINT(misc-use-internal-linkage)
     preferences.putUChar("filterAlgo", config.filterAlgorithm);
     preferences.putUChar("outlierFilter", config.outlierFilterEnabled);
 
-    // v3.10.0: УЛУЧШЕННАЯ СИСТЕМА ФИЛЬТРАЦИИ
+    // v3.12.0: УЛУЧШЕННАЯ СИСТЕМА ФИЛЬТРАЦИИ
     preferences.putFloat("expAlpha", config.exponentialAlpha);
     preferences.putFloat("outlierThresh", config.outlierThreshold);
     preferences.putUChar("kalmanEnabled", config.kalmanEnabled);
@@ -316,7 +316,7 @@ void saveConfig()  // NOLINT(misc-use-internal-linkage)
     preferences.putBool("seasonAdj", config.flags.seasonalAdjustEnabled);
     preferences.putBool("autoOTA", config.flags.autoOtaEnabled);
 
-    // v3.10.1: СИСТЕМА КАЛИБРОВКИ - сохранение значений
+    // v3.12.0: СИСТЕМА КАЛИБРОВКИ - сохранение значений
     preferences.putFloat("tempOffset", config.temperatureOffset);
     preferences.putFloat("humOffset", config.humidityOffset);
     preferences.putFloat("npkSlopeN", config.npkSlopeN);
@@ -399,7 +399,7 @@ void resetConfig()  // NOLINT(misc-use-internal-linkage)
     config.filterAlgorithm = 0;       // среднее
     config.outlierFilterEnabled = 0;  // отключен для минимальной фильтрации
 
-    // v3.10.0: Сброс настроек улучшенной фильтрации
+    // v3.12.0: Сброс настроек улучшенной фильтрации
     config.exponentialAlpha = EXPONENTIAL_ALPHA_DEFAULT;
     config.outlierThreshold = OUTLIER_THRESHOLD_DEFAULT;
     config.kalmanEnabled = 0;      // отключен по умолчанию

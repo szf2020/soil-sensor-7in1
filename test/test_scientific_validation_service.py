@@ -301,7 +301,7 @@ class TestScientificValidationService:
 
         all_results = {
             "timestamp": "2025-01-11T08:45:00",
-            "version": "3.10.1",
+            "version": "3.12.0",
             "service": "ScientificValidationService",
             "tests": {},
             "overall_status": "PASSED",

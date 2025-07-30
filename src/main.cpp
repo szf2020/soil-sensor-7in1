@@ -240,7 +240,7 @@ void setup()  // NOLINT(misc-use-internal-linkage)
     static std::unique_ptr<ISensor> gSensor = createSensorInstance();
     gSensor->begin();
 
-    // ✅ v3.10.0: Инициализация улучшенной системы фильтрации
+    // ✅ v3.12.0: Инициализация улучшенной системы фильтрации
     AdvancedFilters::resetAllFilters();
     logSuccess("Улучшенная система фильтрации инициализирована");
 
@@ -311,7 +311,7 @@ void loop()  // NOLINT(misc-use-internal-linkage)
             logWarn("Данные датчика недоступны");
         }
 
-        // ✅ v3.10.0: Статистика улучшенной фильтрации
+        // ✅ v3.12.0: Статистика улучшенной фильтрации
         AdvancedFilters::logFilterStatistics();
 
         logPrintSeparator("─", 60);

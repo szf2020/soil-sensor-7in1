@@ -1,4 +1,4 @@
-# JXCT Soil Sensor v3.10.1
+# JXCT Soil Sensor v3.12.0
 
 **Профессиональная IoT система мониторинга почвы на базе ESP32**
 
@@ -11,7 +11,7 @@
 [![Tests](https://img.shields.io/badge/tests-100%25%20passing-brightgreen.svg?style=for-the-badge)](https://github.com/Gfermoto/soil-sensor-7in1)
 [![IoT](https://img.shields.io/badge/IoT-Smart%20Agriculture-blue.svg?style=for-the-badge)](https://github.com/Gfermoto/soil-sensor-7in1)
 
-**Версия:** 3.10.1 | **Дата:** 12.07.2024 | **Статус:** ✅ Production Ready
+**Версия:** 3.12.0 | **Дата:** 30.07.2025 | **Статус:** ✅ Production Ready
 
 ---
 
@@ -354,7 +354,7 @@ A: Через [GitHub Issues](https://github.com/Gfermoto/soil-sensor-7in1/issue
 
 ## 🧪 Тестирование: критические и некритические тесты
 
-С версии 3.10.1 тесты разделены на две категории:
+С версии 3.12.0 тесты разделены на две категории:
 
 - **Критические тесты** (`test/test_critical_validation.py`, `test/test_format.py`):
   - Должны всегда проходить.

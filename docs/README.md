@@ -1,8 +1,8 @@
-# JXCT Soil Sensor v3.10.1
+# JXCT Soil Sensor v3.12.0
 
 **Профессиональная IoT система мониторинга почвы на базе ESP32**
 
-**Статус:** ✅ **ГОТОВ К ПРОДАКШЕНУ** | **Версия:** 3.10.1 | **Обновлено:** 12.07.2024
+**Статус:** ✅ **ГОТОВ К ПРОДАКШЕНУ** | **Версия:** 3.12.0 | **Обновлено:** 30.07.2025
 
 [![Version](https://img.shields.io/github/v/tag/Gfermoto/soil-sensor-7in1?color=blue&label=version)](https://github.com/Gfermoto/soil-sensor-7in1/releases)
 [![Platform](https://img.shields.io/badge/platform-ESP32-green.svg)](https://www.espressif.com/en/products/socs/esp32)
@@ -98,4 +98,4 @@
 
 ---
 
-**Версия:** 3.10.1 | **Обновлено:** 12.07.2024 | **Статус:** ✅ Готов к продакшену
+**Версия:** 3.12.0 | **Обновлено:** 30.07.2025 | **Статус:** ✅ Готов к продакшену
