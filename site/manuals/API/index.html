@@ -26,7 +26,7 @@
     
     
       
-        <title>📖 API документация - JXCT Soil Sensor v3.10.0</title>
+        <title>📖 API документация - JXCT Soil Sensor v3.10.1</title>
       
     
     
@@ -98,7 +98,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Верхний колонтитул">
-    <a href="../.." title="JXCT Soil Sensor v3.10.0" class="md-header__button md-logo" aria-label="JXCT Soil Sensor v3.10.0" data-md-component="logo">
+    <a href="../.." title="JXCT Soil Sensor v3.10.1" class="md-header__button md-logo" aria-label="JXCT Soil Sensor v3.10.1" data-md-component="logo">
       
   <img src="../../assets/images/favicon.png" alt="logo">
 
@@ -111,7 +111,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            JXCT Soil Sensor v3.10.0
+            JXCT Soil Sensor v3.10.1
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -362,12 +362,12 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Навигация" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="JXCT Soil Sensor v3.10.0" class="md-nav__button md-logo" aria-label="JXCT Soil Sensor v3.10.0" data-md-component="logo">
+    <a href="../.." title="JXCT Soil Sensor v3.10.1" class="md-nav__button md-logo" aria-label="JXCT Soil Sensor v3.10.1" data-md-component="logo">
       
   <img src="../../assets/images/favicon.png" alt="logo">
 
     </a>
-    JXCT Soil Sensor v3.10.0
+    JXCT Soil Sensor v3.10.1
   </label>
   
     <div class="md-nav__source">
@@ -640,11 +640,35 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#Soderzhanie" class="md-nav__link">
+  <a href="#api-v1-endpoints" class="md-nav__link">
     <span class="md-ellipsis">
-      📖 Содержание
+      🆕 API v1 Endpoints
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="🆕 API v1 Endpoints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      🎯 Основные API v1 маршруты
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-v1_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      📊 Структура ответа API v1
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -748,19 +772,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#mqtt-integratsiya" class="md-nav__link">
+  <a href="#calibration-scientific-services" class="md-nav__link">
     <span class="md-ellipsis">
-      🏠 MQTT интеграция
+      🆕 Калибровка и научные сервисы
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🏠 MQTT интеграция">
+    <nav class="md-nav" aria-label="🆕 Калибровка и научные сервисы">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      📊 API калибровки
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔬 Научные сервисы
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#Topiki-publikatsii" class="md-nav__link">
     <span class="md-ellipsis">
-      Топики публикации
+      Топики публикации MQTT
     </span>
   </a>
   
@@ -786,6 +828,57 @@
       📡 ThingSpeak интеграция
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reports-monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      🆕 Отчеты и мониторинг
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🆕 Отчеты и мониторинг">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      📈 API отчетов
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mqtt" class="md-nav__link">
+    <span class="md-ellipsis">
+      🏠 MQTT интеграция
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#Topiki-publikatsii" class="md-nav__link">
+    <span class="md-ellipsis">
+      Топики публикации
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#Komandy-upravleniya" class="md-nav__link">
+    <span class="md-ellipsis">
+      Команды управления
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1155,11 +1248,35 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#Soderzhanie" class="md-nav__link">
+  <a href="#api-v1-endpoints" class="md-nav__link">
     <span class="md-ellipsis">
-      📖 Содержание
+      🆕 API v1 Endpoints
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="🆕 API v1 Endpoints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      🎯 Основные API v1 маршруты
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-v1_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      📊 Структура ответа API v1
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1263,19 +1380,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#mqtt-integratsiya" class="md-nav__link">
+  <a href="#calibration-scientific-services" class="md-nav__link">
     <span class="md-ellipsis">
-      🏠 MQTT интеграция
+      🆕 Калибровка и научные сервисы
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🏠 MQTT интеграция">
+    <nav class="md-nav" aria-label="🆕 Калибровка и научные сервисы">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      📊 API калибровки
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔬 Научные сервисы
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#Topiki-publikatsii" class="md-nav__link">
     <span class="md-ellipsis">
-      Топики публикации
+      Топики публикации MQTT
     </span>
   </a>
   
@@ -1301,6 +1436,57 @@
       📡 ThingSpeak интеграция
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reports-monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      🆕 Отчеты и мониторинг
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🆕 Отчеты и мониторинг">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      📈 API отчетов
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mqtt" class="md-nav__link">
+    <span class="md-ellipsis">
+      🏠 MQTT интеграция
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#Topiki-publikatsii" class="md-nav__link">
+    <span class="md-ellipsis">
+      Топики публикации
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#Komandy-upravleniya" class="md-nav__link">
+    <span class="md-ellipsis">
+      Команды управления
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1649,8 +1835,9 @@
 
 <h1 id="api-jxct-7-1">📊 API документация JXCT 7-в-1<a class="headerlink" href="#api-jxct-7-1" title="Постоянная ссылка">&para;</a></h1>
 <p><strong>Дата:</strong> Июль 2025
-<strong>Версия API:</strong> v1</p>
-<p>REST API для интеграции с JXCT Soil Sensor v3.10.0</p>
+<strong>Версия API:</strong> v1
+<strong>Статус:</strong> Актуально</p>
+<p>REST API для интеграции с JXCT Soil Sensor v3.10.1</p>
 <h3 id="Svyazannaya-dokumentatsiya">🔗 Связанная документация<a class="headerlink" href="#Svyazannaya-dokumentatsiya" title="Постоянная ссылка">&para;</a></h3>
 <ul>
 <li><strong><a href="https://gfermoto.github.io/soil-sensor-7in1/api/index.html">🖥️ C++ API</a></strong> - Документация исходного кода</li>
@@ -1662,9 +1849,12 @@
 <ul>
 <li><a href="#Svyazannaya-dokumentatsiya">Связанная документация</a></li>
 <li><a href="#Soderzhanie">Содержание</a></li>
+<li><a href="#api-v1-endpoints">🆕 API v1 Endpoints</a></li>
 <li><a href="#Dostup-k-api">Доступ к API</a></li>
 <li><a href="#Tablitsa-aktualnyh-endpointov-api-v1">Таблица актуальных эндпоинтов (API v1)</a></li>
 <li><a href="#Ustarevshiedeprecated-endpointy">УстаревшиеDEPRECATED эндпоинты</a></li>
+<li><a href="#calibration-scientific-services">🆕 Калибровка и научные сервисы</a></li>
+<li><a href="#reports-monitoring">🆕 Отчеты и мониторинг</a></li>
 <li><a href="#Veb-stranitsy">Веб-страницы</a></li>
 <li><a href="#get-Nastroyki">GET  - Настройки</a></li>
 <li><a href="#get-readings-Monitoring">GET readings - Мониторинг</a></li>
@@ -1687,17 +1877,92 @@
 <li><a href="#Poleznye-ssylki">Полезные ссылки</a></li>
 </ul>
 <hr />
-<h2 id="Soderzhanie">📖 Содержание<a class="headerlink" href="#Soderzhanie" title="Постоянная ссылка">&para;</a></h2>
-<ol>
-<li><strong>🌐 Доступ к API</strong></li>
-<li><strong>📊 Основные endpoints</strong></li>
-<li><strong>🌐 Веб-страницы</strong></li>
-<li><strong>📝 Настройки</strong></li>
-<li><strong>🏠 MQTT интеграция</strong></li>
-<li><strong>📡 ThingSpeak интеграция</strong></li>
-<li><strong>🔄 Коды ошибок</strong></li>
-<li><strong>📱 CORS поддержка</strong></li>
-</ol>
+<h2 id="api-v1-endpoints">🆕 API v1 Endpoints<a class="headerlink" href="#api-v1-endpoints" title="Постоянная ссылка">&para;</a></h2>
+<h3 id="api-v1">🎯 <strong>Основные API v1 маршруты</strong><a class="headerlink" href="#api-v1" title="Постоянная ссылка">&para;</a></h3>
+<p>Новая архитектура API v1 с улучшенной структурой и функциональностью:</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Метод</th>
+<th>Описание</th>
+<th>Статус</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/v1/sensor</code></td>
+<td>GET</td>
+<td>Данные датчика с timestamp</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/api/v1/system/health</code></td>
+<td>GET</td>
+<td>Состояние системы</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/api/v1/system/status</code></td>
+<td>GET</td>
+<td>Статус сервисов</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/api/v1/system/reset</code></td>
+<td>POST</td>
+<td>Сброс настроек</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/api/v1/system/reboot</code></td>
+<td>POST</td>
+<td>Перезагрузка</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/api/v1/config/export</code></td>
+<td>GET</td>
+<td>Экспорт конфигурации</td>
+<td>✅ Активен</td>
+</tr>
+</tbody>
+</table>
+<h3 id="api-v1_1">📊 <strong>Структура ответа API v1</strong><a class="headerlink" href="#api-v1_1" title="Постоянная ссылка">&para;</a></h3>
+<p><strong>GET /api/v1/sensor:</strong>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-07-11T14:30:00Z&quot;</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;3.10.1&quot;</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">&quot;sensor_data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">&quot;temperature&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">24.5</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="nt">&quot;humidity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">65.2</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">&quot;ec&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1850</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">&quot;ph&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">6.8</span><span class="p">,</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nt">&quot;nitrogen&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">180</span><span class="p">,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">&quot;phosphorus&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">75</span><span class="p">,</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="nt">&quot;potassium&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">220</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">  </span><span class="nt">&quot;compensated&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">  </span><span class="nt">&quot;calibrated&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">  </span><span class="nt">&quot;soil_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;loam&quot;</span><span class="p">,</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ok&quot;</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="p">}</span>
+</span></code></pre></div></p>
+<p><strong>GET /api/v1/system/health:</strong>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;system&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;healthy&quot;</span><span class="p">,</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">&quot;uptime&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3600000</span><span class="p">,</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">&quot;memory_free&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">45632</span><span class="p">,</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="nt">&quot;wifi_signal&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">-45</span><span class="p">,</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="nt">&quot;services&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">&quot;modbus&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;active&quot;</span><span class="p">,</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="nt">&quot;mqtt&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;connected&quot;</span><span class="p">,</span><span class="w"> </span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="nt">&quot;calibration&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ready&quot;</span><span class="p">,</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="nt">&quot;compensation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;active&quot;</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-07-11T14:30:00Z&quot;</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="p">}</span>
+</span></code></pre></div></p>
 <hr />
 <h2 id="Dostup-k-api">🌐 Доступ к API<a class="headerlink" href="#Dostup-k-api" title="Постоянная ссылка">&para;</a></h2>
 <p><strong>Все endpoints открыты</strong> - авторизация не требуется.</p>
@@ -1805,12 +2070,12 @@
 <p>Статус WiFi, MQTT, ThingSpeak, датчика, системные метрики.</p>
 <h2 id="Nastroyki">📝 Настройки<a class="headerlink" href="#Nastroyki" title="Постоянная ссылка">&para;</a></h2>
 <h3 id="post-save-Sohranenie-nastroek">POST /save - Сохранение настроек<a class="headerlink" href="#post-save-Sohranenie-nastroek" title="Постоянная ссылка">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://192.168.4.1/save<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span>-d<span class="w"> </span><span class="s2">&quot;wifi_ssid=MyWiFi&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s2">&quot;wifi_password=mypass&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s2">&quot;mqtt_server=mqtt.local&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span>-d<span class="w"> </span><span class="s2">&quot;mqtt_port=1883&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span>-d<span class="w"> </span><span class="s2">&quot;thingspeak_api_key=YOUR_KEY&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://192.168.4.1/save<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>-d<span class="w"> </span><span class="s2">&quot;wifi_ssid=MyWiFi&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s2">&quot;wifi_password=mypass&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s2">&quot;mqtt_server=mqtt.local&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span>-d<span class="w"> </span><span class="s2">&quot;mqtt_port=1883&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span>-d<span class="w"> </span><span class="s2">&quot;thingspeak_api_key=YOUR_KEY&quot;</span>
 </span></code></pre></div>
 <p><strong>Параметры:</strong>
 - <code>wifi_ssid</code>, <code>wifi_password</code> - WiFi настройки
@@ -1818,25 +2083,128 @@
 - <code>thingspeak_api_key</code> - ThingSpeak API ключ
 - <code>homeassistant_discovery</code> - включить HA Discovery (1/0)
 - <code>web_password</code> - пароль для веб-интерфейса</p>
-<h2 id="mqtt-integratsiya">🏠 MQTT интеграция<a class="headerlink" href="#mqtt-integratsiya" title="Постоянная ссылка">&para;</a></h2>
-<h3 id="Topiki-publikatsii">Топики публикации<a class="headerlink" href="#Topiki-publikatsii" title="Постоянная ссылка">&para;</a></h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>homeassistant/sensor/jxct_soil/temperature/state
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>homeassistant/sensor/jxct_soil/humidity/state
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>homeassistant/sensor/jxct_soil/ec/state
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>homeassistant/sensor/jxct_soil/ph/state
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>homeassistant/sensor/jxct_soil/nitrogen/state
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>homeassistant/sensor/jxct_soil/phosphorus/state
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>homeassistant/sensor/jxct_soil/potassium/state
+<h2 id="calibration-scientific-services">🆕 Калибровка и научные сервисы<a class="headerlink" href="#calibration-scientific-services" title="Постоянная ссылка">&para;</a></h2>
+<h3 id="api">📊 <strong>API калибровки</strong><a class="headerlink" href="#api" title="Постоянная ссылка">&para;</a></h3>
+<p>Новые endpoints для работы с системой калибровки:</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Метод</th>
+<th>Описание</th>
+<th>Статус</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/calibration/status</code></td>
+<td>GET</td>
+<td>Статус калибровки</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/api/calibration/temperature/add</code></td>
+<td>POST</td>
+<td>Добавить точку калибровки температуры</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/api/calibration/humidity/add</code></td>
+<td>POST</td>
+<td>Добавить точку калибровки влажности</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/api/calibration/ec/add</code></td>
+<td>POST</td>
+<td>Добавить точку калибровки EC</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/api/calibration/ph/add</code></td>
+<td>POST</td>
+<td>Добавить точку калибровки pH</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/api/calibration/reset</code></td>
+<td>POST</td>
+<td>Сброс калибровки</td>
+<td>✅ Активен</td>
+</tr>
+</tbody>
+</table>
+<p><strong>GET /api/calibration/status:</strong>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;calibration_active&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">&quot;points&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="nt">&quot;temperature&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="nt">&quot;humidity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="nt">&quot;ec&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="nt">&quot;ph&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span><span class="nt">&quot;last_calibration&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-07-11T12:30:00Z&quot;</span><span class="p">,</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ready&quot;</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="p">}</span>
+</span></code></pre></div></p>
+<p><strong>POST /api/calibration/temperature/add:</strong>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;reference_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">25.0</span><span class="p">,</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;sensor_reading&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">24.8</span><span class="p">,</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-07-11T14:30:00Z&quot;</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">}</span>
+</span></code></pre></div></p>
+<h3 id="_1">🔬 <strong>Научные сервисы</strong><a class="headerlink" href="#_1" title="Постоянная ссылка">&para;</a></h3>
+<p>Endpoints для работы с научными алгоритмами:</p>
+<table>
+<thead>
+<tr>
+<th>Сервис</th>
+<th>Описание</th>
+<th>Алгоритм</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SensorCompensationService</code></td>
+<td>Компенсация показаний датчиков</td>
+<td>Rhoades et al. (1989), Уравнение Нернста, Delgado et al.</td>
+</tr>
+<tr>
+<td><code>ScientificValidationService</code></td>
+<td>Валидация научных формул</td>
+<td>Проверка источников и коэффициентов</td>
+</tr>
+<tr>
+<td><code>NutrientInteractionService</code></td>
+<td>Взаимодействие питательных веществ</td>
+<td>Антагонизм/синергизм NPK</td>
+</tr>
+<tr>
+<td><code>CropRecommendationEngine</code></td>
+<td>Рекомендации по культурам</td>
+<td>15 культур, 13 типов почв</td>
+</tr>
+</tbody>
+</table>
+<h3 id="Topiki-publikatsii">Топики публикации MQTT<a class="headerlink" href="#Topiki-publikatsii" title="Постоянная ссылка">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>homeassistant/sensor/jxct_soil/temperature/state
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>homeassistant/sensor/jxct_soil/humidity/state
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>homeassistant/sensor/jxct_soil/ec/state
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>homeassistant/sensor/jxct_soil/ph/state
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>homeassistant/sensor/jxct_soil/nitrogen/state
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>homeassistant/sensor/jxct_soil/phosphorus/state
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>homeassistant/sensor/jxct_soil/potassium/state
 </span></code></pre></div>
 <h3 id="Komandy-upravleniya">Команды управления<a class="headerlink" href="#Komandy-upravleniya" title="Постоянная ссылка">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Перезагрузка устройства</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>mosquitto_pub<span class="w"> </span>-h<span class="w"> </span>mqtt.local<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;jxct/command&quot;</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;reboot&quot;</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Сброс настроек</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>mosquitto_pub<span class="w"> </span>-h<span class="w"> </span>mqtt.local<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;jxct/command&quot;</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;reset&quot;</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Тестовая публикация</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>mosquitto_pub<span class="w"> </span>-h<span class="w"> </span>mqtt.local<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;jxct/command&quot;</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;publish_test&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Перезагрузка устройства</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>mosquitto_pub<span class="w"> </span>-h<span class="w"> </span>mqtt.local<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;jxct/command&quot;</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;reboot&quot;</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># Сброс настроек</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>mosquitto_pub<span class="w"> </span>-h<span class="w"> </span>mqtt.local<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;jxct/command&quot;</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;reset&quot;</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="c1"># Тестовая публикация</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>mosquitto_pub<span class="w"> </span>-h<span class="w"> </span>mqtt.local<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;jxct/command&quot;</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;publish_test&quot;</span>
 </span></code></pre></div>
 <h2 id="thingspeak-integratsiya">📡 ThingSpeak интеграция<a class="headerlink" href="#thingspeak-integratsiya" title="Постоянная ссылка">&para;</a></h2>
 <p>Автоматическая отправка данных каждые 15 секунд в поля:
@@ -1847,6 +2215,101 @@
 - Field5: Азот (mg/kg)
 - Field6: Фосфор (mg/kg)
 - Field7: Калий (mg/kg)</p>
+<h2 id="reports-monitoring">🆕 Отчеты и мониторинг<a class="headerlink" href="#reports-monitoring" title="Постоянная ссылка">&para;</a></h2>
+<h3 id="api_1">📈 <strong>API отчетов</strong><a class="headerlink" href="#api_1" title="Постоянная ссылка">&para;</a></h3>
+<p>Новые endpoints для получения отчетов и метрик:</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Метод</th>
+<th>Описание</th>
+<th>Статус</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/reports/test-summary</code></td>
+<td>GET</td>
+<td>Сводка результатов тестирования</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/api/reports/technical-debt</code></td>
+<td>GET</td>
+<td>Отчет по техническому долгу</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/api/reports/performance</code></td>
+<td>GET</td>
+<td>Метрики производительности</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/reports</code></td>
+<td>GET</td>
+<td>HTML-страница отчетов</td>
+<td>✅ Активен</td>
+</tr>
+<tr>
+<td><code>/reports/dashboard.html</code></td>
+<td>GET</td>
+<td>Дашборд метрик</td>
+<td>✅ Активен</td>
+</tr>
+</tbody>
+</table>
+<p><strong>GET /api/reports/test-summary:</strong>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-07-11T14:30:00Z&quot;</span><span class="p">,</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">&quot;total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">53</span><span class="p">,</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">&quot;passed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">53</span><span class="p">,</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="nt">&quot;failed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span><span class="nt">&quot;success_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">  </span><span class="nt">&quot;coverage&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span><span class="nt">&quot;python_tests&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span><span class="nt">&quot;native_tests&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">    </span><span class="nt">&quot;total_coverage&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;70.8%&quot;</span>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="p">}</span>
+</span></code></pre></div></p>
+<p><strong>GET /api/reports/technical-debt:</strong>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">&quot;clang_tidy_warnings&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">169</span><span class="p">,</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">&quot;categories&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="nt">&quot;bugprone&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">19</span><span class="p">,</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="nt">&quot;readability&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">74</span><span class="p">,</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="nt">&quot;modernize&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">38</span><span class="p">,</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="nt">&quot;misc&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">38</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span><span class="nt">&quot;critical_files&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">    </span><span class="s2">&quot;src/business/crop_recommendation_engine.cpp&quot;</span><span class="p">,</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">    </span><span class="s2">&quot;src/modbus_sensor.cpp&quot;</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">  </span><span class="p">],</span>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-07-11T14:30:00Z&quot;</span>
+</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="p">}</span>
+</span></code></pre></div></p>
+<h3 id="mqtt">🏠 <strong>MQTT интеграция</strong><a class="headerlink" href="#mqtt" title="Постоянная ссылка">&para;</a></h3>
+<h3 id="Topiki-publikatsii">Топики публикации<a class="headerlink" href="#Topiki-publikatsii" title="Постоянная ссылка">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>homeassistant/sensor/jxct_soil/temperature/state
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>homeassistant/sensor/jxct_soil/humidity/state
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>homeassistant/sensor/jxct_soil/ec/state
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>homeassistant/sensor/jxct_soil/ph/state
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>homeassistant/sensor/jxct_soil/nitrogen/state
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>homeassistant/sensor/jxct_soil/phosphorus/state
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>homeassistant/sensor/jxct_soil/potassium/state
+</span></code></pre></div>
+<h3 id="Komandy-upravleniya">Команды управления<a class="headerlink" href="#Komandy-upravleniya" title="Постоянная ссылка">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Перезагрузка устройства</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>mosquitto_pub<span class="w"> </span>-h<span class="w"> </span>mqtt.local<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;jxct/command&quot;</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;reboot&quot;</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Сброс настроек</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>mosquitto_pub<span class="w"> </span>-h<span class="w"> </span>mqtt.local<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;jxct/command&quot;</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;reset&quot;</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="c1"># Тестовая публикация</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>mosquitto_pub<span class="w"> </span>-h<span class="w"> </span>mqtt.local<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;jxct/command&quot;</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;publish_test&quot;</span>
+</span></code></pre></div>
 <h2 id="Kody-oshibok">🔄 Коды ошибок<a class="headerlink" href="#Kody-oshibok" title="Постоянная ссылка">&para;</a></h2>
 <ul>
 <li><strong>200</strong> - Успешно</li>
@@ -1856,39 +2319,39 @@
 </ul>
 <h2 id="cors-podderzhka">📱 CORS поддержка<a class="headerlink" href="#cors-podderzhka" title="Постоянная ссылка">&para;</a></h2>
 <p>API поддерживает CORS для локальных сетей:
-<div class="language-javascript highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nx">fetch</span><span class="p">(</span><span class="s1">&#39;http://192.168.4.1/api/sensor&#39;</span><span class="p">)</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">response</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">data</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">data</span><span class="p">));</span>
+<div class="language-javascript highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nx">fetch</span><span class="p">(</span><span class="s1">&#39;http://192.168.4.1/api/sensor&#39;</span><span class="p">)</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">response</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">data</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">data</span><span class="p">));</span>
 </span></code></pre></div></p>
 <h2 id="Primery-integratsiy">🔧 Примеры интеграций<a class="headerlink" href="#Primery-integratsiy" title="Постоянная ссылка">&para;</a></h2>
 <h3 id="python">Python<a class="headerlink" href="#python" title="Постоянная ссылка">&para;</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Получить данные датчика</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;http://192.168.4.1/api/sensor&#39;</span><span class="p">)</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Температура: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">°C&quot;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1"># Получить данные датчика</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;http://192.168.4.1/api/sensor&#39;</span><span class="p">)</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Температура: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">°C&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="nodejs">Node.js<a class="headerlink" href="#nodejs" title="Постоянная ссылка">&para;</a></h3>
-<div class="language-javascript highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">axios</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s1">&#39;axios&#39;</span><span class="p">);</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getSensorData</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">axios</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;http://192.168.4.1/api/sensor&#39;</span><span class="p">);</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">data</span><span class="p">;</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="p">}</span>
+<div class="language-javascript highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">axios</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s1">&#39;axios&#39;</span><span class="p">);</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getSensorData</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">axios</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;http://192.168.4.1/api/sensor&#39;</span><span class="p">);</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">data</span><span class="p">;</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="p">}</span>
 </span></code></pre></div>
 <h3 id="home-assistant">Home Assistant<a class="headerlink" href="#home-assistant" title="Постоянная ссылка">&para;</a></h3>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># configuration.yaml</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nt">sensor</span><span class="p">:</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">platform</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rest</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="nt">resource</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http://192.168.4.1/api/sensor</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;JXCT</span><span class="nv"> </span><span class="s">Soil</span><span class="nv"> </span><span class="s">Sensor&quot;</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="nt">json_attributes</span><span class="p">:</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">temperature</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">humidity</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ph</span>
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ec</span>
-</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">    </span><span class="nt">value_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">value_json.temperature</span><span class="nv"> </span><span class="s">}}&quot;</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># configuration.yaml</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="nt">sensor</span><span class="p">:</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">platform</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rest</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">    </span><span class="nt">resource</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http://192.168.4.1/api/sensor</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;JXCT</span><span class="nv"> </span><span class="s">Soil</span><span class="nv"> </span><span class="s">Sensor&quot;</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">    </span><span class="nt">json_attributes</span><span class="p">:</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">temperature</span>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">humidity</span>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ph</span>
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ec</span>
+</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="w">    </span><span class="nt">value_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">value_json.temperature</span><span class="nv"> </span><span class="s">}}&quot;</span>
 </span></code></pre></div>
 <h2 id="Podderzhka">📞 Поддержка<a class="headerlink" href="#Podderzhka" title="Постоянная ссылка">&para;</a></h2>
 <h3 id="Svyaz-s-razrabotchikami">💬 Связь с разработчиками<a class="headerlink" href="#Svyaz-s-razrabotchikami" title="Постоянная ссылка">&para;</a></h3>
@@ -1913,7 +2376,7 @@
 <li><a href="https://github.com/Gfermoto/soil-sensor-7in1">🌱 GitHub репозиторий</a> - Исходный код проекта</li>
 <li><a href="../../dev/REFACTORING_PLAN/">📋 План рефакторинга</a> - Планы развития</li>
 <li><a href="../../dev/TECHNICAL_DEBT_REPORT/">📊 Отчет о техническом долге</a> - Анализ технических проблем</li>
-<li><a href="../../dev/ARCH_OVERALL/">🏗️ Архитектура системы</a> - Общая архитектура проекта</li>
+<li><a href="../dev/ARCH_OVERALL.md">🏗️ Архитектура системы</a> - Общая архитектура проекта</li>
 </ul>
 
 

@@ -264,6 +264,121 @@ cat test_reports/latest_test_report.json
 
 ---
 
+## 🚀 Быстрые команды разработки
+
+### ⚡ Основные команды
+
+```bash
+# Быстрая сборка и тестирование
+pio run -e esp32dev && python scripts/run_simple_tests.py
+
+# Полный цикл проверки
+python scripts/run_clang_tidy_analysis.py && pio check -e static-analysis && python -m pytest test/
+
+# Обновление версии и деплой
+python scripts/auto_version.py && python scripts/sync_versions.py
+
+# Генерация документации
+python scripts/gen_docs.py && mkdocs build
+```
+
+### 🔧 Настройка среды разработки
+
+#### Требования
+- **Python 3.8+** с pip
+- **PlatformIO Core** 6.0+
+- **w64devkit** (для Windows, clang-tidy)
+- **Git** для контроля версий
+
+#### Быстрая настройка
+```bash
+# 1. Клонирование репозитория
+git clone https://github.com/your-org/JXCT.git
+cd JXCT
+
+# 2. Установка зависимостей
+pip install -r requirements.txt
+pio lib install
+
+# 3. Настройка pre-commit хуков
+python scripts/setup_hooks.py
+
+# 4. Первая сборка
+pio run -e esp32dev
+```
+
+#### Настройка clang-tools (Windows)
+```powershell
+# Автоматическая настройка PATH
+.\scripts\setup_clang_tools_simple.ps1
+
+# Проверка установки
+clang-tidy --version
+```
+
+### 📊 Команды мониторинга
+
+```bash
+# Статус проекта
+python scripts/generate_ci_summary.py
+
+# Анализ технического долга
+python scripts/analyze_technical_debt.py
+
+# Проверка производительности
+python scripts/performance_monitor.py
+
+# Валидация формул
+python scripts/validate_formula_consistency.py
+```
+
+### 🔄 Workflow команды
+
+```bash
+# Ежедневная проверка
+make daily-check  # или python scripts/run_simple_tests.py
+
+# Перед коммитом
+make pre-commit   # или python scripts/pre-commit.py
+
+# Релиз
+make release      # или python scripts/release_manager.py
+```
+
+### 🐛 Отладка
+
+```bash
+# Подробный лог сборки
+pio run -e esp32dev -v
+
+# Отладка тестов
+python -m pytest test/ -v -s
+
+# Анализ памяти
+pio run -e esp32dev -t size
+
+# Мониторинг Serial
+pio device monitor
+```
+
+### 🏗️ Среда разработки
+
+#### VS Code настройка
+- Установите PlatformIO IDE extension
+- Используйте workspace settings из `.vscode/`
+- Включите clang-tidy в настройках
+
+#### Полезные алиасы
+```bash
+# Добавьте в .bashrc или PowerShell Profile
+alias piorun='pio run -e esp32dev'
+alias piotest='pio test -e native'  
+alias jxcttest='python scripts/run_simple_tests.py'
+alias jxctbuild='pio run -e esp32dev && python scripts/run_simple_tests.py'
+```
+
+---
+
 ## 📚 Дополнительные ресурсы {#Dopolnitelnye-resursy}
 
 - [Руководство по тестированию](TESTING_GUIDE.md)
