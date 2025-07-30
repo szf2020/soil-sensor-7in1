@@ -441,8 +441,11 @@ void setupDataRoutes()
             html += "<li><strong>Цветовая индикация RAW:</strong></li>";
             html += "<ul style='margin:5px 0;padding-left:15px;'>";
             html += "<li>🟢 <strong>Зеленый:</strong> значение в рабочем диапазоне датчика</li>";
+            html += "<li>🟡 <strong>Желтый:</strong> значение в диапазоне с малой точностью</li>";
             html += "<li>🔴 <strong>Красный:</strong> значение за пределами датчика</li>";
             html += "</ul>";
+            html += "<li><strong>Точность в скобках:</strong> указана точность измерений для каждого параметра</li>";
+            html += "<li><strong>Валидность данных:</strong> данные считаются валидными при влажности ≥25%, температуре 5-40°C, отсутствии полива и ошибок датчика</li>";
             html += "</ul>";
             html += "<li><strong>Компенс.</strong> - данные после математической компенсации:</li>";
             html += "<ul style='margin:5px 0;padding-left:15px;'>";
@@ -482,8 +485,11 @@ void setupDataRoutes()
             html += "<li><strong>Цветовая индикация валидности данных:</strong></li>";
             html += "<ul style='margin:5px 0;padding-left:15px;'>";
             html += "<li>🟢 <strong>Зеленый:</strong> данные валидны</li>";
-            html += "<li>🔴 <strong>Красный:</strong> данные не валидны</li>";
+            html += "<li>🔵 <strong>Синий:</strong> полив активен - данные временно не валидны</li>";
+            html += "<li>🟠 <strong>Оранжевый:</strong> данные не валидны - неоптимальные условия</li>";
+            html += "<li>🔴 <strong>Красный:</strong> данные не валидны - ошибки датчика</li>";
             html += "</ul>";
+            html += "<li><strong>Детекция полива:</strong> автоматическое определение полива по скачку влажности и времени</li>";
             html += "</ul>";
             html += "</div>";
 
@@ -790,13 +796,42 @@ void setupDataRoutes()
             html += ".then(d => {";
             html += "  if (!d || typeof d !== 'object') throw new Error('Invalid data');";
             html += "  console.log('Valid sensor data received:', d);";
-            html += "set('temp_raw',d.raw_temperature);";
-            html += "set('hum_raw',d.raw_humidity);";
-            html += "set('ec_raw',d.raw_ec);";
-            html += "set('ph_raw',d.raw_ph);";
-            html += "set('n_raw',d.raw_nitrogen);";
-            html += "set('p_raw',d.raw_phosphorus);";
-            html += "set('k_raw',d.raw_potassium);";
+            // 🌈 ФУНКЦИЯ ДЛЯ ОТОБРАЖЕНИЯ RAW ЗНАЧЕНИЙ С ТОЧНОСТЬЮ В СКОБКАХ (ГЛОБАЛЬНАЯ)
+            html += "function setRawWithPrecision(id, value, sensorType) {";
+            html += "  const ranges = {";
+            html += "    temp: { precision: '±0.5°C' },";
+            html += "    hum: { precision: '±3%RH', lowPrecisionMin: 53, lowPrecisionMax: 100, lowPrecision: '±5%RH' },";
+            html += "    ph: { precision: '±0.3pH' },";
+            html += "    ec: { precision: '±2-5%' },";
+            html += "    n: { precision: '2%' },";
+            html += "    p: { precision: '2%' },";
+            html += "    k: { precision: '2%' }";
+            html += "  };";
+            html += "  const range = ranges[sensorType];";
+            html += "  if (!range) {";
+            html += "    set(id, value);";
+            html += "    return;";
+            html += "  }";
+            html += "  const element = document.getElementById(id);";
+            html += "  if (element) {";
+            html += "    let precision = range.precision;";
+            html += "    if (sensorType === 'hum' && range.lowPrecisionMin !== undefined && range.lowPrecisionMax !== undefined) {";
+            html += "      if (value >= range.lowPrecisionMin && value <= range.lowPrecisionMax) {";
+            html += "        precision = range.lowPrecision;";
+            html += "      }";
+            html += "    }";
+            html += "    element.textContent = value + ' (' + precision + ')';";
+            html += "  }";
+            html += "}";
+            
+            // 🌈 УСТАНОВКА RAW ЗНАЧЕНИЙ С ТОЧНОСТЬЮ В СКОБКАХ
+            html += "setRawWithPrecision('temp_raw',d.raw_temperature,'temp');";
+            html += "setRawWithPrecision('hum_raw',d.raw_humidity,'hum');";
+            html += "setRawWithPrecision('ec_raw',d.raw_ec,'ec');";
+            html += "setRawWithPrecision('ph_raw',d.raw_ph,'ph');";
+            html += "setRawWithPrecision('n_raw',d.raw_nitrogen,'n');";
+            html += "setRawWithPrecision('p_raw',d.raw_phosphorus,'p');";
+            html += "setRawWithPrecision('k_raw',d.raw_potassium,'k');";
             html +=
                 "set('temp_rec',d.rec_temperature);set('hum_rec',d.rec_humidity);set('ec_rec',d.rec_ec);set('ph_rec',d."
                 "rec_ph);set('n_rec',d.rec_nitrogen);set('p_rec',d.rec_phosphorus);set('k_rec',d.rec_potassium);";
@@ -852,10 +887,17 @@ void setupDataRoutes()
             html += "  });";
             html += "}";
 
-            html += R"(var invalid = d.irrigation || (d.alerts && Array.isArray(d.alerts) && d.alerts.length>0) || d.humidity<25 || d.temperature<5 || )"
-                    R"(d.temperature>40;)";
-            html += R"(var statusHtml = invalid ? '<span class="red">Данные&nbsp;не&nbsp;валидны</span>' : '<span )"
-                    R"(class="green">Данные&nbsp;валидны</span>';)";
+            // 🌈 ОБНОВЛЕННАЯ ЛОГИКА ВАЛИДАЦИИ С СИНЕЙ ОКРАСКОЙ ДЛЯ ПОЛИВА
+            html += "var statusHtml = '';";
+            html += "if (d.irrigation) {";
+            html += "  statusHtml = '<span class=\"blue\">Полив активен - данные временно не валидны</span>';";
+            html += "} else if (d.alerts && Array.isArray(d.alerts) && d.alerts.length > 0) {";
+            html += "  statusHtml = '<span class=\"red\">Данные не валидны - ошибки датчика</span>';";
+            html += "} else if (d.humidity < 25 || d.temperature < 5 || d.temperature > 40) {";
+            html += "  statusHtml = '<span class=\"orange\">Данные не валидны - неоптимальные условия</span>';";
+            html += "} else {";
+            html += "  statusHtml = '<span class=\"green\">Данные валидны</span>';";
+            html += "}";
             html +=
                 R"(var seasonColor={'Лето':'green','Весна':'yellow','Осень':'yellow','Зима':'red','Н/Д':''}[d.season]||'';)";
             html += R"(var seasonHtml=seasonColor?(`<span class=\"${seasonColor}\">${d.season}</span>`):d.season;)";
