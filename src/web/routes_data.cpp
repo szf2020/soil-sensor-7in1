@@ -253,6 +253,10 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     // Получаем рекомендации по антагонизмам
     String antagonismRecommendations = getNutrientInteractionService().generateAntagonismRecommendations(
         npk, soilType, sensorData.ph);
+    // ✅ Ограничиваем длину рекомендаций для экономии памяти
+    if (antagonismRecommendations.length() > 200) {
+        antagonismRecommendations = antagonismRecommendations.substring(0, 200) + "...";
+    }
     doc["nutrient_interactions"] = antagonismRecommendations;
     
     logDebugSafe("JSON API: antagonismRecommendations='%s'", antagonismRecommendations.c_str());
@@ -267,23 +271,8 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
         logDebugSafe("JSON API: cropId was empty, set to 'none'");
     }
     
-    // ✅ Добавляем cropId в JSON для отладки  
+    // ✅ Добавляем только необходимый cropId в JSON
     doc["crop_id"] = String(config.cropId);
-    doc["crop_id_debug"] = String("len=") + String(strlen(config.cropId)) + ", strcmp=" + String(strcmp(config.cropId, "none"));
-    doc["crop_id_hex"] = "";
-    // Показываем первые 8 байт в hex для отладки
-    for(int i = 0; i < min(8, (int)strlen(config.cropId)); i++) {
-        char hex[4];
-        sprintf(hex, "%02X ", (unsigned char)config.cropId[i]);
-        doc["crop_id_hex"] = doc["crop_id_hex"].as<String>() + String(hex);
-    }
-    doc["crop_len_check"] = strlen(config.cropId) > 0;
-    doc["crop_str_check"] = strcmp(config.cropId, "none") != 0;
-    doc["debug_npk_n"] = npk.nitrogen;
-    doc["debug_npk_p"] = npk.phosphorus;
-    doc["debug_npk_k"] = npk.potassium;
-    doc["debug_ph"] = sensorData.ph;
-    doc["debug_soil_type"] = (int)soilType;
     
     // ✅ ОТЛАДКА: Проверяем каждое условие отдельно
     bool lenCheck = strlen(config.cropId) > 0;
@@ -293,9 +282,12 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     if (lenCheck && strCheck) {
         String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
             String(config.cropId), npk, soilType, sensorData.ph);
+        // ✅ Ограничиваем длину рекомендаций для экономии памяти
+        if (cropRecommendations.length() > 200) {
+            cropRecommendations = cropRecommendations.substring(0, 200) + "...";
+        }
         doc["crop_specific_recommendations"] = cropRecommendations;
         
-        // ✅ ТОЛЬКО ОДНО логирование для отладки
         logDebugSafe("JSON API: crop='%s', rec_len=%d", config.cropId, cropRecommendations.length());
     } else {
         doc["crop_specific_recommendations"] = "";
