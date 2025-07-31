@@ -801,35 +801,30 @@ void setupDataRoutes()
             html += "  if(deviation <= 15) return 'orange';";
             html += "  return 'red';";
             html += "}";
+            // Генерация диапазонов датчиков из C++ констант для унификации
+            html += "const SENSOR_RANGES = {";
+            html += "  temp: { min: " + String(SENSOR_TEMP_MIN) + ", max: " + String(SENSOR_TEMP_MAX) + ", precision: '±0.5°C' },";
+            html += "  hum: { min: " + String(SENSOR_HUMIDITY_MIN) + ", max: " + String(SENSOR_HUMIDITY_MAX) + ", precision: '±3%RH' },";
+            html += "  ph: { min: " + String(SENSOR_PH_MIN) + ", max: " + String(SENSOR_PH_MAX) + ", precision: '±0.3pH' },";
+            html += "  ec: { min: " + String(SENSOR_EC_MIN) + ", max: " + String(SENSOR_EC_MAX) + ", precision: '±2-5%' },";
+            html += "  n: { min: " + String(SENSOR_NPK_MIN) + ", max: " + String(SENSOR_NPK_MAX) + ", precision: '2%' },";
+            html += "  p: { min: " + String(SENSOR_NPK_MIN) + ", max: " + String(SENSOR_NPK_MAX) + ", precision: '2%' },";
+            html += "  k: { min: " + String(SENSOR_NPK_MIN) + ", max: " + String(SENSOR_NPK_MAX) + ", precision: '2%' }";
+            html += "};";
+            
             // Функция для покраски RAW значений на основе диапазонов датчика JXCT
             html +=
                 "function colorSensorRange(value, sensorType) {";
             html += "  if(isNaN(value)) return '';";
-            html += "  switch(sensorType) {";
-            html += "    case 'temp':";
-            html += "      if(value >= -45 && value <= 115) return 'green';";
-            html += "      return 'red';";
-            html += "    case 'hum':";
-            html += "      if(value >= 0 && value <= 100) {";
-            html += "        // Для влажности: 0-30% и 70-100% - малая точность, 30-70% - высокая точность";
-            html += "        if(value >= 30 && value <= 70) return 'green';";
-            html += "        return 'yellow';";
-            html += "      }";
-            html += "      return 'red';";
-            html += "    case 'ph':";
-            html += "      if(value >= 3 && value <= 9) return 'green';";
-            html += "      return 'red';";
-            html += "    case 'n':";
-            html += "    case 'p':";
-            html += "    case 'k':";
-            html += "      if(value >= 0 && value <= 1999) return 'green';";
-            html += "      return 'red';";
-            html += "    case 'ec':";
-            html += "      if(value >= 0 && value <= 10000) return 'green';";
-            html += "      return 'red';";
-            html += "    default:";
-            html += "      return '';";
+            html += "  const range = SENSOR_RANGES[sensorType];";
+            html += "  if (!range) return '';";
+            html += "  if (value < range.min || value > range.max) return 'red';";
+            html += "  // Для влажности: 0-30% и 70-100% - малая точность, 30-70% - высокая точность";
+            html += "  if (sensorType === 'hum') {";
+            html += "    if (value >= 30 && value <= 70) return 'green';";
+            html += "    return 'yellow';";
             html += "  }";
+            html += "  return 'green';"; // В рабочем диапазоне - зеленый
             html += "}";
             html +=
                 "function applyColor(spanId,cls){var "
