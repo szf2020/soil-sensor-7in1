@@ -17,6 +17,7 @@
 #include "business/crop_recommendation_engine.h"
 #include "business/sensor_calibration_service.h"
 #include "business/sensor_compensation_service.h"
+#include "business/nutrient_interaction_service.h"
 #include "debug.h"  // ✅ Добавляем систему условной компиляции
 #include "fake_sensor.h"
 #include "jxct_config_vars.h"
@@ -45,6 +46,7 @@
 extern CropRecommendationEngine gCropEngine;
 extern SensorCalibrationService gCalibrationService;
 extern SensorCompensationService gCompensationService;
+extern NutrientInteractionService gNutrientInteractionService;
 
 // Переменные для отслеживания времени
 namespace
@@ -243,6 +245,12 @@ void setup()  // NOLINT(misc-use-internal-linkage)
     // ✅ v3.10.0: Инициализация улучшенной системы фильтрации
     AdvancedFilters::resetAllFilters();
     logSuccess("Улучшенная система фильтрации инициализирована");
+
+    // ✅ КРИТИЧНО: Инициализация бизнес-сервисов
+    logSystem("Инициализация бизнес-сервисов...");
+    // gCropEngine, gCalibrationService, gCompensationService инициализируются автоматически
+    // gNutrientInteractionService инициализируется автоматически через конструктор
+    logSuccess("Бизнес-сервисы инициализированы");
 
     // Legacy: оставляем старые задачи для поточного обновления sensorData
     if (config.flags.useRealSensor)
