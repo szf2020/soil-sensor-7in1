@@ -263,6 +263,17 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     bool lenCheck = strlen(config.cropId) > 0;
     bool strCheck = strcmp(config.cropId, "none") != 0;
     
+    // ✅ ДОБАВЛЯЕМ DEBUG ПОЛЯ В JSON
+    doc["crop_id_debug"] = String(config.cropId);
+    doc["crop_id_hex"] = String(config.cropId, HEX);
+    doc["crop_len_check"] = lenCheck;
+    doc["crop_str_check"] = strCheck;
+    doc["debug_npk_n"] = sensorData.nitrogen;
+    doc["debug_npk_p"] = sensorData.phosphorus;
+    doc["debug_npk_k"] = sensorData.potassium;
+    doc["debug_ph"] = sensorData.ph;
+    doc["debug_soil_type"] = static_cast<int>(soilType);
+    
     if (lenCheck && strCheck) {
         String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
             String(config.cropId), npk, soilType, sensorData.ph);
