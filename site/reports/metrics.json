@@ -1,31 +1,11 @@
 {
-  "timestamp": "2025-07-30T04:01:09.604926",
-  "version": "3.12.0",
-  "project": "JXCT Soil Sensor",
-  "metrics": {
-    "code_quality": {
-      "clang_tidy_warnings": 125,
-      "critical_warnings": 4,
-      "code_coverage": 70.8,
-      "test_count": 53
-    },
-    "documentation": {
-      "pages": 24,
-      "api_endpoints": 8,
-      "cultures_supported": 24,
-      "soil_types": 13
-    },
-    "performance": {
-      "firmware_size": 1364560,
-      "memory_usage": 85.2,
-      "response_time": 150
-    }
-  },
+  "last_update": "2025-08-01T04:10:51.612579",
   "test_success_rate": 100.0,
   "total_tests": 90,
   "code_smells": 0,
   "coverage": 100.0,
   "maintainability_rating": "A+",
   "debt_ratio": 0.0,
-  "status": "production_ready"
+  "project_status": "production_ready",
+  "version": "3.10.1"
 }
