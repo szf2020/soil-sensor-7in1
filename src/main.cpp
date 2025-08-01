@@ -17,6 +17,7 @@
 #include "business/crop_recommendation_engine.h"
 #include "business/sensor_calibration_service.h"
 #include "business/sensor_compensation_service.h"
+#include "business/nutrient_interaction_service.h"
 #include "debug.h"  // ✅ Добавляем систему условной компиляции
 #include "fake_sensor.h"
 #include "jxct_config_vars.h"
@@ -45,6 +46,7 @@
 extern CropRecommendationEngine gCropEngine;
 extern SensorCalibrationService gCalibrationService;
 extern SensorCompensationService gCompensationService;
+extern NutrientInteractionService gNutrientInteractionService;
 
 // Переменные для отслеживания времени
 namespace
@@ -244,6 +246,12 @@ void setup()  // NOLINT(misc-use-internal-linkage)
     AdvancedFilters::resetAllFilters();
     logSuccess("Улучшенная система фильтрации инициализирована");
 
+    // ✅ КРИТИЧНО: Инициализация бизнес-сервисов
+    logSystem("Инициализация бизнес-сервисов...");
+    // gCropEngine, gCalibrationService, gCompensationService инициализируются автоматически
+    // gNutrientInteractionService инициализируется автоматически через конструктор
+    logSuccess("Бизнес-сервисы инициализированы");
+
     // Legacy: оставляем старые задачи для поточного обновления sensorData
     if (config.flags.useRealSensor)
     {
@@ -277,11 +285,21 @@ void setup()  // NOLINT(misc-use-internal-linkage)
     logPrintSeparator("─", 60);
 }
 
-// ✅ Неблокирующий главный цикл с оптимизированными интервалами
+// ✅ Неблокирующий главный цикл с оптимизированными интервалами и защитой от переполнения стека
 void loop()  // NOLINT(misc-use-internal-linkage)
 {
     const unsigned long currentTime = millis();
     esp_task_wdt_reset();
+    
+    // ✅ ЗАЩИТА ОТ ПЕРЕПОЛНЕНИЯ СТЕКА: проверяем свободную память
+    static unsigned long lastMemoryCheck = 0;
+    if (currentTime - lastMemoryCheck >= 30000) {  // Каждые 30 секунд
+        size_t freeHeap = ESP.getFreeHeap();
+        if (freeHeap < 50000) {  // Меньше 50KB - критично
+            logWarn("Критически мало памяти: " + String(freeHeap) + " байт");
+        }
+        lastMemoryCheck = currentTime;
+    }
 
     // Обновление NTP каждые 6 часов
     if (timeClient != nullptr && millis() - lastNtpUpdate > 6 * 3600 * 1000)

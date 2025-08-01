@@ -52,7 +52,7 @@ constexpr uint8_t DEFAULT_MODBUS_ADDRESS = 1;
 
 // Размеры буферов
 constexpr size_t MQTT_BUFFER_SIZE = 512;
-constexpr size_t JSON_BUFFER_SIZE = 1024;  // Увеличено для рекомендаций
+constexpr size_t JSON_BUFFER_SIZE = 256;
 constexpr size_t TOPIC_BUFFER_SIZE = 128;
 constexpr size_t CLIENT_ID_BUFFER_SIZE = 32;
 constexpr size_t HOSTNAME_BUFFER_SIZE = 64;
@@ -202,6 +202,7 @@ constexpr int MODBUS_RE_PIN = 5;   // GPIO5 - управление приемо�
 constexpr size_t SENSOR_TASK_STACK_SIZE = 4096;
 constexpr size_t RESET_BUTTON_TASK_STACK_SIZE = 2048;
 constexpr size_t WEB_SERVER_TASK_STACK_SIZE = 8192;
+constexpr size_t MAIN_LOOP_STACK_SIZE = 8192;  // ✅ Увеличен для стабильности
 
 // Приоритеты задач
 constexpr UBaseType_t SENSOR_TASK_PRIORITY = 2;
@@ -210,7 +211,7 @@ constexpr UBaseType_t WEB_SERVER_TASK_PRIORITY = 1;
 
 // Лимиты памяти
 constexpr size_t MAX_CONFIG_JSON_SIZE = 2048;  // 2KB для конфигурации
-constexpr size_t MAX_SENSOR_JSON_SIZE = 1024;  // 1KB для данных датчика и рекомендаций
+constexpr size_t MAX_SENSOR_JSON_SIZE = 512;   // 512B для данных датчика
 constexpr size_t MAX_LOG_MESSAGE_SIZE = 256;   // 256B для лог сообщений
 
 // ============================================================================
@@ -433,4 +434,4 @@ constexpr unsigned long NTP_TIMESTAMP_2000 = 946684800;  // 2000-01-01 00:00:00 
 // Валидация сенсорных данных - теперь используется единая система выше
 
 // Размеры JSON документов
-constexpr size_t SENSOR_JSON_DOC_SIZE = 2048;  // ✅ УВЕЛИЧЕН для рекомендаций
+constexpr size_t SENSOR_JSON_DOC_SIZE = 2048;  // ✅ УВЕЛИЧЕН для функций точности и полива
