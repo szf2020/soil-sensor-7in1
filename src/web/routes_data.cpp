@@ -259,20 +259,9 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     // ✅ Добавляем cropId в JSON
     doc["crop_id"] = String(config.cropId);
     
-    // ✅ ОТЛАДКА: Проверяем каждое условие отдельно
+    // Проверяем валидность crop_id
     bool lenCheck = strlen(config.cropId) > 0;
     bool strCheck = strcmp(config.cropId, "none") != 0;
-    
-    // ✅ ДОБАВЛЯЕМ DEBUG ПОЛЯ В JSON
-    doc["crop_id_debug"] = String(config.cropId);
-    doc["crop_id_hex"] = String(config.cropId, HEX);
-    doc["crop_len_check"] = lenCheck;
-    doc["crop_str_check"] = strCheck;
-    doc["debug_npk_n"] = sensorData.nitrogen;
-    doc["debug_npk_p"] = sensorData.phosphorus;
-    doc["debug_npk_k"] = sensorData.potassium;
-    doc["debug_ph"] = sensorData.ph;
-    doc["debug_soil_type"] = static_cast<int>(soilType);
     
     if (lenCheck && strCheck) {
         String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
@@ -898,7 +887,7 @@ void setupDataRoutes()
             html += "const interactionsDiv = document.getElementById('nutrient-interactions');";
             html += "if(interactionsDiv) {";
             html += "  if(d.nutrient_interactions && typeof d.nutrient_interactions === 'string' && d.nutrient_interactions.length > 0) {";
-            html += "    interactionsDiv.innerHTML = d.nutrient_interactions.replace(/\\n/g, '<br>');";
+            html += "    interactionsDiv.innerHTML = d.nutrient_interactions.replace(/\\\\n/g, '<br>');";
             html += "    console.log('Updated nutrient interactions');";
             html += "  } else {";
             html += "    interactionsDiv.innerHTML = '<p style=\"color:#28a745;\">✅ Антагонизмов питательных веществ не обнаружено</p>';";
@@ -910,16 +899,8 @@ void setupDataRoutes()
             
             html += "const cropDiv = document.getElementById('crop-specific-recommendations');";
             html += "if(cropDiv) {";
-            html += "  console.log('Crop recommendations data:', d.crop_specific_recommendations);";
-            html += "  console.log('Crop ID:', d.crop_id);";
-            html += "  console.log('Crop ID debug:', d.crop_id_debug);";
-            html += "  console.log('Crop ID hex:', d.crop_id_hex);";
-            html += "  console.log('Crop len check:', d.crop_len_check);";
-            html += "  console.log('Crop str check:', d.crop_str_check);";
-            html += "  console.log('DEBUG NPK - N:', d.debug_npk_n, 'P:', d.debug_npk_p, 'K:', d.debug_npk_k);";
-            html += "  console.log('DEBUG pH:', d.debug_ph, 'SoilType:', d.debug_soil_type);";
             html += "  if(d.crop_specific_recommendations && typeof d.crop_specific_recommendations === 'string' && d.crop_specific_recommendations.length > 0) {";
-            html += "    cropDiv.innerHTML = d.crop_specific_recommendations.replace(/\\n/g, '<br>');";
+            html += "    cropDiv.innerHTML = d.crop_specific_recommendations.replace(/\\\\n/g, '<br>');";
             html += "    console.log('Updated crop recommendations');";
             html += "  } else {";
             html += "    cropDiv.innerHTML = '<p style=\"color:#6c757d;\">ℹ️ Выберите культуру для получения специфических рекомендаций</p>';";
