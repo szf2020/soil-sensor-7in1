@@ -887,7 +887,7 @@ void setupDataRoutes()
             html += "const interactionsDiv = document.getElementById('nutrient-interactions');";
             html += "if(interactionsDiv) {";
             html += "  if(d.nutrient_interactions && typeof d.nutrient_interactions === 'string' && d.nutrient_interactions.length > 0) {";
-            html += "    interactionsDiv.innerHTML = d.nutrient_interactions.replace(/\\n/g, '<br>');";
+            html += "    interactionsDiv.innerHTML = d.nutrient_interactions.replace(/\\\\n/g, '<br>');";
             html += "    console.log('Updated nutrient interactions');";
             html += "  } else {";
             html += "    interactionsDiv.innerHTML = '<p style=\"color:#28a745;\">✅ Антагонизмов питательных веществ не обнаружено</p>';";
@@ -900,7 +900,7 @@ void setupDataRoutes()
             html += "const cropDiv = document.getElementById('crop-specific-recommendations');";
             html += "if(cropDiv) {";
             html += "  if(d.crop_specific_recommendations && typeof d.crop_specific_recommendations === 'string' && d.crop_specific_recommendations.length > 0) {";
-            html += "    cropDiv.innerHTML = d.crop_specific_recommendations.replace(/\\n/g, '<br>');";
+            html += "    cropDiv.innerHTML = d.crop_specific_recommendations.replace(/\\\\n/g, '<br>');";
             html += "    console.log('Updated crop recommendations');";
             html += "  } else {";
             html += "    cropDiv.innerHTML = '<p style=\"color:#6c757d;\">ℹ️ Выберите культуру для получения специфических рекомендаций</p>';";

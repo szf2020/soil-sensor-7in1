@@ -1354,16 +1354,16 @@ String CropRecommendationEngine::generateCropSpecificRecommendations(const Strin
     
     if (soilType == SoilType::CLAY || soilType == SoilType::CLAY_LOAM) {
         recommendations += "🏺 Глинистые почвы могут связывать микроэлементы. ";
-        recommendations += "Рекомендуется: использовать хелатные формы удобрений\n";
+        recommendations += "Рекомендуется: использовать хелатные формы удобрений\\n";
     }
     
     if (soilType == SoilType::SAND || soilType == SoilType::SANDY_LOAM) {
         recommendations += "🏖️ Песчаные почвы быстро теряют питательные вещества. ";
-        recommendations += "Рекомендуется: частые подкормки малыми дозами\n";
+        recommendations += "Рекомендуется: частые подкормки малыми дозами\\n";
     }
     
     if (soilType == SoilType::PEAT && npk.phosphorus < 30.0F) {
-        recommendations += "🟫 Торф → дефицит P\n";
+        recommendations += "🟫 Торф → дефицит P\\n";
     }
     
     return recommendations;
