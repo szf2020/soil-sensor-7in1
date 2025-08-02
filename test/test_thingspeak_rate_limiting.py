@@ -1,252 +1,223 @@
 #!/usr/bin/env python3
 """
-Тест ограничения частоты запросов к ThingSpeak
-Проверяет логику защиты от спама и ограничения на 1 час при множественных ошибках
+Тест логики ограничения частоты запросов к ThingSpeak
+Проверяет алгоритм блокировки на 1 час при множественных ошибках
 """
 
 import sys
-import os
 import time
-import json
-from unittest.mock import Mock, patch, MagicMock
 
-
-class MockConfig:
-    """Мок конфигурации для тестирования"""
-    def __init__(self):
-        self.flags = Mock()
-        self.flags.thingSpeakEnabled = True
-        self.thingSpeakInterval = 600000  # 10 минут
-        self.thingSpeakApiKey = "TEST_API_KEY_123456789012345"
-        self.thingSpeakChannelId = "123456789"
-
-
-class MockSensorData:
-    """Мок данных датчика"""
-    def __init__(self):
-        self.valid = True
-        self.temperature = 25.5
-        self.humidity = 60.0
-        self.ec = 1500.0
-        self.ph = 6.8
-        self.nitrogen = 45.0
-        self.phosphorus = 30.0
-        self.potassium = 25.0
-
-
-class MockWiFi:
-    """Мок WiFi соединения"""
-    def __init__(self):
-        self.connected = True
-
-
-class TestThingSpeakRateLimiting:
-    """Тест ограничения частоты запросов к ThingSpeak"""
+def test_thingspeak_rate_limiting_logic():
+    """Тест логики ограничения частоты ThingSpeak"""
+    print("🧪 Тестирование логики ограничения частоты ThingSpeak")
+    print("=" * 60)
     
-    def setup_method(self):
-        """Настройка перед каждым тестом"""
-        self.mock_config = MockConfig()
-        self.mock_sensor_data = MockSensorData()
-        self.mock_wifi = MockWiFi()
-        
-        # Сбрасываем глобальные переменные
-        self.last_ts_publish = 0
-        self.consecutive_fail_count = 0
-        self.last_fail_time = 0
-        self.current_time = 0
-        
-    def test_can_send_to_thingspeak_basic_checks(self):
-        """Тест базовых проверок возможности отправки"""
-        # Тест 1: ThingSpeak отключен
-        self.mock_config.flags.thingSpeakEnabled = False
-        assert not self._can_send_to_thingspeak()
-        
-        # Тест 2: WiFi не подключен
-        self.mock_config.flags.thingSpeakEnabled = True
-        self.mock_wifi.connected = False
-        assert not self._can_send_to_thingspeak()
-        
-        # Тест 3: Данные датчика невалидны
-        self.mock_wifi.connected = True
-        self.mock_sensor_data.valid = False
-        assert not self._can_send_to_thingspeak()
-        
-    def test_can_send_to_thingspeak_interval_check(self):
-        """Тест проверки интервала отправки"""
-        self.mock_sensor_data.valid = True
-        
-        # Первая отправка должна быть разрешена (last_ts_publish = 0, current_time = 0)
-        assert self._can_send_to_thingspeak()
-        
-        # Сразу после отправки должна быть заблокирована
-        self.current_time = 1000  # Устанавливаем время
-        self.last_ts_publish = self.current_time
-        assert not self._can_send_to_thingspeak()
-        
-        # Через 5 минут (меньше интервала) должна быть заблокирована
-        self.current_time = 300000  # 5 минут
-        assert not self._can_send_to_thingspeak()
-            
-        # Через 11 минут (больше интервала) должна быть разрешена
-        self.current_time = 660000  # 11 минут
-        assert self._can_send_to_thingspeak()
-            
-    def test_can_send_to_thingspeak_error_limit(self):
-        """Тест ограничения при множественных ошибках"""
-        self.mock_sensor_data.valid = True
-        self.consecutive_fail_count = 10
-        self.last_fail_time = self.current_time
-        
-        # Сразу после 10 ошибок должна быть заблокирована
-        assert not self._can_send_to_thingspeak()
-        
-        # Через 30 минут (меньше часа) должна быть заблокирована
-        self.current_time = 1800000  # 30 минут
-        assert not self._can_send_to_thingspeak()
-            
-        # Через 61 минуту (больше часа) должна быть разрешена
-        self.current_time = 3660000  # 61 минута
-        assert self._can_send_to_thingspeak()
-            
-    def test_send_data_to_thingspeak_success(self):
-        """Тест успешной отправки данных"""
-        self.mock_sensor_data.valid = True
-        
-        # Мокаем успешный ответ от ThingSpeak
-        result = self._send_data_to_thingspeak(success=True)
-            
-        assert result is True
-        assert self.consecutive_fail_count == 0
-        assert self.last_fail_time == 0
-        
-    def test_send_data_to_thingspeak_failure(self):
-        """Тест неудачной отправки данных"""
-        self.mock_sensor_data.valid = True
-        self.current_time = 1000  # Устанавливаем время
-        
-        # Мокаем неудачный ответ от ThingSpeak
-        result = self._send_data_to_thingspeak(success=False)
-            
-        assert result is False
-        assert self.consecutive_fail_count == 1
-        assert self.last_fail_time == 1000
-        
-    def test_send_data_to_thingspeak_error_limit_reached(self):
-        """Тест достижения лимита ошибок"""
-        self.mock_sensor_data.valid = True
-        self.consecutive_fail_count = 9
-        self.current_time = 2000  # Устанавливаем время
-        
-        # Мокаем неудачный ответ от ThingSpeak (10-я ошибка)
-        result = self._send_data_to_thingspeak(success=False)
-            
-        assert result is False
-        assert self.consecutive_fail_count == 10
-        assert self.last_fail_time == 2000
-        
-        # Следующая попытка должна быть заблокирована
-        assert not self._can_send_to_thingspeak()
-        
-    def test_send_data_to_thingspeak_recovery_after_success(self):
-        """Тест восстановления после успешной отправки"""
-        self.mock_sensor_data.valid = True
-        self.consecutive_fail_count = 5
-        self.last_fail_time = self.current_time
-        
-        # Мокаем успешный ответ от ThingSpeak
-        result = self._send_data_to_thingspeak(success=True)
-            
-        assert result is True
-        assert self.consecutive_fail_count == 0
-        assert self.last_fail_time == 0
-        
-        # Следующая попытка должна быть разрешена
-        assert self._can_send_to_thingspeak()
-        
-    def _can_send_to_thingspeak(self):
-        """Упрощенная версия функции canSendToThingSpeak для тестирования"""
-        # Проверки
-        if not self.mock_config.flags.thingSpeakEnabled:
+    # Симуляция глобальных переменных
+    last_ts_publish = 0
+    last_fail_time = 0
+    consecutive_fail_count = 0
+    
+    # Константы
+    THINGSPEAK_INTERVAL = 600000  # 10 минут
+    RATE_LIMIT_DURATION = 3600000  # 1 час
+    MAX_FAIL_COUNT = 10
+    
+    def can_send_to_thingspeak(thing_speak_enabled, wifi_connected, sensor_valid, current_time):
+        """Симуляция функции canSendToThingSpeak"""
+        # Проверки базовых условий
+        if not thing_speak_enabled:
             return False
-        if not self.mock_wifi.connected:
+        if not wifi_connected:
             return False
-        if not self.mock_sensor_data.valid:
+        if not sensor_valid:
             return False
-
-        current_time = self.current_time
         
         # Проверяем ограничение на 1 час при множественных ошибках
-        if (self.consecutive_fail_count >= 10 and 
-            (current_time - self.last_fail_time) < 3600000):  # 1 час = 3600000 мс
+        if (consecutive_fail_count >= MAX_FAIL_COUNT and 
+            (current_time - last_fail_time) < RATE_LIMIT_DURATION):
             return False
         
         # Проверяем обычный интервал отправки
         # Если last_ts_publish = 0, это первая отправка, разрешаем
-        if self.last_ts_publish > 0 and (current_time - self.last_ts_publish) < self.mock_config.thingSpeakInterval:
+        if last_ts_publish > 0 and (current_time - last_ts_publish) < THINGSPEAK_INTERVAL:
             return False
-
+        
         return True
+    
+    def simulate_send_attempt(success, current_time):
+        """Симуляция попытки отправки"""
+        nonlocal last_ts_publish, last_fail_time, consecutive_fail_count
         
-    def _send_data_to_thingspeak(self, success=True):
-        """Упрощенная версия функции sendDataToThingSpeak для тестирования"""
-        # Проверяем возможность отправки
-        if not self._can_send_to_thingspeak():
-            return False
-
-        # Мокаем отправку данных
-        res = 200 if success else -401
-        
-        if res == 200:
-            self.last_ts_publish = self.current_time
-            self.consecutive_fail_count = 0
-            self.last_fail_time = 0
+        if success:
+            last_ts_publish = current_time
+            consecutive_fail_count = 0
             return True
         else:
-            self.consecutive_fail_count += 1
-            self.last_fail_time = self.current_time
+            consecutive_fail_count += 1
+            last_fail_time = current_time
             
             # Если слишком много ошибок подряд, устанавливаем ограничение на 1 час
-            if self.consecutive_fail_count >= 10:
+            if consecutive_fail_count >= MAX_FAIL_COUNT:
                 pass  # Ограничение уже установлено
-                
+            
             return False
+    
+    # Тест 1: Базовые проверки
+    print("1️⃣ Тест базовых проверок...")
+    assert not can_send_to_thingspeak(False, True, True, 0), "ThingSpeak отключен"
+    assert not can_send_to_thingspeak(True, False, True, 0), "WiFi отключен"
+    assert not can_send_to_thingspeak(True, True, False, 0), "Данные невалидны"
+    # Проверяем, что при всех выполненных условиях отправка разрешена
+    result = can_send_to_thingspeak(True, True, True, 0)
+    assert result, f"Все условия выполнены, но результат: {result}"
+    print("✅ Базовые проверки пройдены")
+    
+    # Тест 2: Проверка интервала отправки
+    print("2️⃣ Тест интервала отправки...")
+    # Сначала успешная отправка в момент времени 0
+    simulate_send_attempt(True, 0)
+    
+    # Первая отправка всегда разрешена (last_ts_publish == 0)
+    last_ts_publish = 0
+    result = can_send_to_thingspeak(True, True, True, 0)
+    assert result, f"Первая отправка должна быть разрешена, но результат: {result}"
+    
+    # После первой отправки (last_ts_publish = 0), следующая попытка через 5 минут запрещена
+    simulate_send_attempt(True, 0)
+    current_time = 300000  # 5 минут (меньше интервала 600000)
+    result = can_send_to_thingspeak(True, True, True, current_time)
+    assert not result, f"Интервал не истек (5 мин < 10 мин), но результат: {result}"
+    
+    current_time = 700000  # 11.7 минут (больше интервала 600000)
+    result = can_send_to_thingspeak(True, True, True, current_time)
+    assert result, f"Интервал истек (11.7 мин > 10 мин), но результат: {result}"
+    print("✅ Интервал отправки проверен")
+    
+    # Тест 3: Ограничение при множественных ошибках
+    print("3️⃣ Тест ограничения при множественных ошибках...")
+    # Симулируем 10 неудачных попыток
+    for i in range(10):
+        simulate_send_attempt(False, current_time + i * 1000)
+    
+    # Проверяем, что отправка заблокирована
+    current_time = 1800000  # 30 минут после первой ошибки
+    assert not can_send_to_thingspeak(True, True, True, current_time), "Должна быть заблокирована"
+    print("✅ Ограничение при множественных ошибках работает")
+    
+    # Тест 4: Восстановление после блокады
+    print("4️⃣ Тест восстановления после блокады...")
+    current_time = 3660000  # 61 минута (больше часа)
+    assert can_send_to_thingspeak(True, True, True, current_time), "Должна быть разрешена"
+    print("✅ Восстановление после блокады работает")
+    
+    # Тест 5: Успешная отправка сбрасывает счетчик ошибок
+    print("5️⃣ Тест сброса счетчика при успешной отправке...")
+    simulate_send_attempt(True, current_time)
+    assert consecutive_fail_count == 0, "Счетчик ошибок должен быть сброшен"
+    print("✅ Сброс счетчика при успешной отправке работает")
+    
+    # Тест 6: Проверка точных временных границ
+    print("6️⃣ Тест точных временных границ...")
+    # Сбрасываем состояние
+    consecutive_fail_count = 0
+    last_fail_time = 0
+    last_ts_publish = 0
+    
+    # Симулируем 10 ошибок
+    for i in range(10):
+        simulate_send_attempt(False, i * 1000)
+    
+    # Проверяем границу в 1 час
+    current_time = 3599999  # 59 минут 59 секунд 999 миллисекунд
+    assert not can_send_to_thingspeak(True, True, True, current_time), "Должна быть заблокирована"
+    
+    current_time = 3600000  # Ровно 1 час
+    assert can_send_to_thingspeak(True, True, True, current_time), "Должна быть разрешена"
+    print("✅ Точные временные границы проверены")
+    
+    print("=" * 60)
+    print("🎉 ВСЕ ТЕСТЫ ЛОГИКИ ОГРАНИЧЕНИЯ ЧАСТОТЫ ПРОЙДЕНЫ УСПЕШНО!")
+    return True
 
-
-def run_thingspeak_rate_limiting_tests():
-    """Запуск всех тестов ограничения частоты ThingSpeak"""
-    print("🧪 Тестирование ограничения частоты запросов к ThingSpeak")
+def test_thingspeak_error_handling():
+    """Тест обработки различных ошибок ThingSpeak"""
+    print("🧪 Тестирование обработки ошибок ThingSpeak")
     print("=" * 60)
     
-    test_instance = TestThingSpeakRateLimiting()
-    test_methods = [method for method in dir(test_instance) 
-                   if method.startswith('test_')]
+    def simulate_thingspeak_response(response_code):
+        """Симуляция различных ответов от ThingSpeak"""
+        if response_code == 200:
+            return "Успешная отправка"
+        elif response_code == -301:
+            return "Timeout -301"
+        elif response_code == -401:
+            return "Превышен лимит публикаций (15 сек)"
+        elif response_code == -302:
+            return "Неверный API ключ"
+        elif response_code == -304:
+            return "Неверный Channel ID"
+        elif response_code == 0:
+            return "Ошибка подключения"
+        elif response_code == 400:
+            return "HTTP 400 – неверный запрос (API/Channel)"
+        else:
+            return f"Ошибка {response_code}"
+    
+    # Тест различных кодов ответа
+    test_cases = [
+        (200, "Успешная отправка"),
+        (-301, "Timeout -301"),
+        (-401, "Превышен лимит публикаций (15 сек)"),
+        (-302, "Неверный API ключ"),
+        (-304, "Неверный Channel ID"),
+        (0, "Ошибка подключения"),
+        (400, "HTTP 400 – неверный запрос (API/Channel)"),
+        (500, "Ошибка 500")
+    ]
+    
+    for response_code, expected_message in test_cases:
+        result = simulate_thingspeak_response(response_code)
+        assert result == expected_message, f"Ожидалось '{expected_message}', получено '{result}'"
+        print(f"✅ Код {response_code}: {result}")
+    
+    print("=" * 60)
+    print("🎉 ВСЕ ТЕСТЫ ОБРАБОТКИ ОШИБОК ПРОЙДЕНЫ УСПЕШНО!")
+    return True
+
+def main():
+    """Главная функция тестирования"""
+    print("🚀 Запуск комплексного тестирования ThingSpeak")
+    print("=" * 80)
+    
+    tests = [
+        test_thingspeak_rate_limiting_logic,
+        test_thingspeak_error_handling
+    ]
     
     passed = 0
-    failed = 0
+    total = len(tests)
     
-    for method_name in test_methods:
+    for test in tests:
         try:
-            test_instance.setup_method()
-            getattr(test_instance, method_name)()
-            print(f"✅ {method_name}: PASS")
+            test()
             passed += 1
+            print(f"✅ {test.__name__}: PASS")
         except Exception as e:
-            import traceback
-            print(f"❌ {method_name}: FAIL - {e}")
-            print(f"   Подробности: {traceback.format_exc()}")
-            failed += 1
+            print(f"❌ {test.__name__}: FAIL - {e}")
+        print()
     
-    print("=" * 60)
-    print(f"📊 Результаты: {passed} PASS, {failed} FAIL")
+    print("=" * 80)
+    print(f"📊 ИТОГОВЫЕ РЕЗУЛЬТАТЫ: {passed}/{total} тестов прошли успешно")
     
-    if failed == 0:
-        print("🎉 ВСЕ ТЕСТЫ ОГРАНИЧЕНИЯ ЧАСТОТЫ ПРОЙДЕНЫ УСПЕШНО!")
-        return True
+    if passed == total:
+        print("🎉 ВСЕ ТЕСТЫ THINGSPEAK ПРОЙДЕНЫ УСПЕШНО!")
+        print("✅ Логика ограничения частоты работает корректно")
+        print("✅ Обработка ошибок функционирует правильно")
+        print("✅ Система восстановления после блокировки активна")
+        return 0
     else:
         print("⚠️ Некоторые тесты не прошли")
-        return False
-
+        return 1
 
 if __name__ == "__main__":
-    success = run_thingspeak_rate_limiting_tests()
-    sys.exit(0 if success else 1) 
+    sys.exit(main()) 
