@@ -509,7 +509,7 @@ void finalizeSensorData(bool success)
     updateIrrigationFlag(sensorData);
     applyCompensationIfEnabled(sensorData);
 
-    // ✅ v3.10.0: Применяем улучшенную фильтрацию
+    // ✅ v3.12.0: Применяем улучшенную фильтрацию
     AdvancedFilters::applyAdvancedFiltering(sensorData);
 
     addToMovingAverage(sensorData, sensorData);
@@ -591,7 +591,7 @@ static void realSensorTask(void* /*pvParameters*/)  // NOLINT(misc-use-internal-
 
 void startRealSensorTask()
 {
-    // ✅ v3.10.0: Увеличиваем стек для задачи датчика из-за фильтрации
+    // ✅ v3.12.0: Увеличиваем стек для задачи датчика из-за фильтрации
     xTaskCreate(realSensorTask, "RealSensor", 8192, nullptr, 1, nullptr);
 }
 

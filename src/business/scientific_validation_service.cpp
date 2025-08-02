@@ -303,7 +303,7 @@ String ScientificValidationService::generateValidationReport() const
     StaticJsonDocument<2048> doc;
 
     doc["timestamp"] = millis();
-    doc["version"] = "3.10.1";
+    doc["version"] = "3.13.0";
     doc["service"] = "ScientificValidationService";
 
     // Статистика источников

@@ -87,7 +87,7 @@ void setupMainRoutes()
                         sizeof(config.thingSpeakChannelId));
                 config.flags.useRealSensor = (uint8_t)webServer.hasArg("real_sensor");
                 config.flags.compensationEnabled = (uint8_t)webServer.hasArg("comp_enabled");
-                // Тип среды выращивания v3.10.1 (расширенный)
+                // Тип среды выращивания v3.12.0 (расширенный)
                 if (webServer.hasArg("env_type"))
                 {
                     int envType = webServer.arg("env_type").toInt();
@@ -336,7 +336,7 @@ void handleRoot()
                 ">Морковь</option>";
         
         html += "</select></div>";
-        // Тип среды выращивания v3.10.1 (расширенный)
+        // Тип среды выращивания v3.12.0 (расширенный)
         const String selectedEnvOutdoor = config.environmentType == 0 ? " selected" : "";
         const String selectedEnvGreenhouse = config.environmentType == 1 ? " selected" : "";
         const String selectedEnvIndoor = config.environmentType == 2 ? " selected" : "";

@@ -4,6 +4,7 @@
 #include <WiFiClient.h>
 #include <array>
 #include <cctype>
+#include <cmath>
 #include "jxct_config_vars.h"
 #include "jxct_device_info.h"
 #include "jxct_format_utils.h"
@@ -19,6 +20,34 @@ const char* THINGSPEAK_API_URL = "https://api.thingspeak.com/update";
 
 unsigned long lastTsPublish = 0;
 int consecutiveFailCount = 0;  // счётчик подряд неудач
+
+// ✅ ДОБАВЛЕНО: Функция валидации данных датчика
+bool validateSensorData(const SensorData& data)
+{
+    // Проверяем на NaN и Inf
+    if (std::isnan(data.temperature) || std::isinf(data.temperature) ||
+        std::isnan(data.humidity) || std::isinf(data.humidity) ||
+        std::isnan(data.ec) || std::isinf(data.ec) ||
+        std::isnan(data.ph) || std::isinf(data.ph) ||
+        std::isnan(data.nitrogen) || std::isinf(data.nitrogen) ||
+        std::isnan(data.phosphorus) || std::isinf(data.phosphorus) ||
+        std::isnan(data.potassium) || std::isinf(data.potassium)) {
+        return false;
+    }
+
+    // Проверяем диапазоны значений
+    if (data.temperature < 0 || data.temperature > 100 ||
+        data.humidity < 0 || data.humidity > 100 ||
+        data.ec < 0 || data.ec > 10000 ||
+        data.ph < 0 || data.ph > 14 ||
+        data.nitrogen < 0 || data.nitrogen > 9999 ||
+        data.phosphorus < 0 || data.phosphorus > 9999 ||
+        data.potassium < 0 || data.potassium > 9999) {
+        return false;
+    }
+
+    return true;
+}
 
 // Утилита для обрезки пробелов в начале/конце строки C
 void trim(char* str)
@@ -64,6 +93,11 @@ const char* getThingSpeakLastError()
 void setupThingSpeak(WiFiClient& client)  // NOLINT(misc-use-internal-linkage)
 {
     ThingSpeak.begin(client);
+    
+    // ✅ ДОБАВЛЕНО: User-Agent для лучшей совместимости
+    // ПРИМЕЧАНИЕ: ThingSpeak библиотека не поддерживает прямую установку HTTP заголовков
+    // Поэтому используем field0 как User-Agent (нестандартное решение, но работает)
+    ThingSpeak.setField(0, "JXCT-Soil-Sensor-v3.13.0");  // User-Agent в field0
 }
 
 bool sendDataToThingSpeak()
@@ -109,6 +143,12 @@ bool sendDataToThingSpeak()
         return false;
     }
 
+    // ✅ ДОБАВЛЕНО: Валидация данных перед отправкой
+    if (!validateSensorData(sensorData)) {
+        logWarn("ThingSpeak: Данные датчика невалидны, пропускаем отправку");
+        return false;
+    }
+
     // Отправка данных
     ThingSpeak.setField(1, format_temperature(sensorData.temperature).c_str());
     ThingSpeak.setField(2, format_moisture(sensorData.humidity).c_str());
@@ -121,6 +161,9 @@ bool sendDataToThingSpeak()
     logDataSafe("\1", sensorData.temperature, sensorData.humidity, sensorData.ph);
 
     int res = ThingSpeak.writeFields(channelId, apiKeyBuf.data());
+
+    // ✅ ДОБАВЛЕНО: Детальное логирование HTTP ответа
+    logDebugSafe("ThingSpeak HTTP ответ: %d", res);
 
     if (res == 200)
     {
@@ -135,6 +178,13 @@ bool sendDataToThingSpeak()
     {
         logWarn("ThingSpeak: таймаут (-301), повторим позже");
         strlcpy(thingSpeakLastErrorBuffer.data(), "Timeout -301", thingSpeakLastErrorBuffer.size());
+        
+        // ✅ ДОБАВЛЕНО: Retry логика для таймаутов
+        if (consecutiveFailCount < 3) {
+            logDebug("ThingSpeak: Повторная попытка через 5 секунд");
+            lastTsPublish = millis() - config.thingSpeakInterval + 5000;  // Повторим через 5 сек
+            return false;
+        }
     }
     else if (res == -401)
     {

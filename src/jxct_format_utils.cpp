@@ -24,7 +24,13 @@ struct FormatOptions
 // Универсальная функция форматирования float
 std::string formatFloat(float value, const FormatOptions& options)
 {
-    std::array<char, 8> buf;
+    // ✅ ИСПРАВЛЕНО: Увеличен буфер с 8 до 32 байт для предотвращения переполнения
+    std::array<char, 32> buf;
+
+    // ✅ ДОБАВЛЕНО: Валидация входных данных
+    if (std::isnan(value) || std::isinf(value)) {
+        return "0";  // Возвращаем безопасное значение для NaN/Inf
+    }
 
     snprintf(buf.data(), buf.size(), (options.formatType == FormatType::INTEGER) ? "%d" : "%.*f",
              (options.formatType == FormatType::INTEGER) ? static_cast<int>(lround(value)) : options.precision,
