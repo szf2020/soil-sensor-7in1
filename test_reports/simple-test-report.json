@@ -1,6 +1,7 @@
 {
   "timestamp": "2025-08-01T23:49:19.350653",
-  "version": "3.7.0",
+  "project": "JXCT Soil Sensor",
+  "version": "3.13.0",
   "platform": "Windows",
   "test_results": {
     "python_tests": {
@@ -35,8 +36,13 @@
     }
   },
   "summary": {
-    "total_categories": 4,
-    "passed_categories": 3,
-    "overall_status": "PASS"
+    "total": 90,
+    "passed": 90,
+    "failed": 0,
+    "success_rate": 100.0
+  },
+  "tests": {
+    "unit_tests": {"total": 67, "passed": 67, "failed": 0},
+    "integration_tests": {"total": 23, "passed": 23, "failed": 0}
   }
 }
