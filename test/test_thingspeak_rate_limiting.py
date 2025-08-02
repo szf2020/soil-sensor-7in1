@@ -5,7 +5,6 @@
 """
 
 import sys
-import time
 
 def test_thingspeak_rate_limiting_logic():
     """Тест логики ограничения частоты ThingSpeak"""
@@ -38,10 +37,7 @@ def test_thingspeak_rate_limiting_logic():
             return False
         
         # Проверяем обычный интервал отправки (точно как в C++)
-        if (current_time - last_ts_publish) < THINGSPEAK_INTERVAL:
-            return False
-        
-        return True
+        return (current_time - last_ts_publish) >= THINGSPEAK_INTERVAL
     
     def simulate_send_attempt(success, current_time):
         """Симуляция попытки отправки"""
