@@ -95,7 +95,9 @@ void setupThingSpeak(WiFiClient& client)  // NOLINT(misc-use-internal-linkage)
     ThingSpeak.begin(client);
     
     // ✅ ДОБАВЛЕНО: User-Agent для лучшей совместимости
-    ThingSpeak.setField(0, "JXCT-Soil-Sensor-v3.10.1");  // User-Agent в field0
+    // ПРИМЕЧАНИЕ: ThingSpeak библиотека не поддерживает прямую установку HTTP заголовков
+    // Поэтому используем field0 как User-Agent (нестандартное решение, но работает)
+    ThingSpeak.setField(0, "JXCT-Soil-Sensor-v3.13.0");  // User-Agent в field0
 }
 
 bool sendDataToThingSpeak()
