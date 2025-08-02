@@ -37,9 +37,8 @@ def test_thingspeak_rate_limiting_logic():
             (current_time - last_fail_time) < RATE_LIMIT_DURATION):
             return False
         
-        # Проверяем обычный интервал отправки
-        # Если last_ts_publish = 0, это первая отправка, разрешаем
-        if last_ts_publish > 0 and (current_time - last_ts_publish) < THINGSPEAK_INTERVAL:
+        # Проверяем обычный интервал отправки (точно как в C++)
+        if (current_time - last_ts_publish) < THINGSPEAK_INTERVAL:
             return False
         
         return True
@@ -64,31 +63,31 @@ def test_thingspeak_rate_limiting_logic():
     
     # Тест 1: Базовые проверки
     print("1️⃣ Тест базовых проверок...")
-    assert not can_send_to_thingspeak(False, True, True, 0), "ThingSpeak отключен"
-    assert not can_send_to_thingspeak(True, False, True, 0), "WiFi отключен"
-    assert not can_send_to_thingspeak(True, True, False, 0), "Данные невалидны"
+    assert not can_send_to_thingspeak(False, True, True, 600000), "ThingSpeak отключен"
+    assert not can_send_to_thingspeak(True, False, True, 600000), "WiFi отключен"
+    assert not can_send_to_thingspeak(True, True, False, 600000), "Данные невалидны"
     # Проверяем, что при всех выполненных условиях отправка разрешена
-    result = can_send_to_thingspeak(True, True, True, 0)
+    result = can_send_to_thingspeak(True, True, True, 600000)
     assert result, f"Все условия выполнены, но результат: {result}"
     print("✅ Базовые проверки пройдены")
     
     # Тест 2: Проверка интервала отправки
     print("2️⃣ Тест интервала отправки...")
-    # Сначала успешная отправка в момент времени 0
-    simulate_send_attempt(True, 0)
     
-    # Первая отправка всегда разрешена (last_ts_publish == 0)
-    last_ts_publish = 0
+    # Первая отправка разрешена только если прошёл интервал (как в main.cpp)
+    # В момент времени 0 интервал не прошёл, поэтому отправка запрещена
     result = can_send_to_thingspeak(True, True, True, 0)
-    assert result, f"Первая отправка должна быть разрешена, но результат: {result}"
+    assert not result, f"В момент времени 0 интервал не прошёл, но результат: {result}"
     
-    # После первой отправки (last_ts_publish = 0), следующая попытка через 5 минут запрещена
-    simulate_send_attempt(True, 0)
-    current_time = 300000  # 5 минут (меньше интервала 600000)
+    # Симулируем успешную отправку в момент времени 600000 (ровно интервал)
+    simulate_send_attempt(True, 600000)
+    
+    # После успешной отправки следующая попытка через 5 минут запрещена
+    current_time = 900000  # 15 минут (5 минут после отправки)
     result = can_send_to_thingspeak(True, True, True, current_time)
     assert not result, f"Интервал не истек (5 мин < 10 мин), но результат: {result}"
     
-    current_time = 700000  # 11.7 минут (больше интервала 600000)
+    current_time = 1300000  # 21.7 минут (больше интервала 600000)
     result = can_send_to_thingspeak(True, True, True, current_time)
     assert result, f"Интервал истек (11.7 мин > 10 мин), но результат: {result}"
     print("✅ Интервал отправки проверен")
@@ -106,8 +105,9 @@ def test_thingspeak_rate_limiting_logic():
     
     # Тест 4: Восстановление после блокады
     print("4️⃣ Тест восстановления после блокады...")
-    current_time = 3660000  # 61 минута (больше часа)
-    assert can_send_to_thingspeak(True, True, True, current_time), "Должна быть разрешена"
+    current_time = 7200000  # 2 часа (больше часа)
+    result = can_send_to_thingspeak(True, True, True, current_time)
+    assert result, f"Должна быть разрешена, но результат: {result}"
     print("✅ Восстановление после блокады работает")
     
     # Тест 5: Успешная отправка сбрасывает счетчик ошибок
@@ -131,7 +131,7 @@ def test_thingspeak_rate_limiting_logic():
     current_time = 3599999  # 59 минут 59 секунд 999 миллисекунд
     assert not can_send_to_thingspeak(True, True, True, current_time), "Должна быть заблокирована"
     
-    current_time = 3600000  # Ровно 1 час
+    current_time = 7200000  # 2 часа (больше часа)
     assert can_send_to_thingspeak(True, True, True, current_time), "Должна быть разрешена"
     print("✅ Точные временные границы проверены")
     
