@@ -11,10 +11,9 @@ from typing import Dict
 
 # Принудительно устанавливаем stdout в utf-8 для Windows
 if hasattr(sys.stdout, 'encoding') and sys.stdout.encoding and sys.stdout.encoding.lower() not in ['utf-8', 'utf8']:
-    try:
+    from contextlib import suppress
+    with suppress(Exception):
         sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf-8', buffering=1)
-    except Exception:
-        pass
 
 class RegisterDiagnostics:
     """Диагностика регистров калибровки JXCT"""
@@ -44,16 +43,13 @@ class RegisterDiagnostics:
         # Пока симулируем возможные проблемные значения
         
         # Симуляция проблемных значений для демонстрации
-        if address == 0x0064:  # Humidity Offset
-            return 150  # Смещение влажности
-        elif address == 0x0065:  # Humidity Multiplier
-            return 850  # Пониженный множитель
-        elif address == 0x0066:  # EC Offset
-            return -200  # Отрицательное смещение EC
-        elif address == 0x0067:  # EC Multiplier
-            return 750  # Пониженный множитель EC
-        else:
-            return 0
+        register_values = {
+            0x0064: 150,   # Humidity Offset - Смещение влажности
+            0x0065: 850,   # Humidity Multiplier - Пониженный множитель
+            0x0066: -200,  # EC Offset - Отрицательное смещение EC
+            0x0067: 750    # EC Multiplier - Пониженный множитель EC
+        }
+        return register_values.get(address, 0)
 
     def read_all_calibration_registers(self) -> Dict[int, int]:
         """Чтение всех регистров калибровки"""
@@ -99,7 +95,7 @@ class RegisterDiagnostics:
         hum_offset = registers.get(0x0064, 0)
         hum_mult = registers.get(0x0065, 1000)
         
-        print(f"💧 ВЛАЖНОСТЬ:")
+        print("💧 ВЛАЖНОСТЬ:")
         print(f"   Смещение: {hum_offset}")
         print(f"   Множитель: {hum_mult}")
         
@@ -122,7 +118,7 @@ class RegisterDiagnostics:
         ec_offset = registers.get(0x0066, 0)
         ec_mult = registers.get(0x0067, 1000)
         
-        print(f"⚡ EC (ЭЛЕКТРОПРОВОДНОСТЬ):")
+        print("⚡ EC (ЭЛЕКТРОПРОВОДНОСТЬ):")
         print(f"   Смещение: {ec_offset}")
         print(f"   Множитель: {ec_mult}")
         
