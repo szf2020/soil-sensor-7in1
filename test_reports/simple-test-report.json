@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-08-03T13:45:54.587959",
+  "timestamp": "2025-08-03T14:06:02.710176",
   "version": "3.7.0",
   "platform": "Windows",
   "test_results": {
@@ -29,8 +29,8 @@
       }
     },
     "esp32_build": {
-      "status": "FAIL",
-      "error": "In file included from C:/Users/Robot1/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include/assert.h:20,\n                 from C:/Users/Robot1/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_common/include/esp_err.h:11,\n                 from C:/Users/Robot1/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_wifi/include/esp_private/esp_wifi_types_private.h:21,\n                 from C:/Users/Robot1/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_wifi/include/esp_wifi_types.h:11,\n                 from C:/Users/Robot1/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/WiFiType.h:26,\n                 from C:/Users/Robot1/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/WiFi.h:31,\n                 from src/config.cpp:7:\nC:/Users/Robot1/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/dio_qspi/include/sdkconfig.h:438: warning: \"CONFIG_HEAP_POISONING_LIGHT\" redefined\n #define CONFIG_HEAP_POISONING_LIGHT 1\n \n<command-line>: note: this is the location of the previous definition\n*** [.pio\\build\\esp32dev\\firmware.bin] C:\\Git\\JXCT\\.pio\\build\\esp32dev\\firmware.bin: \\u041f\\u0440\\u043e\\u0446\\u0435\\u0441\\u0441 \\u043d\\u0435 \\u043c\\u043e\\u0436\\u0435\\u0442 \\u043f\\u043e\\u043b\\u0443\\u0447\\u0438\\u0442\\u044c \\u0434\\u043e\\u0441\\u0442\\u0443\\u043f \\u043a \\u0444\\u0430\\u0439\\u043b\\u0443, \\u0442\\u0430\\u043a \\u043a\\u0430\\u043a \\u044d\\u0442\\u043e\\u0442 \\u0444\\u0430\\u0439\\u043b \\u0437\\u0430\\u043d\\u044f\\u0442 \\u0434\\u0440\\u0443\\u0433\\u0438\\u043c \\u043f\\u0440\\u043e\\u0446\\u0435\\u0441\\u0441\\u043e\\u043c\n========================= [FAILED] Took 21.13 seconds =========================\nEnvironment    Status    Duration\n-------------  --------  ------------\nesp32dev       FAILED    00:00:21.131\n==================== 1 failed, 0 succeeded in 00:00:21.131 ====================\n"
+      "status": "PASS",
+      "firmware_size": 1375216
     },
     "esp32_tests": {
       "status": "SKIPPED",
@@ -42,7 +42,7 @@
   },
   "summary": {
     "total_categories": 4,
-    "passed_categories": 2,
-    "overall_status": "FAIL"
+    "passed_categories": 3,
+    "overall_status": "PASS"
   }
 }
