@@ -47,8 +47,9 @@
 
 **Для разработчиков:**
 
-[![👨‍💻 API Overview](https://img.shields.io/badge/👨‍💻-API%20Overview-green?style=for-the-badge&logo=swagger)](docs/api-overview.md)
+[![👨‍💻 API Documentation](https://img.shields.io/badge/👨‍💻-API%20Documentation-green?style=for-the-badge&logo=swagger)](docs/api/)
 [![🧑‍💻 Dev Guide](https://img.shields.io/badge/🧑‍💻-Dev%20Guide-lightgrey?style=for-the-badge&logo=github)](docs/dev/)
+[![📋 Contributing](https://img.shields.io/badge/📋-Contributing-orange?style=for-the-badge&logo=github)](docs/CONTRIBUTING.md)
 
 ---
 
