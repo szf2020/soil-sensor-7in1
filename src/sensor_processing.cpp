@@ -80,11 +80,15 @@ SoilProfile getSoilProfile(int profileIndex) {
  * @param config Конфигурация системы
  */
 void processSensorData(SensorData& sensorData, const Config& config) {
-    // 1. ВСЕГДА применяем калибровку (расчет по точкам)
-    logDebugSafe("📊 Применяем калибровку датчика");
-    
-    const SoilProfile profile = getSoilProfile(config.soilProfile);
-    gCalibrationService.applyCalibration(sensorData, profile);
+    // 1. Применяем калибровку ТОЛЬКО если включена
+    if (config.flags.calibrationEnabled) {
+        logDebugSafe("📊 Применяем калибровку датчика");
+        
+        const SoilProfile profile = getSoilProfile(config.soilProfile);
+        gCalibrationService.applyCalibration(sensorData, profile);
+    } else {
+        logDebugSafe("📊 Калибровка отключена");
+    }
 
     // 2. Применяем научную компенсацию ТОЛЬКО если включена
     if (config.flags.compensationEnabled) {  // ✅ Правильный флаг для компенсации

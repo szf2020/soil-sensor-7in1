@@ -62,6 +62,7 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
     config.flags.mqttEnabled = preferences.getBool("mqttEnabled", false);
     config.flags.thingSpeakEnabled = preferences.getBool("tsEnabled", false);
     config.flags.compensationEnabled = preferences.getBool("compEnabled", false);
+    config.flags.calibrationEnabled = preferences.getBool("calEnabled", false);
 
     config.mqttQos = preferences.getUChar("mqttQos", 0);
     config.thingspeakInterval = preferences.getUShort("tsInterval", 60);
@@ -257,6 +258,7 @@ void saveConfig()  // NOLINT(misc-use-internal-linkage)
     preferences.putBool("mqttEnabled", config.flags.mqttEnabled);
     preferences.putBool("tsEnabled", config.flags.thingSpeakEnabled);
     preferences.putBool("compEnabled", config.flags.compensationEnabled);
+    preferences.putBool("calEnabled", config.flags.calibrationEnabled);
 
     preferences.putUChar("mqttQos", config.mqttQos);
     preferences.putUShort("tsInterval", config.thingspeakInterval);

@@ -67,6 +67,8 @@ bool pendingThingspeakPublish = false;
 // startFakeSensorTask() - в fake_sensor.h
 // handleMQTT() - в mqtt_client.h
 
+            // Система коррекции показаний (не требует сброса датчика)
+
 WiFiUDP ntpUDP;                   // NOLINT(misc-use-internal-linkage)
 NTPClient* timeClient = nullptr;  // NOLINT(misc-use-internal-linkage)
 
@@ -98,6 +100,9 @@ bool initFileSystem()
 }  // namespace
 
 // === ОПТИМИЗАЦИЯ 3.2: Интеллектуальный батчинг данных для группировки сетевых отправок ===
+
+// ✅ Система коррекции показаний JXBS-3001-Ver1
+// Датчик не поддерживает программный сброс, поэтому используем коррекцию
 // перемещены в анонимное пространство имён выше
 
 namespace
@@ -241,6 +246,10 @@ void setup()  // NOLINT(misc-use-internal-linkage)
     // Создаём экземпляр абстрактного сенсора
     static std::unique_ptr<ISensor> gSensor = createSensorInstance();
     gSensor->begin();
+
+                // ✅ СИСТЕМА КОРРЕКЦИИ ПОКАЗАНИЙ
+            logSystem("Система коррекции показаний активна");
+    logSystem("Коэффициенты коррекции: влажность=1.25x-5%, EC=1.35x");
 
     // ✅ v3.12.0: Инициализация улучшенной системы фильтрации
     AdvancedFilters::resetAllFilters();
