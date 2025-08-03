@@ -16,7 +16,7 @@ ModbusRTU modbus;
 void setup() {
   Serial.begin(115200);
   Serial.println("🔍 ПРОСТОЙ ТЕСТ РЕГИСТРОВ JXCT");
-  Serial.println("=" * 40);
+  Serial.println("========================================");
   
   // Инициализация Modbus
   modbus.begin(&Serial2, RS485_DE_PIN);

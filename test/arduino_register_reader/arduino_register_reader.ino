@@ -20,7 +20,7 @@ const char* REGISTER_NAMES[] = {"Humidity Offset", "Humidity Multiplier", "EC Of
 void setup() {
   Serial.begin(115200);
   Serial.println("🔧 ДИАГНОСТИКА РЕГИСТРОВ КАЛИБРОВКИ JXCT");
-  Serial.println("=" * 60);
+  Serial.println("============================================================");
   
   // Настройка RS485
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
@@ -106,7 +106,7 @@ bool writeRegister(uint16_t address, uint16_t value) {
 // Чтение всех регистров калибровки
 void readAllRegisters() {
   Serial.println("\n🔧 ЧТЕНИЕ РЕГИСТРОВ КАЛИБРОВКИ");
-  Serial.println("=" * 60);
+  Serial.println("============================================================");
   
   for (int i = 0; i < 4; i++) {
     uint16_t address = REGISTER_ADDRESSES[i];

@@ -7,7 +7,7 @@
 
 import sys
 import json
-from typing import Dict, List, Tuple, Optional
+from typing import Dict
 from datetime import datetime
 
 # Принудительно устанавливаем stdout в utf-8 для Windows

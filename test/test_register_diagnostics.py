@@ -7,7 +7,7 @@
 
 import sys
 import time
-from typing import Dict, List, Tuple, Optional
+from typing import Dict
 
 # Принудительно устанавливаем stdout в utf-8 для Windows
 if hasattr(sys.stdout, 'encoding') and sys.stdout.encoding and sys.stdout.encoding.lower() not in ['utf-8', 'utf8']:
