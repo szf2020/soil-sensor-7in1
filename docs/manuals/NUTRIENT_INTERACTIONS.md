@@ -294,7 +294,10 @@ public:
 ```cpp
 void processSensorData(SensorData& sensorData, const Config& config) {
     // 1. Калибровка
-    gCalibrationService.applyCalibration(sensorData, profile);
+    // Применение коррекции показаний
+sensorData.humidity = SensorCorrection::correctHumidity(sensorData.humidity);
+sensorData.ec = SensorCorrection::correctEC(sensorData.ec);
+sensorData.temperature = SensorCorrection::correctTemperature(sensorData.temperature);
     
     // 2. Компенсация
     if (config.flags.compensationEnabled) {

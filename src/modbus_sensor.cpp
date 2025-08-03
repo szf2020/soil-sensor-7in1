@@ -18,6 +18,7 @@
 #include "sensor_processing.h"  // Общая логика обработки
 #include "sensor_types.h"
 #include "validation_utils.h"  // Для централизованной валидации
+#include "sensor_correction.h"  // ✅ Система коррекции показаний
 
 // Глобальные переменные (должны быть доступны через extern)
 // Внутренние переменные и функции — только для этой единицы трансляции
@@ -185,8 +186,20 @@ bool readSingleRegister(uint16_t reg_addr, const char* reg_name, float multiplie
         if (is_float)
         {
             auto* float_target = static_cast<float*>(target);
-            *float_target = convertRegisterToFloat(
+            float factory_value = convertRegisterToFloat(
                 RegisterConversion::builder().setRegisterValue(raw_value).setScaleMultiplier(multiplier).build());
+            
+            // ✅ Применяем коррекцию показаний
+            float corrected_value = factory_value;
+            if (reg_addr == REG_SOIL_MOISTURE) {
+                corrected_value = SensorCorrection::correctHumidity(raw_value);
+            } else if (reg_addr == REG_CONDUCTIVITY) {
+                corrected_value = SensorCorrection::correctEC(raw_value);
+            } else if (reg_addr == REG_SOIL_TEMP) {
+                corrected_value = SensorCorrection::correctTemperature(raw_value);
+            }
+            
+            *float_target = corrected_value;
             logDebugSafe("\1", reg_name, *float_target);
         }
         else
@@ -355,6 +368,10 @@ void setupModbus()
     modbus.postTransmission(postTransmission);  // Вызывается после передачи
 
     logSuccess("Modbus инициализирован");
+    
+                // ✅ Инициализация системы коррекции показаний
+    SensorCorrection::init();
+    
     logPrintHeader("MODBUS ГОТОВ ДЛЯ ПОЛНОГО ТЕСТИРОВАНИЯ", LogColor::GREEN);
 }
 
@@ -570,6 +587,19 @@ void postTransmission()
     delayMicroseconds(50);             // Ждем завершения передачи последнего байта
     digitalWrite(MODBUS_DE_PIN, LOW);  // Отключаем передатчик
     digitalWrite(MODBUS_RE_PIN, LOW);  // Включаем приемник
+}
+
+// Функция записи регистра Modbus
+bool writeRegister(uint16_t address, uint16_t value) {
+    uint8_t result = modbus.writeSingleRegister(address, value);
+    
+    if (result == modbus.ku8MBSuccess) {
+        Serial.printf("✅ Регистр 0x%04X = %d\n", address, value);
+        return true;
+    } else {
+        Serial.printf("❌ Ошибка записи регистра 0x%04X: %d\n", address, result);
+        return false;
+    }
 }
 
 // ✅ Неблокирующая задача реального датчика с ДИАГНОСТИКОЙ

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Тест окраски влажности</title>
+    <style>
+        .green { color: #4CAF50; }
+        .yellow { color: #FFC107; }
+        .orange { color: #FF9800; }
+        .red { color: #F44336; }
+        .blue { color: #2196F3; }
+        .test-value {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            display: inline-block;
+            min-width: 100px;
+            text-align: center;
+        }
+        .precision-test {
+            padding: 15px;
+            margin: 10px;
+            border: 2px solid #333;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест логики окраски влажности</h1>
+    
+    <div id="test-results"></div>
+    <div id="precision-test"></div>
+    
+    <script>
+        // Функция colorSensorRange из нашего кода
+        function colorSensorRange(value, sensorType) {
+            const ranges = {
+                temp: { min: -40, max: 80, precision: '±0.5°C' },
+                hum: { min: 0, max: 100, precision: '±3%RH' },
+                ph: { min: 3, max: 9, precision: '±0.3pH' },
+                ec: { min: 0, max: 20000, precision: '±2-5%' },
+                n: { min: 0, max: 1999, precision: '2%' },
+                p: { min: 0, max: 1999, precision: '2%' },
+                k: { min: 0, max: 1999, precision: '2%' }
+            };
+            const range = ranges[sensorType];
+            if (!range) return '';
+            if (value < range.min || value > range.max) return 'red';
+            // ОСОБАЯ ЛОГИКА ДЛЯ ВЛАЖНОСТИ: желтый выше 53%
+            if (sensorType === 'hum' && value > 53) return 'yellow';
+            return 'green'; // В рабочем диапазоне - зеленый
+        }
+        
+        // Функция setRawWithPrecision из нашего кода
+        function setRawWithPrecision(id, value, sensorType) {
+            const ranges = {
+                temp: { precision: '±0.5°C' },
+                hum: { precision: '±3%RH', lowPrecisionMin: 53, lowPrecisionMax: 100, lowPrecision: '±5%RH' },
+                ph: { precision: '±0.3pH' },
+                ec: { precision: '±2-5%' },
+                n: { precision: '2%' },
+                p: { precision: '2%' },
+                k: { precision: '2%' }
+            };
+            const range = ranges[sensorType];
+            if (!range) {
+                set(id, value);
+                return;
+            }
+            const element = document.getElementById(id);
+            if (element) {
+                let precision = range.precision;
+                // ОСОБАЯ ЛОГИКА ДЛЯ ВЛАЖНОСТИ: показываем ±5%RH выше 53%
+                if (sensorType === 'hum' && value > 53 && range.lowPrecision) {
+                    precision = range.lowPrecision;
+                }
+                element.textContent = value + ' (' + precision + ')';
+            }
+        }
+        
+        // Функция applyColor из нашего кода
+        function applyColor(spanId, cls) {
+            var el = document.getElementById(spanId);
+            if (!el) return;
+            el.classList.remove('red', 'orange', 'yellow', 'green');
+            if (cls) {
+                el.classList.add(cls);
+            } else {
+                el.classList.add('green');
+            }
+        }
+        
+        // Функция set для тестирования
+        function set(id, v) {
+            if (v !== undefined && v !== null) {
+                document.getElementById(id).textContent = v;
+            }
+        }
+        
+        // Тестируем различные значения влажности
+        const testValues = [-5, 0, 25, 50, 53, 54, 60, 80, 100, 105];
+        
+        let resultsHtml = '<h2>Тест значений влажности:</h2>';
+        
+        testValues.forEach((value, index) => {
+            const color = colorSensorRange(value, 'hum');
+            const elementId = `hum-test-${index}`;
+            
+            resultsHtml += `
+                <div class="test-value ${color}" id="${elementId}">
+                    ${value}% → ${color}
+                </div>
+            `;
+        });
+        
+        document.getElementById('test-results').innerHTML = resultsHtml;
+        
+        // Тест функции setRawWithPrecision
+        let precisionHtml = '<h2>Тест функции setRawWithPrecision:</h2>';
+        
+        testValues.forEach((value, index) => {
+            const elementId = `precision-test-${index}`;
+            precisionHtml += `
+                <div class="precision-test">
+                    <strong>Влажность ${value}%:</strong>
+                    <span id="${elementId}">-</span>
+                </div>
+            `;
+        });
+        
+        document.getElementById('precision-test').innerHTML = precisionHtml;
+        
+        // Применяем setRawWithPrecision
+        testValues.forEach((value, index) => {
+            const elementId = `precision-test-${index}`;
+            setRawWithPrecision(elementId, value, 'hum');
+        });
+        
+        // Дополнительный тест с applyColor
+        console.log('=== ТЕСТ ЛОГИКИ ОКРАСКИ ===');
+        testValues.forEach(value => {
+            const color = colorSensorRange(value, 'hum');
+            console.log(`Влажность ${value}% → цвет: ${color}`);
+        });
+        
+        // Проверяем что происходит при вызове applyColor
+        console.log('=== ТЕСТ APPLYCOLOR ===');
+        testValues.forEach((value, index) => {
+            const color = colorSensorRange(value, 'hum');
+            const elementId = `hum-test-${index}`;
+            applyColor(elementId, color);
+            console.log(`applyColor('${elementId}', '${color}')`);
+        });
+        
+        console.log('=== ТЕСТ SETRAWWITHPRECISION ===');
+        testValues.forEach((value, index) => {
+            const elementId = `precision-test-${index}`;
+            setRawWithPrecision(elementId, value, 'hum');
+            console.log(`setRawWithPrecision('${elementId}', ${value}, 'hum')`);
+        });
+    </script>
+</body>
+</html> 

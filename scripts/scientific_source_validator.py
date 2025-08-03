@@ -8,7 +8,7 @@ import re
 import json
 import urllib.request
 import urllib.error
-from typing import Dict, List, Tuple, Optional
+from typing import Dict
 import time
 
 class ScientificSourceValidator:

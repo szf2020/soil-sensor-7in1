@@ -209,34 +209,43 @@ String SensorCalibrationService::exportCalibrationTable(SoilProfile profile)
     const CalibrationTable& table = tableIter->second;
     String csv = "sensor_type,raw_value,reference_value\n";  // NOLINT(misc-const-correctness)
 
-    // Экспортируем все точки калибровки
+    // Экспортируем все точки калибровки с использованием sprintf для избежания временных String объектов
+    char buffer[64];
+    
     for (const auto& point : table.temperaturePoints)
     {
-        csv += "temperature," + String(point.rawValue) + "," + String(point.referenceValue) + "\n";
+        snprintf(buffer, sizeof(buffer), "temperature,%.2f,%.2f\n", point.rawValue, point.referenceValue);
+        csv += buffer;
     }
     for (const auto& point : table.humidityPoints)
     {
-        csv += "humidity," + String(point.rawValue) + "," + String(point.referenceValue) + "\n";
+        snprintf(buffer, sizeof(buffer), "humidity,%.2f,%.2f\n", point.rawValue, point.referenceValue);
+        csv += buffer;
     }
     for (const auto& point : table.ecPoints)
     {
-        csv += "ec," + String(point.rawValue) + "," + String(point.referenceValue) + "\n";
+        snprintf(buffer, sizeof(buffer), "ec,%.2f,%.2f\n", point.rawValue, point.referenceValue);
+        csv += buffer;
     }
     for (const auto& point : table.phPoints)
     {
-        csv += "ph," + String(point.rawValue) + "," + String(point.referenceValue) + "\n";
+        snprintf(buffer, sizeof(buffer), "ph,%.2f,%.2f\n", point.rawValue, point.referenceValue);
+        csv += buffer;
     }
     for (const auto& point : table.nitrogenPoints)
     {
-        csv += "nitrogen," + String(point.rawValue) + "," + String(point.referenceValue) + "\n";
+        snprintf(buffer, sizeof(buffer), "nitrogen,%.2f,%.2f\n", point.rawValue, point.referenceValue);
+        csv += buffer;
     }
     for (const auto& point : table.phosphorusPoints)
     {
-        csv += "phosphorus," + String(point.rawValue) + "," + String(point.referenceValue) + "\n";
+        snprintf(buffer, sizeof(buffer), "phosphorus,%.2f,%.2f\n", point.rawValue, point.referenceValue);
+        csv += buffer;
     }
     for (const auto& point : table.potassiumPoints)
     {
-        csv += "potassium," + String(point.rawValue) + "," + String(point.referenceValue) + "\n";
+        snprintf(buffer, sizeof(buffer), "potassium,%.2f,%.2f\n", point.rawValue, point.referenceValue);
+        csv += buffer;
     }
 
     return csv;
@@ -458,7 +467,7 @@ bool SensorCalibrationService::addTemperatureCalibrationPoint(float expected, fl
     
     // Валидация входных данных
     if (!CalibrationMath::validateCalibrationPoint(expected, measured, "temperature")) {
-        logWarn("Невалидная точка температуры: expected=" + String(expected) + ", measured=" + String(measured));
+        logWarnSafe("Невалидная точка температуры: expected=%.1f, measured=%.1f", expected, measured);
         return false;
     }
     
@@ -468,7 +477,7 @@ bool SensorCalibrationService::addTemperatureCalibrationPoint(float expected, fl
     g_modern_calibration_data.temperature.is_valid = true;
     g_modern_calibration_data.temperature.timestamp = millis();
     
-    logInfo("Установлен offset температуры: " + String(offset) + "°C");
+    logInfoSafe("Установлен offset температуры: %.1f°C", offset);
     
     // Сохраняем данные
     return saveModernCalibrationData();
@@ -481,7 +490,7 @@ bool SensorCalibrationService::addHumidityCalibrationPoint(float expected, float
     
     // Валидация входных данных
     if (!CalibrationMath::validateCalibrationPoint(expected, measured, "humidity")) {
-        logWarn("Невалидная точка влажности: expected=" + String(expected) + ", measured=" + String(measured));
+        logWarnSafe("Невалидная точка влажности: expected=%.1f, measured=%.1f", expected, measured);
         return false;
     }
     
@@ -491,7 +500,7 @@ bool SensorCalibrationService::addHumidityCalibrationPoint(float expected, float
     g_modern_calibration_data.humidity.is_valid = true;
     g_modern_calibration_data.humidity.timestamp = millis();
     
-    logInfo("Установлен offset влажности: " + String(offset) + "%");
+    logInfoSafe("Установлен offset влажности: %.1f%%", offset);
     
     // Сохраняем данные
     return saveModernCalibrationData();
@@ -504,7 +513,7 @@ bool SensorCalibrationService::addPHCalibrationPoint(float expected, float measu
     
     // Валидация входных данных
     if (!CalibrationMath::validateCalibrationPoint(expected, measured, "ph")) {
-        logWarn("Невалидная точка pH калибровки: expected=" + String(expected) + ", measured=" + String(measured));
+        logWarnSafe("Невалидная точка pH калибровки: expected=%.1f, measured=%.1f", expected, measured);
         return false;
     }
     
@@ -512,7 +521,7 @@ bool SensorCalibrationService::addPHCalibrationPoint(float expected, float measu
     ModernCalibrationPoint point(expected, measured);
     g_modern_calibration_data.ph.points.push_back(point);
     
-    logInfo("Добавлена точка pH калибровки: expected=" + String(expected) + ", measured=" + String(measured));
+    logInfoSafe("Добавлена точка pH калибровки: expected=%.1f, measured=%.1f", expected, measured);
     
     // Сохраняем данные
     return saveModernCalibrationData();
@@ -525,7 +534,7 @@ bool SensorCalibrationService::addECCalibrationPoint(float expected, float measu
     
     // Валидация входных данных
     if (!CalibrationMath::validateCalibrationPoint(expected, measured, "ec")) {
-        logWarn("Невалидная точка EC калибровки: expected=" + String(expected) + ", measured=" + String(measured));
+        logWarnSafe("Невалидная точка EC калибровки: expected=%.0f, measured=%.0f", expected, measured);
         return false;
     }
     
@@ -533,7 +542,7 @@ bool SensorCalibrationService::addECCalibrationPoint(float expected, float measu
     ModernCalibrationPoint point(expected, measured);
     g_modern_calibration_data.ec.points.push_back(point);
     
-    logInfo("Добавлена точка EC калибровки: expected=" + String(expected) + ", measured=" + String(measured));
+    logInfoSafe("Добавлена точка EC калибровки: expected=%.0f, measured=%.0f", expected, measured);
     
     // Сохраняем данные
     return saveModernCalibrationData();
@@ -548,14 +557,14 @@ bool SensorCalibrationService::setNPKCalibrationPoint(float nitrogen, float phos
     if (!CalibrationMath::validateCalibrationPoint(0.0f, nitrogen, "npk") ||
         !CalibrationMath::validateCalibrationPoint(0.0f, phosphorus, "npk") ||
         !CalibrationMath::validateCalibrationPoint(0.0f, potassium, "npk")) {
-        logWarn("Невалидные значения NPK: N=" + String(nitrogen) + ", P=" + String(phosphorus) + ", K=" + String(potassium));
+        logWarnSafe("Невалидные значения NPK: N=%.0f, P=%.0f, K=%.0f", nitrogen, phosphorus, potassium);
         return false;
     }
     
     // Устанавливаем нулевую точку (дистиллированная вода)
     g_modern_calibration_data.npk.setZeroPoint(nitrogen, phosphorus, potassium);
     
-    logInfo("Установлена нулевая точка NPK: N=" + String(nitrogen) + ", P=" + String(phosphorus) + ", K=" + String(potassium));
+    logInfoSafe("Установлена нулевая точка NPK: N=%.0f, P=%.0f, K=%.0f", nitrogen, phosphorus, potassium);
     
     // Сохраняем данные
     return saveModernCalibrationData();
@@ -751,9 +760,8 @@ String SensorCalibrationService::getCalibrationStatus() const {
     ph["is_ready"] = g_modern_calibration_data.ph.isReady();
     ph["r_squared"] = g_modern_calibration_data.ph.coefficients.r_squared;
     ph["status"] = g_modern_calibration_data.ph.isReady() ? 
-        ("✅ Готова (" + String(g_modern_calibration_data.ph.getPointCount()) + " точек, R²=" + 
-         String(g_modern_calibration_data.ph.coefficients.r_squared, 3) + ")") :
-        ("❌ Нужно минимум 2 точки (" + String(g_modern_calibration_data.ph.getPointCount()) + " добавлено)");
+        "✅ Готова" : "❌ Нужно минимум 2 точки";
+    ph["point_count"] = g_modern_calibration_data.ph.getPointCount();
     
     // EC
     JsonObject ec = doc.createNestedObject("ec");
@@ -761,9 +769,7 @@ String SensorCalibrationService::getCalibrationStatus() const {
     ec["is_ready"] = g_modern_calibration_data.ec.isReady();
     ec["r_squared"] = g_modern_calibration_data.ec.coefficients.r_squared;
     ec["status"] = g_modern_calibration_data.ec.isReady() ? 
-        ("✅ Готова (" + String(g_modern_calibration_data.ec.getPointCount()) + " точек, R²=" + 
-         String(g_modern_calibration_data.ec.coefficients.r_squared, 3) + ")") :
-        ("❌ Нужно минимум 2 точки (" + String(g_modern_calibration_data.ec.getPointCount()) + " добавлено)");
+        "✅ Готова" : "❌ Нужно минимум 2 точки";
     
     // NPK
     JsonObject npk = doc.createNestedObject("npk");
@@ -785,9 +791,8 @@ bool SensorCalibrationService::setNPKCoefficients(float nSlope, float nOffset, f
         return false;
     }
     
-    logInfo("Установка NPK коэффициентов: N(" + String(nSlope, 3) + "," + String(nOffset, 1) + 
-            ") P(" + String(pSlope, 3) + "," + String(pOffset, 1) + 
-            ") K(" + String(kSlope, 3) + "," + String(kOffset, 1) + ")");
+    logInfoSafe("Установка NPK коэффициентов: N(%.3f,%.1f) P(%.3f,%.1f) K(%.3f,%.1f)", 
+                nSlope, nOffset, pSlope, pOffset, kSlope, kOffset);
     
     // Устанавливаем коэффициенты для NPK элементов
     g_modern_calibration_data.npk.nitrogen.offset = nOffset;

@@ -169,8 +169,14 @@ void preTransmission();
 // Функция после передачи для управления SP3485E
 void postTransmission();
 
+// Функция записи регистра Modbus
+bool writeRegister(uint16_t address, uint16_t value);
+
 // Функция для вывода ошибок Modbus
 void printModbusError(uint8_t errNum);
+
+// Функция доступа к объекту Modbus
+ModbusMaster& getModbus();
 
 void startRealSensorTask();
 

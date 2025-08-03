@@ -116,9 +116,11 @@ ValidationResult validateInterval(const IntervalValidation& params)
 {
     if (params.interval < params.min_val || params.interval > params.max_val)
     {
-        const String message = String(params.field_name) + " должен быть в диапазоне " + String(params.min_val) + "-" +
-                               String(params.max_val) + " мс";
-        return {false, message};
+        // Используем sprintf для избежания временных String объектов
+        char buffer[128];
+        snprintf(buffer, sizeof(buffer), "%s должен быть в диапазоне %lu-%lu мс", 
+                params.field_name, params.min_val, params.max_val);
+        return {false, String(buffer)};
     }
     return {true, ""};
 }
@@ -640,8 +642,10 @@ ValidationResult validateMQTTPort(int port)  // NOLINT(misc-use-internal-linkage
 {
     if (port < CONFIG_MQTT_PORT_MIN || port > CONFIG_MQTT_PORT_MAX)
     {
-        return ValidationResult{
-            false, "MQTT порт должен быть от " + String(CONFIG_MQTT_PORT_MIN) + " до " + String(CONFIG_MQTT_PORT_MAX)};
+        // Используем sprintf для избежания временных String объектов
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "MQTT порт должен быть от %d до %d", CONFIG_MQTT_PORT_MIN, CONFIG_MQTT_PORT_MAX);
+        return ValidationResult{false, String(buffer)};
     }
     return ValidationResult{true, ""};
 }

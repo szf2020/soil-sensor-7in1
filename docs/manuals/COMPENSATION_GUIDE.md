@@ -90,7 +90,7 @@ NPKCoefficients npkCoefficients = {
 
 ```mermaid
 graph TD
-    A[📊 Сырые данные датчиков] --> B[🔧 SensorCalibrationService]
+    A[📊 Сырые данные датчиков] --> B[🔧 SensorCorrection]
     B --> C[🔬 SensorCompensationService]
     C --> D[🧪 ScientificValidationService]
     D --> E[🌱 CropRecommendationEngine]
@@ -104,10 +104,13 @@ graph TD
 
 ### 2.2 Сервисы научной валидации
 
-#### **SensorCalibrationService**
-- **Назначение**: Применение калибровочных таблиц
+#### **SensorCorrection**
+- **Назначение**: Применение простых коэффициентов коррекции (множитель + смещение)
 - **Применение**: ВСЕГДА (обязательно)
-- **Метод**: `applyCalibration(sensorData, soilProfile)`
+- **Методы**:
+  - `correctHumidity(raw_value)`
+  - `correctEC(raw_value)`
+  - `correctTemperature(raw_value)`
 
 #### **SensorCompensationService**
 - **Назначение**: Научные формулы компенсации
@@ -126,8 +129,10 @@ graph TD
 
 ```cpp
 void processSensorData(SensorData& sensorData, const Config& config) {
-    // 1. ВСЕГДА применяем калибровку
-    gCalibrationService.applyCalibration(sensorData, profile);
+    // 1. ВСЕГДА применяем коррекцию показаний
+    sensorData.humidity = SensorCorrection::correctHumidity(sensorData.humidity);
+    sensorData.ec = SensorCorrection::correctEC(sensorData.ec);
+    sensorData.temperature = SensorCorrection::correctTemperature(sensorData.temperature);
 
     // 2. Применяем компенсацию ТОЛЬКО если включена
     if (config.flags.compensationEnabled) {
@@ -427,7 +432,7 @@ public:
 ### 8.4 Интеграция сервисов
 
 **Последовательность обработки:**
-1. **Калибровка** → `SensorCalibrationService`
+1. **Коррекция показаний** → `SensorCorrection`
 2. **Компенсация** → `SensorCompensationService`  
 3. **Валидация** → `ScientificValidationService`
 4. **Взаимодействия** → `NutrientInteractionService`

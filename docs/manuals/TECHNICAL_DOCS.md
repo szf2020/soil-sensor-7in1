@@ -48,7 +48,7 @@
   - [Влажностная компенсация](#Vlazhnostnaya-kompensatsiya)
     - [FAO 56 модель для NPK](#fao-56-model-dlya-npk)
   - [Двухэтапная система](#Dvuhetapnaya-sistema)
-    - [Этап 1 CSV калибровка](#Etap-1-csv-kalibrovka)
+    - [Система коррекции показаний](#Sistema-korrektsii-pokazanii)
     - [Этап 2 Математическая компенсация](#Etap-2-Matematicheskaya-kompensatsiya)
 - [Веб-интерфейс](#Veb-interfeys)
   - [Архитектура](#Arhitektura)
@@ -405,16 +405,18 @@ float compensateNPK(float npk, float humidity, SoilType soilType) {
 
 ### 📊 Двухэтапная система {#Dvuhetapnaya-sistema}
 
-#### Этап 1: CSV калибровка {#Etap-1-csv-kalibrovka}
+#### Система коррекции показаний {#Sistema-korrektsii-pokazanii}
 ```cpp
-float applyCalibration(float rawValue, SoilProfile profile) {
-    if (!hasCalibrationTable(profile)) {
-        return rawValue;
-    }
+float correctHumidity(float rawValue) {
+    return rawValue * humidity_slope + humidity_offset;
+}
 
-    // Линейная интерполяция
-    float factor = interpolateCalibration(rawValue, profile);
-    return rawValue * factor;
+float correctEC(float rawValue) {
+    return rawValue * ec_slope + ec_offset;
+}
+
+float correctTemperature(float rawValue) {
+    return rawValue * temperature_slope + temperature_offset;
 }
 ```
 

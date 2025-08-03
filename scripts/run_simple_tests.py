@@ -35,7 +35,8 @@ def run_python_tests():
 
     test_files = [
         "test/test_format.py",
-        "test/test_validation.py"
+        "test/test_validation.py",
+        "test/test_humidity_color.py"
     ]
 
     results = {}

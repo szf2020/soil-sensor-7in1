@@ -27,7 +27,10 @@ String getUptimeString()
     minutes %= 60;
     hours %= 24;
 
-    return String(days) + "д " + String(hours) + "ч " + String(minutes) + "м " + String(seconds) + "с";
+    // Используем sprintf для избежания временных String объектов
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%luд %luч %luм %luс", days, hours, minutes, seconds);
+    return String(buffer);
 }
 }  // namespace
 
@@ -227,13 +230,18 @@ void logWiFiStatus()
 {
     if (WiFiClass::status() == WL_CONNECTED)  // NOLINT(bugprone-branch-clone)
     {
-        logWiFi("Подключен к " + WiFi.SSID() + ", IP: " + WiFi.localIP().toString() + ", RSSI: " + String(WiFi.RSSI()) +
-                " dBm");  // NOLINT(readability-static-accessed-through-instance)
+        // Используем sprintf для избежания временных String объектов
+        char buffer[128];
+        snprintf(buffer, sizeof(buffer), "Подключен к %s, IP: %s, RSSI: %d dBm", 
+                WiFi.SSID().c_str(), WiFi.localIP().toString().c_str(), WiFi.RSSI());
+        logWiFi(buffer);
     }
     else
     {
-        logWarn("WiFi не подключен (статус: " + String(WiFiClass::status()) +
-                ")");  // NOLINT(readability-static-accessed-through-instance)
+        // Используем sprintf для избежания временных String объектов
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "WiFi не подключен (статус: %d)", WiFiClass::status());
+        logWarn(buffer);
     }
 }
 
