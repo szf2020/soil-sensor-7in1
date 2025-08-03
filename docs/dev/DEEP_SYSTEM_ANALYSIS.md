@@ -17,7 +17,7 @@
 ```cpp
 // src/business_instances.cpp
 CropRecommendationEngine gCropEngine;
-SensorCalibrationService gCalibrationService;
+SensorCorrection gSensorCorrection;
 SensorCompensationService gCompensationService;
 NutrientInteractionService gNutrientInteractionService;
 ```

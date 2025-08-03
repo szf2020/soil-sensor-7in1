@@ -141,62 +141,7 @@ class RegisterDiagnostics:
         
         return analysis
 
-    def generate_factory_reset_code(self) -> str:
-        """Генерация кода для сброса к заводским настройкам"""
-        print("\n🛠️ КОД ДЛЯ СБРОСА К ЗАВОДСКИМ НАСТРОЙКАМ")
-        print("=" * 60)
-        
-        reset_code = """
-// Функция сброса к заводским настройкам
-void factoryReset() {
-    Serial.println("🔄 Сброс к заводским настройкам...");
-    
-    // Команда сброса
-    writeRegister(0x0063, 0x0001);
-    delay(1000);
-    
-    // Сброс регистров влажности
-    writeRegister(0x0064, 0);       // Humidity Offset = 0
-    writeRegister(0x0065, 1000);    // Humidity Multiplier = 1000
-    
-    // Сброс регистров EC
-    writeRegister(0x0066, 0);       // EC Offset = 0
-    writeRegister(0x0067, 1000);    // EC Multiplier = 1000
-    
-    // Сохранение в EEPROM
-    writeRegister(0xFFFF, 0x00A5);
-    delay(500);
-    
-    Serial.println("✅ Сброс завершен!");
-}
 
-// Функция чтения регистра
-uint16_t readRegister(uint16_t address) {
-    uint8_t response[4];
-    uint8_t request[] = {0x01, 0x03, (address >> 8) & 0xFF, address & 0xFF, 0x00, 0x01};
-    
-    if (modbusMaster.sendRequest(request, sizeof(request))) {
-        if (modbusMaster.readResponse(response, sizeof(response))) {
-            return (response[3] << 8) | response[4];
-        }
-    }
-    return 0xFFFF; // Ошибка
-}
-
-// Функция записи регистра
-bool writeRegister(uint16_t address, uint16_t value) {
-    uint8_t request[] = {0x01, 0x06, (address >> 8) & 0xFF, address & 0xFF, (value >> 8) & 0xFF, value & 0xFF};
-    uint8_t response[8];
-    
-    if (modbusMaster.sendRequest(request, sizeof(request))) {
-        return modbusMaster.readResponse(response, sizeof(response));
-    }
-    return false;
-}
-"""
-        
-        print(reset_code)
-        return reset_code
 
     def generate_calibration_code(self, registers: Dict[int, int]) -> str:
         """Генерация кода для калибровки на основе текущих значений"""
@@ -255,7 +200,6 @@ void calibrateSensor() {{
         analysis = self.analyze_calibration_values(registers)
         
         # Генерация кода
-        reset_code = self.generate_factory_reset_code()
         calibration_code = self.generate_calibration_code(registers)
         
         # Итоговые рекомендации
@@ -268,7 +212,7 @@ void calibrateSensor() {{
                 print(f"   • {description}")
             print()
             print("🛠️ РЕКОМЕНДАЦИИ:")
-            print("   1. Выполните factoryReset() для сброса к заводским настройкам")
+            print("   1. Используйте систему коррекции показаний в веб-интерфейсе")
             print("   2. Если проблема сохраняется - проверьте физическое состояние датчика")
             print("   3. При необходимости выполните калибровку в дистиллированной воде")
         else:
@@ -278,7 +222,6 @@ void calibrateSensor() {{
         return {
             "registers": registers,
             "analysis": analysis,
-            "reset_code": reset_code,
             "calibration_code": calibration_code
         }
 
@@ -287,11 +230,10 @@ def main():
     diagnostics = RegisterDiagnostics()
     results = diagnostics.run_diagnostics()
     
-    print("\n📄 Для использования в Arduino IDE:")
-    print("1. Скопируйте код factoryReset() в ваш скетч")
-    print("2. Добавьте функции readRegister() и writeRegister()")
-    print("3. Вызовите factoryReset() в setup()")
-    print("4. Проверьте показания после сброса")
+    print("\n📄 РЕКОМЕНДАЦИИ:")
+    print("1. Используйте систему коррекции показаний в веб-интерфейсе")
+    print("2. Настройте коэффициенты коррекции для влажности и EC")
+    print("3. Проверьте показания после применения коррекции")
     
     return len(results["analysis"]) == 0
 
