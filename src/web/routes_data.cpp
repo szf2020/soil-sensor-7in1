@@ -1419,7 +1419,7 @@ void setupDataRoutes()
                          
                          // Validate JXCT sensor pH range (3-9 pH)
                          if (expected < 3 || expected > 9 || measured < 3 || measured > 9) {
-                             logWarn("pH вне диапазона JXCT: expected=" + String(expected) + ", measured=" + String(measured));
+                             logWarnSafe("pH вне диапазона JXCT: expected=%.1f, measured=%.1f", expected, measured);
                              webServer.send(400, "application/json", "{\"success\":false,\"error\":\"pH values out of JXCT sensor range (3-9 pH)\"}");
                              return;
                          }
@@ -1428,7 +1428,7 @@ void setupDataRoutes()
                          success = gCalibrationService.addPHCalibrationPoint(expected, measured);
                          
                          if (success) {
-                             logSuccess("pH калибровочная точка добавлена: expected=" + String(expected) + ", measured=" + String(measured));
+                             logSuccessSafe("pH калибровочная точка добавлена: expected=%.1f, measured=%.1f", expected, measured);
                          } else {
                              logError("Ошибка добавления pH калибровочной точки");
                          }
@@ -1477,7 +1477,7 @@ void setupDataRoutes()
                          
                          // Validate JXCT sensor EC range (0-10000 µS/cm)
                          if (expected < 0 || expected > 10000 || measured < 0 || measured > 10000) {
-                             logWarn("EC вне диапазона JXCT: expected=" + String(expected) + ", measured=" + String(measured));
+                             logWarnSafe("EC вне диапазона JXCT: expected=%.0f, measured=%.0f", expected, measured);
                              webServer.send(400, "application/json", "{\"success\":false,\"error\":\"EC values out of JXCT sensor range (0-10000 µS/cm)\"}");
                              return;
                          }
@@ -1486,7 +1486,7 @@ void setupDataRoutes()
                          success = gCalibrationService.addECCalibrationPoint(expected, measured);
                          
                          if (success) {
-                             logSuccess("EC калибровочная точка добавлена: expected=" + String(expected) + ", measured=" + String(measured));
+                             logSuccessSafe("EC калибровочная точка добавлена: expected=%.0f, measured=%.0f", expected, measured);
                          } else {
                              logError("Ошибка добавления EC калибровочной точки");
                          }
@@ -1539,7 +1539,7 @@ void setupDataRoutes()
                          
                          // Validate JXCT sensor NPK range (0-1999 mg/kg)
                          if (n < 0 || n > 1999 || p < 0 || p > 1999 || k < 0 || k > 1999) {
-                             logWarn("NPK вне диапазона JXCT: N=" + String(n) + ", P=" + String(p) + ", K=" + String(k));
+                             logWarnSafe("NPK вне диапазона JXCT: N=%.0f, P=%.0f, K=%.0f", n, p, k);
                              webServer.send(400, "application/json", "{\"success\":false,\"error\":\"NPK values out of JXCT sensor range (0-1999 mg/kg)\"}");
                              return;
                          }
@@ -1548,7 +1548,7 @@ void setupDataRoutes()
                          success = gCalibrationService.setNPKCalibrationPoint(n, p, k);
                          
                          if (success) {
-                             logSuccess("NPK калибровочная точка установлена: N=" + String(n) + ", P=" + String(p) + ", K=" + String(k));
+                             logSuccessSafe("NPK калибровочная точка установлена: N=%.0f, P=%.0f, K=%.0f", n, p, k);
                              
                                                       // Включаем компенсацию в конфигурации
                          config.flags.compensationEnabled = true;
