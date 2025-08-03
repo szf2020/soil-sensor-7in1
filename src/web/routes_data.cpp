@@ -741,7 +741,9 @@ void setupDataRoutes()
             html += "  const range = ranges[sensorType];";
             html += "  if (!range) return '';";
             html += "  if (value < range.min || value > range.max) return 'red';";
-            html += "  return 'green';"; // В рабочем диапазоне - зеленый
+            html += "  /* ОСОБАЯ ЛОГИКА ДЛЯ ВЛАЖНОСТИ: желтый выше 53% */";
+            html += "  if (sensorType === 'hum' && value > 53) return 'yellow';";
+            html += "  return 'green';";
             html += "}";
             
             html += "function colorCompensationDeviation(compensated, raw) {";
@@ -788,10 +790,9 @@ void setupDataRoutes()
             html += "  const element = document.getElementById(id);";
             html += "  if (element) {";
             html += "    let precision = range.precision;";
-            html += "    if (sensorType === 'hum' && range.lowPrecisionMin !== undefined && range.lowPrecisionMax !== undefined) {";
-            html += "      if (value >= range.lowPrecisionMin && value <= range.lowPrecisionMax) {";
-            html += "        precision = range.lowPrecision;";
-            html += "      }";
+            html += "    /* ОСОБАЯ ЛОГИКА ДЛЯ ВЛАЖНОСТИ: показываем ±5%RH выше 53% */";
+            html += "    if (sensorType === 'hum' && value > 53 && range.lowPrecision) {";
+            html += "      precision = range.lowPrecision;";
             html += "    }";
             html += "    element.textContent = value + ' (' + precision + ')';";
             html += "  }";
