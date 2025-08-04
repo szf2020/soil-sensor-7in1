@@ -14,6 +14,18 @@ const char* getThingSpeakLastError();
 // Инициализация ThingSpeak клиента (передаём WiFiClient)
 void setupThingSpeak(WiFiClient& client);
 
+// ✅ ДОБАВЛЕНО: Проверка возможности отправки в ThingSpeak
+bool canSendToThingSpeak();
+
+// ✅ ДОБАВЛЕНО: Принудительный сброс блокировки ThingSpeak
+void resetThingSpeakBlock();
+
+// ✅ ДОБАВЛЕНО: Диагностика состояния ThingSpeak
+void diagnoseThingSpeakStatus();
+
+// ✅ ДОБАВЛЕНО: Получение диагностики ThingSpeak в JSON формате
+String getThingSpeakDiagnosticsJson();
+
 // Отправка данных в ThingSpeak (с учётом интервала)
 bool sendDataToThingSpeak();
 

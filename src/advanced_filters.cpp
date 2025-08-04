@@ -481,6 +481,13 @@ float applyECSpecializedFilter(float raw_value)
     if (ec_filter_state.filled >= 3U)
     {
         float prev_value = ec_filter_state.recent_values[(ec_filter_state.index - 2 + 10) % 10];
+        
+        // Защита от деления на ноль и очень маленьких значений
+        if (fabs(prev_value) < 1e-3F)
+        {
+            return raw_value;  // Пропускаем проверку для очень маленьких значений
+        }
+        
         const float change_percent = (abs(raw_value - prev_value) / prev_value) * 100.0F;
 
         // Если изменение больше 25% - считаем выбросом

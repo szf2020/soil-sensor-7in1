@@ -366,15 +366,23 @@ void loop()  // NOLINT(misc-use-internal-linkage)
     // ✅ Групповая отправка ThingSpeak (настраиваемо v2.3.0)
     if (pendingThingspeakPublish && (currentTime - thingspeakBatchTimer >= config.thingSpeakInterval))
     {
-        const bool tsOk = sendDataToThingSpeak();
-        if (tsOk)
+        // ✅ ДОБАВЛЕНО: Предварительная проверка возможности отправки
+        if (canSendToThingSpeak())
         {
-            thingspeakBatchTimer = currentTime;  // Сбрасываем таймер только при успешной отправке
-            DEBUG_PRINTLN("[BATCH] ThingSpeak данные отправлены группой");
+            const bool tsOk = sendDataToThingSpeak();
+            if (tsOk)
+            {
+                thingspeakBatchTimer = currentTime;  // Сбрасываем таймер только при успешной отправке
+                DEBUG_PRINTLN("[BATCH] ThingSpeak данные отправлены группой");
+            }
+            else
+            {
+                DEBUG_PRINTLN("[BATCH] ThingSpeak отправка не удалась, повтор через следующий интервал");
+            }
         }
         else
         {
-            DEBUG_PRINTLN("[BATCH] ThingSpeak отправка не удалась, повтор через следующий интервал");
+            DEBUG_PRINTLN("[BATCH] ThingSpeak отправка заблокирована (ограничения/ошибки)");
         }
         pendingThingspeakPublish = false;
     }

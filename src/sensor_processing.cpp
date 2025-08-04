@@ -10,6 +10,7 @@
 #include "business/sensor_calibration_service.h"
 #include "business/sensor_compensation_service.h"
 #include "sensor_types.h"
+#include "advanced_filters.h"
 
 // Глобальные экземпляры бизнес-сервисов
 extern SensorCalibrationService gCalibrationService;
@@ -112,6 +113,14 @@ void processSensorData(SensorData& sensorData, const Config& config) {
         sensorData.potassium = npk.potassium;
     } else {
         logDebugSafe("🔬 Компенсация отключена");
+    }
+
+    // 3. Применяем улучшенную фильтрацию ТОЛЬКО если включена
+    if (config.adaptiveFiltering || config.kalmanEnabled) {
+        logDebugSafe("🔧 Применяем улучшенную фильтрацию");
+        AdvancedFilters::applyAdvancedFiltering(sensorData);
+    } else {
+        logDebugSafe("🔧 Фильтрация отключена");
     }
 }
 

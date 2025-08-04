@@ -19,6 +19,7 @@ namespace
 const char* THINGSPEAK_API_URL = "https://api.thingspeak.com/update";
 
 unsigned long lastTsPublish = 0;
+unsigned long lastFailTime = 0;  // ✅ ДОБАВЛЕНО: Время последней ошибки
 int consecutiveFailCount = 0;  // счётчик подряд неудач
 
 // ✅ ДОБАВЛЕНО: Функция валидации данных датчика
@@ -80,6 +81,70 @@ std::array<char, 32> thingSpeakLastPublishBuffer = {"0"};
 std::array<char, 64> thingSpeakLastErrorBuffer = {""};
 }  // namespace
 
+// ✅ ДОБАВЛЕНО: Функция принудительного сброса блокировки ThingSpeak
+void resetThingSpeakBlock()
+{
+    consecutiveFailCount = 0;
+    lastFailTime = 0;
+    thingSpeakLastErrorBuffer[0] = '\0';
+    logSuccess("ThingSpeak: Блокировка принудительно сброшена");
+}
+
+// ✅ ДОБАВЛЕНО: Функция диагностики состояния ThingSpeak
+void diagnoseThingSpeakStatus()
+{
+    const unsigned long now = millis();
+    const unsigned long timeSinceLastFail = (lastFailTime > 0) ? (now - lastFailTime) : 0;
+    const unsigned long timeSinceLastPublish = (lastTsPublish > 0) ? (now - lastTsPublish) : 0;
+    
+    logSystem("=== ДИАГНОСТИКА THINGSPEAK ===");
+    logSystemSafe("Включен: %s", config.flags.thingSpeakEnabled ? "ДА" : "НЕТ");
+    logSystemSafe("WiFi статус: %s", wifiConnected ? "ПОДКЛЮЧЕН" : "ОТКЛЮЧЕН");
+    logSystemSafe("Данные валидны: %s", sensorData.valid ? "ДА" : "НЕТ");
+    logSystemSafe("Счетчик ошибок: %d", consecutiveFailCount);
+    logSystemSafe("Время последней ошибки: %lu мс назад", timeSinceLastFail);
+    logSystemSafe("Время последней публикации: %lu мс назад", timeSinceLastPublish);
+    logSystemSafe("Интервал отправки: %lu мс", (unsigned long)config.thingSpeakInterval);
+    
+         if (consecutiveFailCount >= 5) {
+         const unsigned long remainingBlockTime = 1800000UL - timeSinceLastFail;
+         logWarnSafe("БЛОКИРОВКА АКТИВНА! Осталось: %lu мс (%lu мин)", 
+                    remainingBlockTime, remainingBlockTime / 60000);
+     }
+    
+    if (strlen(thingSpeakLastErrorBuffer.data()) > 0) {
+        logWarnSafe("Последняя ошибка: %s", thingSpeakLastErrorBuffer.data());
+    }
+    
+    logSystem("================================");
+}
+
+// ✅ ДОБАВЛЕНО: Получение диагностики ThingSpeak в JSON формате
+String getThingSpeakDiagnosticsJson()
+{
+    const unsigned long now = millis();
+    const unsigned long timeSinceLastFail = (lastFailTime > 0) ? (now - lastFailTime) : 0;
+    const unsigned long timeSinceLastPublish = (lastTsPublish > 0) ? (now - lastTsPublish) : 0;
+         const unsigned long remainingBlockTime = (consecutiveFailCount >= 5) ? (1800000UL - timeSinceLastFail) : 0;
+    
+    String json = "{";
+    json += "\"enabled\":" + String(config.flags.thingSpeakEnabled ? "true" : "false") + ",";
+    json += "\"wifi_connected\":" + String(wifiConnected ? "true" : "false") + ",";
+    json += "\"data_valid\":" + String(sensorData.valid ? "true" : "false") + ",";
+    json += "\"consecutive_fail_count\":" + String(consecutiveFailCount) + ",";
+    json += "\"time_since_last_fail_ms\":" + String(timeSinceLastFail) + ",";
+    json += "\"time_since_last_publish_ms\":" + String(timeSinceLastPublish) + ",";
+    json += "\"interval_ms\":" + String((unsigned long)config.thingSpeakInterval) + ",";
+         json += "\"blocked\":" + String((consecutiveFailCount >= 5 && timeSinceLastFail < 1800000UL) ? "true" : "false") + ",";
+    json += "\"remaining_block_time_ms\":" + String(remainingBlockTime) + ",";
+    json += "\"remaining_block_time_min\":" + String(remainingBlockTime / 60000) + ",";
+    json += "\"last_error\":\"" + String(thingSpeakLastErrorBuffer.data()) + "\",";
+    json += "\"last_publish\":\"" + String(thingSpeakLastPublishBuffer.data()) + "\"";
+    json += "}";
+    
+    return json;
+}
+
 // Геттеры для совместимости с внешним кодом
 const char* getThingSpeakLastPublish()
 {
@@ -88,6 +153,56 @@ const char* getThingSpeakLastPublish()
 const char* getThingSpeakLastError()
 {
     return thingSpeakLastErrorBuffer.data();
+}
+
+// ✅ ДОБАВЛЕНО: Функция проверки возможности отправки в ThingSpeak
+bool canSendToThingSpeak()
+{
+    // Проверки базовых условий
+    if (!config.flags.thingSpeakEnabled) {
+        return false;
+    }
+    if (!wifiConnected) {
+        return false;
+    }
+    if (!sensorData.valid) {
+        return false;
+    }
+
+    const unsigned long now = millis();
+    
+         // ✅ ДОБАВЛЕНО: Автоматический сброс блокировки при восстановлении WiFi
+     if (consecutiveFailCount >= 5 && (now - lastFailTime) >= 1800000UL) {
+         logSuccess("ThingSpeak: Блокировка автоматически сброшена (прошло 30 минут)");
+         consecutiveFailCount = 0;
+         lastFailTime = 0;
+         thingSpeakLastErrorBuffer[0] = '\0';
+     }
+    
+    // ✅ ДОБАВЛЕНО: Сброс блокировки при стабильном WiFi соединении
+    if (consecutiveFailCount >= 5 && WiFi.status() == WL_CONNECTED && (now - lastFailTime) >= 300000UL) {
+        logSuccess("ThingSpeak: Блокировка сброшена (стабильное WiFi, прошло 5 мин)");
+        consecutiveFailCount = 0;
+        lastFailTime = 0;
+        thingSpeakLastErrorBuffer[0] = '\0';
+    }
+    
+         // Проверяем ограничение на 30 минут при множественных ошибках
+     if (consecutiveFailCount >= 5 && (now - lastFailTime) < 1800000UL) {
+         return false;
+     }
+    
+    // Проверяем обычный интервал отправки
+    if (now - lastTsPublish < config.thingSpeakInterval) {
+        return false;
+    }
+    
+    // ✅ ДОБАВЛЕНО: Дополнительная проверка минимального интервала (20 сек)
+    if (now - lastTsPublish < 20000) {
+        return false;
+    }
+
+    return true;
 }
 
 void setupThingSpeak(WiFiClient& client)  // NOLINT(misc-use-internal-linkage)
@@ -102,23 +217,32 @@ void setupThingSpeak(WiFiClient& client)  // NOLINT(misc-use-internal-linkage)
 
 bool sendDataToThingSpeak()
 {
+    // ✅ ДОБАВЛЕНО: Подробная диагностика входа в функцию
+    logDebug("ThingSpeak: Попытка отправки данных");
+    logDebugSafe("ThingSpeak: enabled=%d, wifi=%d, data_valid=%d", 
+                 (int)config.flags.thingSpeakEnabled, wifiConnected, sensorData.valid);
+    
     // Проверки
     if (!config.flags.thingSpeakEnabled)
     {
+        logDebug("ThingSpeak: Отключен в настройках");
         return false;
     }
     if (!wifiConnected)
     {
+        logDebug("ThingSpeak: WiFi не подключен");
         return false;
     }
     if (!sensorData.valid)
     {
+        logDebug("ThingSpeak: Данные датчика невалидны");
         return false;
     }
 
     const unsigned long now = millis();
     if (now - lastTsPublish < config.thingSpeakInterval)
     {  // too frequent
+        logDebugSafe("ThingSpeak: Слишком часто (интервал %lu мс)", (unsigned long)config.thingSpeakInterval);
         return false;
     }
 
@@ -131,13 +255,17 @@ bool sendDataToThingSpeak()
 
     const unsigned long channelId = strtoul(channelBuf.data(), nullptr, 10);
 
+    // ✅ ДОБАВЛЕНО: Диагностика настроек
+    logDebugSafe("ThingSpeak: Channel ID: '%s' -> %lu, API Key: '%s' (длина: %zu)", 
+                 channelBuf.data(), channelId, apiKeyBuf.data(), strlen(apiKeyBuf.data()));
+
     // Проверяем корректность ID и API ключа - если неверные, молча пропускаем
     if (channelId == 0 || strlen(apiKeyBuf.data()) < 16)
     {
         // Не логируем ошибку каждый раз, просто пропускаем отправку
         if (strlen(thingSpeakLastErrorBuffer.data()) == 0)  // логируем только первый раз
         {
-            logWarnSafe("\1", channelBuf.data(), strlen(apiKeyBuf.data()));
+            logWarnSafe("ThingSpeak: Неверные настройки - Channel ID: '%s', API Key длина: %zu", channelBuf.data(), strlen(apiKeyBuf.data()));
             strlcpy(thingSpeakLastErrorBuffer.data(), "Настройки не заданы", thingSpeakLastErrorBuffer.size());
         }
         return false;
@@ -149,86 +277,126 @@ bool sendDataToThingSpeak()
         return false;
     }
 
-    // Отправка данных
-    ThingSpeak.setField(1, format_temperature(sensorData.temperature).c_str());
-    ThingSpeak.setField(2, format_moisture(sensorData.humidity).c_str());
-    ThingSpeak.setField(3, format_ec(sensorData.ec).c_str());
-    ThingSpeak.setField(4, format_ph(sensorData.ph).c_str());
-    ThingSpeak.setField(5, format_npk(sensorData.nitrogen).c_str());
-    ThingSpeak.setField(6, format_npk(sensorData.phosphorus).c_str());
-    ThingSpeak.setField(7, format_npk(sensorData.potassium).c_str());
+    // ✅ ДОБАВЛЕНО: Проверка стабильности WiFi соединения
+    if (WiFi.status() != WL_CONNECTED) {
+        logWarn("ThingSpeak: WiFi соединение нестабильно, пропускаем отправку");
+        return false;
+    }
 
-    logDataSafe("\1", sensorData.temperature, sensorData.humidity, sensorData.ph);
+    // ✅ ДОБАВЛЕНО: Проверка DNS перед отправкой
+    IPAddress thingSpeakIP;
+    if (!WiFi.hostByName("api.thingspeak.com", thingSpeakIP)) {
+        logWarn("ThingSpeak: DNS ошибка - не удается разрешить api.thingspeak.com");
+        strlcpy(thingSpeakLastErrorBuffer.data(), "DNS Error", thingSpeakLastErrorBuffer.size());
+        return false;
+    }
 
-    int res = ThingSpeak.writeFields(channelId, apiKeyBuf.data());
+    // ✅ ДОБАВЛЕНО: Увеличенный таймаут для ThingSpeak
+    espClient.setTimeout(30000);  // 30 секунд вместо стандартных 5
 
-    // ✅ ДОБАВЛЕНО: Детальное логирование HTTP ответа
-    logDebugSafe("ThingSpeak HTTP ответ: %d", res);
+         // ✅ ДОБАВЛЕНО: Диагностика данных перед отправкой
+     logDebugSafe("ThingSpeak: Данные для отправки - T:%.2f, H:%.2f, EC:%.2f, pH:%.2f, N:%d, P:%d, K:%d", 
+                  sensorData.temperature, sensorData.humidity, sensorData.ec, sensorData.ph,
+                  (int)sensorData.nitrogen, (int)sensorData.phosphorus, (int)sensorData.potassium);
+     
+     // Формируем данные для отправки
+     ThingSpeak.setField(1, sensorData.temperature);
+     ThingSpeak.setField(2, sensorData.humidity);
+     ThingSpeak.setField(3, sensorData.ec);
+     ThingSpeak.setField(4, sensorData.ph);
+     ThingSpeak.setField(5, sensorData.nitrogen);
+     ThingSpeak.setField(6, sensorData.phosphorus);
+     ThingSpeak.setField(7, sensorData.potassium);
+     
+     // ✅ ДОБАВЛЕНО: Уникальный идентификатор для избежания HTTP 304
+     ThingSpeak.setField(8, (float)millis());  // Время отправки как уникальный ID
 
-    if (res == 200)
-    {
-        logSuccess("ThingSpeak: данные отправлены");
-        lastTsPublish = millis();
-        snprintf(thingSpeakLastPublishBuffer.data(), thingSpeakLastPublishBuffer.size(), "%lu", lastTsPublish);
-        thingSpeakLastErrorBuffer[0] = '\0';  // Очистка ошибки
-        consecutiveFailCount = 0;             // обнуляем при успехе
-        return true;
-    }
-    if (res == -301)
-    {
-        logWarn("ThingSpeak: таймаут (-301), повторим позже");
-        strlcpy(thingSpeakLastErrorBuffer.data(), "Timeout -301", thingSpeakLastErrorBuffer.size());
-        
-        // ✅ ДОБАВЛЕНО: Retry логика для таймаутов
-        if (consecutiveFailCount < 3) {
-            logDebug("ThingSpeak: Повторная попытка через 5 секунд");
-            lastTsPublish = millis() - config.thingSpeakInterval + 5000;  // Повторим через 5 сек
-            return false;
-        }
-    }
-    else if (res == -401)
-    {
-        logDebug("ThingSpeak: превышен лимит публикаций");
-        strlcpy(thingSpeakLastErrorBuffer.data(), "Превышен лимит публикаций (15 сек)",
-                thingSpeakLastErrorBuffer.size());
-    }
-    else if (res == -302)
-    {
-        logError("ThingSpeak: неверный API ключ");
-        strlcpy(thingSpeakLastErrorBuffer.data(), "Неверный API ключ", thingSpeakLastErrorBuffer.size());
-    }
-    else if (res == -304)
-    {
-        logError("ThingSpeak: неверный Channel ID");
-        strlcpy(thingSpeakLastErrorBuffer.data(), "Неверный Channel ID", thingSpeakLastErrorBuffer.size());
-    }
-    else if (res == 0)
-    {
-        logError("ThingSpeak: ошибка подключения");
-        strlcpy(thingSpeakLastErrorBuffer.data(), "Ошибка подключения", thingSpeakLastErrorBuffer.size());
-    }
-    else if (res == 400)
-    {
-        logError("ThingSpeak: HTTP 400 – неверный запрос (проверьте API Key/Channel)");
-        strlcpy(thingSpeakLastErrorBuffer.data(), "HTTP 400 – неверный запрос (API/Channel)",
-                thingSpeakLastErrorBuffer.size());
-    }
+    // ✅ ДОБАВЛЕНО: Улучшенная обработка ошибок с детальной диагностикой
+    const int res = ThingSpeak.writeFields(channelId, apiKeyBuf.data());
+    
+         if (res == 200)  // ✅ HTTP 200 - настоящий успех
+     {
+         logSuccess("ThingSpeak: данные отправлены (HTTP 200)");
+         lastTsPublish = millis();
+         snprintf(thingSpeakLastPublishBuffer.data(), thingSpeakLastPublishBuffer.size(), "%lu", lastTsPublish);
+         thingSpeakLastErrorBuffer[0] = '\0';  // Очистка ошибки
+         consecutiveFailCount = 0;             // обнуляем при успехе
+         lastFailTime = 0;                     // Сбрасываем время ошибки
+         return true;
+     }
+     else if (res == 304 || res == -304)  // ✅ HTTP 304 - данные не изменились, но это НЕ ошибка
+     {
+         logSuccess("ThingSpeak: данные отправлены (HTTP 304 - не изменились)");
+         lastTsPublish = millis();
+         snprintf(thingSpeakLastPublishBuffer.data(), thingSpeakLastPublishBuffer.size(), "%lu", lastTsPublish);
+         // НЕ сбрасываем счетчик ошибок и НЕ очищаем ошибку - это не настоящий успех
+         return true;
+     }
     else
     {
-        logErrorSafe("\1", res);
-        snprintf(thingSpeakLastErrorBuffer.data(), thingSpeakLastErrorBuffer.size(), "Ошибка %d", res);
+        // ✅ ДОБАВЛЕНО: Детальная диагностика ошибок
+        char errorMsg[64];
+                 switch (res) {
+             case 200:
+                 strlcpy(errorMsg, "HTTP 200 (успех)", sizeof(errorMsg));
+                 break;
+             case 304:
+             case -304:
+                 strlcpy(errorMsg, "HTTP 304 (данные не изменились)", sizeof(errorMsg));
+                 break;
+                         case 400:
+                 strlcpy(errorMsg, "HTTP 400 (неверный запрос - проверьте API ключ/Channel ID)", sizeof(errorMsg));
+                 break;
+             case 429:
+                 strlcpy(errorMsg, "HTTP 429 (слишком часто)", sizeof(errorMsg));
+                 break;
+            case -301:
+                strlcpy(errorMsg, "Timeout -301 (увеличьте интервал)", sizeof(errorMsg));
+                break;
+            case -302:
+                strlcpy(errorMsg, "DNS Error -302", sizeof(errorMsg));
+                break;
+            case -303:
+                strlcpy(errorMsg, "Connection Failed -303", sizeof(errorMsg));
+                break;
+            case 0:
+                strlcpy(errorMsg, "HTTP 0 (проверьте WiFi)", sizeof(errorMsg));
+                break;
+            default:
+                snprintf(errorMsg, sizeof(errorMsg), "HTTP %d", res);
+                break;
+        }
+        
+        logWarnSafe("ThingSpeak: ошибка отправки: %s", errorMsg);
+        strlcpy(thingSpeakLastErrorBuffer.data(), errorMsg, thingSpeakLastErrorBuffer.size());
+        
+        consecutiveFailCount++;
+        lastFailTime = millis();  // ✅ ДОБАВЛЕНО: Записываем время ошибки
+
+        // ✅ ДОБАВЛЕНО: Улучшенная логика повторных попыток
+        if (res == -301 || res == -302 || res == -303) {
+            // Сетевые ошибки - повторяем с экспоненциальной задержкой
+            if (consecutiveFailCount < 5) {
+                unsigned long retryDelay = 10000 * (1 << (consecutiveFailCount - 1));  // 10, 20, 40, 80 сек
+                logDebugSafe("ThingSpeak: Повторная попытка через %lu секунд", retryDelay / 1000);
+                lastTsPublish = millis() - config.thingSpeakInterval + retryDelay;
+                return false;
+            }
+        }
+
+                 // Если слишком много ошибок подряд, временно отключаем на 30 минут
+         if (consecutiveFailCount >= 5)
+         {
+             logWarnSafe("ThingSpeak: Отключён на 30 минут (много ошибок: %d)", consecutiveFailCount);
+             lastTsPublish = millis();  // устанавливаем время последней попытки
+             
+             // ✅ ИСПРАВЛЕНО: Сохраняем И блокировку, И реальную ошибку
+             char combinedError[128];
+             snprintf(combinedError, sizeof(combinedError), "Блокировка 30 мин (%d ошибок) | Последняя: %s", 
+                     consecutiveFailCount, errorMsg);
+             strlcpy(thingSpeakLastErrorBuffer.data(), combinedError, thingSpeakLastErrorBuffer.size());
+         }
+        
+        return false;
     }
-
-    consecutiveFailCount++;
-
-    // Если слишком много ошибок подряд, временно отключаем на 1 час
-    if (consecutiveFailCount >= 10)
-    {
-        logWarnSafe("\1", consecutiveFailCount);
-        lastTsPublish = millis();  // устанавливаем время последней попытки
-        consecutiveFailCount = 0;  // сбрасываем счётчик
-        strlcpy(thingSpeakLastErrorBuffer.data(), "Отключён на 1 час (много ошибок)", thingSpeakLastErrorBuffer.size());
-    }
-
-    return false;
 }

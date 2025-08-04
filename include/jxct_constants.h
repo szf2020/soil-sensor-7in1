@@ -106,7 +106,7 @@ constexpr int NPK_MAX_VALID = SENSOR_NPK_MAX;
 // Диапазоны конфигурации
 constexpr unsigned long CONFIG_INTERVAL_MIN = 1000;       // 1 секунда
 constexpr unsigned long CONFIG_INTERVAL_MAX = 3600000;    // 1 час
-constexpr unsigned long CONFIG_THINGSPEAK_MIN = 15000;    // 15 секунд (лимит API)
+constexpr unsigned long CONFIG_THINGSPEAK_MIN = 20000;    // 20 секунд (избегаем таймаутов)
 constexpr unsigned long CONFIG_THINGSPEAK_MAX = 7200000;  // 2 часа
 constexpr int CONFIG_MQTT_PORT_MIN = 1;
 constexpr int CONFIG_MQTT_PORT_MAX = 65535;
