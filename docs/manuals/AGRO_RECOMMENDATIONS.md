@@ -508,7 +508,7 @@ $$\text{NPK}_{\text{seasonal}} = \text{NPK}_{\text{base}} \times \text{multiplie
 - EC: -10% (пониженная активность)
 - Все NPK: базовые
 
-**Источник:** [Climatic Research Unit, University of East Anglia, 2021]
+**Источник:** [Агрономические принципы + FAO рекомендации, 2024]
 
 ---
 

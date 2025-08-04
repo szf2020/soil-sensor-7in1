@@ -362,7 +362,7 @@ P_winter = P_base × 1.08F;  // +8% фосфора
 K_winter = K_base × 1.10F;  // +10% калия
 ```
 
-**Источник:** [Climatic Research Unit, University of East Anglia, 2021]
+**Источник:** [Агрономические принципы + FAO рекомендации, 2024]
 
 ---
 

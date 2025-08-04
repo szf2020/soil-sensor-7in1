@@ -106,11 +106,11 @@ void diagnoseThingSpeakStatus()
     logSystemSafe("Время последней публикации: %lu мс назад", timeSinceLastPublish);
     logSystemSafe("Интервал отправки: %lu мс", (unsigned long)config.thingSpeakInterval);
     
-         if (consecutiveFailCount >= 5) {
-         const unsigned long remainingBlockTime = 1800000UL - timeSinceLastFail;
-         logWarnSafe("БЛОКИРОВКА АКТИВНА! Осталось: %lu мс (%lu мин)", 
-                    remainingBlockTime, remainingBlockTime / 60000);
-     }
+    if (consecutiveFailCount >= 5) {
+        const unsigned long remainingBlockTime = 1800000UL - timeSinceLastFail;
+        logWarnSafe("БЛОКИРОВКА АКТИВНА! Осталось: %lu мс (%lu мин)", 
+                   remainingBlockTime, remainingBlockTime / 60000);
+    }
     
     if (strlen(thingSpeakLastErrorBuffer.data()) > 0) {
         logWarnSafe("Последняя ошибка: %s", thingSpeakLastErrorBuffer.data());
@@ -125,7 +125,7 @@ String getThingSpeakDiagnosticsJson()
     const unsigned long now = millis();
     const unsigned long timeSinceLastFail = (lastFailTime > 0) ? (now - lastFailTime) : 0;
     const unsigned long timeSinceLastPublish = (lastTsPublish > 0) ? (now - lastTsPublish) : 0;
-         const unsigned long remainingBlockTime = (consecutiveFailCount >= 5) ? (1800000UL - timeSinceLastFail) : 0;
+    const unsigned long remainingBlockTime = (consecutiveFailCount >= 5) ? (1800000UL - timeSinceLastFail) : 0;
     
     String json = "{";
     json += "\"enabled\":" + String(config.flags.thingSpeakEnabled ? "true" : "false") + ",";
@@ -135,7 +135,7 @@ String getThingSpeakDiagnosticsJson()
     json += "\"time_since_last_fail_ms\":" + String(timeSinceLastFail) + ",";
     json += "\"time_since_last_publish_ms\":" + String(timeSinceLastPublish) + ",";
     json += "\"interval_ms\":" + String((unsigned long)config.thingSpeakInterval) + ",";
-         json += "\"blocked\":" + String((consecutiveFailCount >= 5 && timeSinceLastFail < 1800000UL) ? "true" : "false") + ",";
+    json += "\"blocked\":" + String((consecutiveFailCount >= 5 && timeSinceLastFail < 1800000UL) ? "true" : "false") + ",";
     json += "\"remaining_block_time_ms\":" + String(remainingBlockTime) + ",";
     json += "\"remaining_block_time_min\":" + String(remainingBlockTime / 60000) + ",";
     json += "\"last_error\":\"" + String(thingSpeakLastErrorBuffer.data()) + "\",";
@@ -171,13 +171,13 @@ bool canSendToThingSpeak()
 
     const unsigned long now = millis();
     
-         // ✅ ДОБАВЛЕНО: Автоматический сброс блокировки при восстановлении WiFi
-     if (consecutiveFailCount >= 5 && (now - lastFailTime) >= 1800000UL) {
-         logSuccess("ThingSpeak: Блокировка автоматически сброшена (прошло 30 минут)");
-         consecutiveFailCount = 0;
-         lastFailTime = 0;
-         thingSpeakLastErrorBuffer[0] = '\0';
-     }
+    // ✅ ДОБАВЛЕНО: Автоматический сброс блокировки при восстановлении WiFi
+    if (consecutiveFailCount >= 5 && (now - lastFailTime) >= 1800000UL) {
+        logSuccess("ThingSpeak: Блокировка автоматически сброшена (прошло 30 минут)");
+        consecutiveFailCount = 0;
+        lastFailTime = 0;
+        thingSpeakLastErrorBuffer[0] = '\0';
+    }
     
     // ✅ ДОБАВЛЕНО: Сброс блокировки при стабильном WiFi соединении
     if (consecutiveFailCount >= 5 && WiFi.status() == WL_CONNECTED && (now - lastFailTime) >= 300000UL) {
@@ -187,10 +187,10 @@ bool canSendToThingSpeak()
         thingSpeakLastErrorBuffer[0] = '\0';
     }
     
-         // Проверяем ограничение на 30 минут при множественных ошибках
-     if (consecutiveFailCount >= 5 && (now - lastFailTime) < 1800000UL) {
-         return false;
-     }
+    // Проверяем ограничение на 30 минут при множественных ошибках
+    if (consecutiveFailCount >= 5 && (now - lastFailTime) < 1800000UL) {
+        return false;
+    }
     
     // Проверяем обычный интервал отправки
     if (now - lastTsPublish < config.thingSpeakInterval) {

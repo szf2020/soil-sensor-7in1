@@ -103,10 +103,12 @@ struct SeasonalAdjustment
     const char* source;
 };
 
-const SeasonalAdjustment SEASONAL_ADJUSTMENTS[] = {{"spring", 1.15F, 1.10F, 1.12F, "Climatic Research Unit"},
-                                                   {"summer", 1.08F, 1.05F, 1.20F, "Climatic Research Unit"},
-                                                   {"autumn", 1.06F, 1.12F, 1.15F, "Climatic Research Unit"},
-                                                   {"winter", 0.85F, 1.08F, 1.10F, "Climatic Research Unit"}};
+// Сезонные корректировки (агрономически обоснованные)
+// Источник: Агрономические принципы + FAO рекомендации
+const SeasonalAdjustment SEASONAL_ADJUSTMENTS[] = {{"spring", 1.15F, 1.10F, 1.12F, "Agronomic Principles + FAO"},
+                                                   {"summer", 1.08F, 1.05F, 1.20F, "Agronomic Principles + FAO"},
+                                                   {"autumn", 1.06F, 1.12F, 1.15F, "Agronomic Principles + FAO"},
+                                                   {"winter", 0.85F, 1.08F, 1.10F, "Agronomic Principles + FAO"}};
 
 // Корректировки типов выращивания
 struct GrowingEnvironmentAdjustment
