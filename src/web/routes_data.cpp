@@ -842,7 +842,7 @@ void setupDataRoutes()
             html += "function updateSeasonalAdjustments(season) {";
             html += "  const adjustments = {";
             html += "    'Весна': { n: '+15%', p: '+10%', k: '+12%' },";
-            html += "    'Лето': { n: '+8%', p: '+5%', k: '+18%' },";
+            html += "    'Лето': { n: '+8%', p: '+5%', k: '+20%' },";
             html += "    'Осень': { n: '+6%', p: '+12%', k: '+15%' },";
             html += "    'Зима': { n: '-5%', p: '+8%', k: '+10%' }";
             html += "  };";
