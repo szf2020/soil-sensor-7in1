@@ -65,12 +65,14 @@ class ICropRecommendationEngine
      * @param npk NPK данные
      * @param soilType Тип почвы
      * @param pH Значение pH
+     * @param season Текущий сезон для корректировки порогов
      * @return String Рекомендации
      */
     virtual String generateCropSpecificRecommendations(const String& cropName,
                                                       const NPKReferences& npk,
                                                       SoilType soilType,
-                                                      float pH) = 0;
+                                                      float pH,
+                                                      const String& season = "none") = 0;
 };
 
 #endif  // ICROP_RECOMMENDATION_ENGINE_H

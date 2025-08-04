@@ -9,7 +9,7 @@ import requests
 import json
 import time
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 class SeasonalSourcesValidator:
     """Валидатор научных источников сезонных корректировок"""
@@ -234,6 +234,8 @@ def main():
         print(report)
         
         # Сохраняем результаты
+        import os
+        os.makedirs("test_reports", exist_ok=True)
         with open("test_reports/seasonal_sources_validation.json", "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
             

@@ -265,8 +265,56 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     bool strCheck = strcmp(config.cropId, "none") != 0;
     
     if (lenCheck && strCheck) {
+        // Получаем текущий сезон для корректировки порогов
+        const char* seasonName = []()
+        {
+            if (timeClient == nullptr)
+            {
+                extern WiFiUDP ntpUDP;
+                timeClient = new NTPClient(ntpUDP, "pool.ntp.org", 0, 3600000);
+                timeClient->begin();
+            }
+
+            time_t now = timeClient ? (time_t)timeClient->getEpochTime() : time(nullptr);
+            if (now < NTP_TIMESTAMP_2000)
+            {
+                if (timeClient)
+                {
+                    timeClient->forceUpdate();
+                    now = (time_t)timeClient->getEpochTime();
+                    if (now < NTP_TIMESTAMP_2000)
+                    {
+                        return "Н/Д";
+                    }
+                }
+                else
+                {
+                    return "Н/Д";
+                }
+            }
+            struct tm* timeInfo = localtime(&now);
+            if (!timeInfo)
+            {
+                return "Н/Д";
+            }
+            uint8_t month = timeInfo->tm_mon + 1;
+            if (month == 12 || month == 1 || month == 2)
+            {
+                return "Зима";
+            }
+            if (month >= 3 && month <= 5)
+            {
+                return "Весна";
+            }
+            if (month >= 6 && month <= 8)
+            {
+                return "Лето";
+            }
+            return "Осень";
+        }();
+        
         String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
-            String(config.cropId), npk, soilType, sensorData.ph);
+            String(config.cropId), npk, soilType, sensorData.ph, String(seasonName));
         doc["crop_specific_recommendations"] = cropRecommendations;
         
         // ✅ Минимальное логирование для отладки

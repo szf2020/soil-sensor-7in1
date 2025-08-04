@@ -245,7 +245,6 @@ class SeasonalCoefficientsAnalyzer:
         }
         
         principles_met = 0
-        total_principles = 4
         
         # Принцип 1: Зимой меньше азота
         if current["winter"]["nitrogen"] < current["spring"]["nitrogen"]:

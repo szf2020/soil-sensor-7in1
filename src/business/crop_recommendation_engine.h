@@ -108,7 +108,8 @@ class CropRecommendationEngine : public ICropRecommendationEngine
     String generateCropSpecificRecommendations(const String& cropName, 
                                              const NPKReferences& npk,
                                              SoilType soilType, 
-                                             float pH);
+                                             float pH,
+                                             const String& season = "none");
 };
 
 #endif  // CROP_RECOMMENDATION_ENGINE_H
