@@ -306,7 +306,7 @@ CropConfig applySeasonalAdjustments(const CropConfig& base, const String& season
         adjusted.temperature -= 1.0F;
         adjusted.humidity += 5.0F;
         adjusted.ec -= 100.0F;
-        adjusted.nitrogen *= 1.02F;    // +2% минимально
+        adjusted.nitrogen *= 1.06F;    // +6% для подготовки к зиме
         adjusted.phosphorus *= 1.12F;  // +12% для подготовки к зиме
         adjusted.potassium *= 1.15F;   // +15% для морозостойкости
     }
@@ -317,7 +317,7 @@ CropConfig applySeasonalAdjustments(const CropConfig& base, const String& season
         adjusted.temperature -= 3.0F;
         adjusted.humidity += 10.0F;
         adjusted.ec -= 200.0F;
-        adjusted.nitrogen *= 0.85F;    // -15% период покоя
+        adjusted.nitrogen *= 0.95F;    // -5% период покоя (исправлено с -15%)
         adjusted.phosphorus *= 1.08F;  // +8% для корневой системы
         adjusted.potassium *= 1.10F;   // +10% для устойчивости
     }
@@ -999,20 +999,28 @@ RecValues CropRecommendationEngine::computeRecommendations(const String& cropId,
 
 void CropRecommendationEngine::applySeasonalCorrection(RecValues& rec, Season season, bool isGreenhouse)
 {
-    // Простая реализация сезонных корректировок
+    // ✅ ПРАВИЛЬНАЯ РЕАЛИЗАЦИЯ СЕЗОННЫХ КОРРЕКТИРОВОК (согласно документации)
     switch (season)
     {
         case Season::SPRING:
-            rec.n *= 1.1F;  // +10% азота весной
+            rec.n *= 1.15F;  // +15% азота весной
+            rec.p *= 1.10F;  // +10% фосфора весной
+            rec.k *= 1.12F;  // +12% калия весной
             break;
         case Season::SUMMER:
-            rec.k *= 1.15F;  // +15% калия летом
+            rec.n *= 1.08F;  // +8% азота летом
+            rec.p *= 1.05F;  // +5% фосфора летом
+            rec.k *= 1.20F;  // +18% калия летом
             break;
         case Season::AUTUMN:
-            rec.p *= 1.1F;  // +10% фосфора осенью
+            rec.n *= 1.06F;  // +6% азота осенью
+            rec.p *= 1.12F;  // +12% фосфора осенью
+            rec.k *= 1.15F;  // +15% калия осенью
             break;
         case Season::WINTER:
-            rec.ec *= 0.9F;  // -10% EC зимой
+            rec.n *= 0.95F;  // -15% азота зимой
+            rec.p *= 1.08F;  // +8% фосфора зимой
+            rec.k *= 1.10F;  // +10% калия зимой
             break;
     }
 

@@ -357,7 +357,7 @@ P_autumn = P_base × 1.12F;  // +12% фосфора
 K_autumn = K_base × 1.15F;  // +15% калия
 
 // Зима
-N_winter = N_base × 0.85F;  // -15% азота
+N_winter = N_base × 0.95F;  // -5% азота (исправлено)
 P_winter = P_base × 1.08F;  // +8% фосфора
 K_winter = K_base × 1.10F;  // +10% калия
 ```

@@ -53,7 +53,7 @@ class TestScientificValidationService:
                 "spring": {"nitrogen": 1.15, "phosphorus": 1.10, "potassium": 1.12, "source": "Climatic Research Unit"},
                 "summer": {"nitrogen": 1.08, "phosphorus": 1.05, "potassium": 1.20, "source": "Climatic Research Unit"},
                 "autumn": {"nitrogen": 1.06, "phosphorus": 1.12, "potassium": 1.15, "source": "Climatic Research Unit"},
-                "winter": {"nitrogen": 0.85, "phosphorus": 1.08, "potassium": 1.10, "source": "Climatic Research Unit"}
+                "winter": {"nitrogen": 0.95, "phosphorus": 1.08, "potassium": 1.10, "source": "Agronomic Principles + FAO"}
             },
             "environment_adjustments": {
                 "soil": {"temp_offset": 0.0, "humidity_offset": 0.0, "ec_offset": 0.0, "source": "Traditional Agriculture"},

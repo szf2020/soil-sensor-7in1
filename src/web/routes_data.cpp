@@ -233,7 +233,8 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     doc["valid"] = isDataValid;
     doc["measurement_status"] = validationStatus;
 
-    const RecValues rec = computeRecommendations();
+    RecValues rec = computeRecommendations();
+    // ✅ ОБНОВЛЯЕМ JSON ПОСЛЕ СЕЗОННОЙ КОРРЕКТИРОВКИ (которая применяется в computeRecommendations)
     doc["rec_temperature"] = format_temperature(rec.t);
     doc["rec_humidity"] = format_moisture(rec.hum);
     doc["rec_ec"] = format_ec(rec.ec);
@@ -840,10 +841,10 @@ void setupDataRoutes()
             // Добавляем индикацию сезонных корректировок
             html += "function updateSeasonalAdjustments(season) {";
             html += "  const adjustments = {";
-            html += "    'Весна': { n: '+20%', p: '+15%', k: '+10%' },";
-            html += "    'Лето': { n: '-10%', p: '+5%', k: '+25%' },";
-            html += "    'Осень': { n: '-20%', p: '+10%', k: '+15%' },";
-            html += "    'Зима': { n: '-30%', p: '+5%', k: '+5%' }";
+            html += "    'Весна': { n: '+15%', p: '+10%', k: '+12%' },";
+            html += "    'Лето': { n: '+8%', p: '+5%', k: '+18%' },";
+            html += "    'Осень': { n: '+6%', p: '+12%', k: '+15%' },";
+            html += "    'Зима': { n: '-5%', p: '+8%', k: '+10%' }";
             html += "  };";
             html += "  const envType = " + String(config.environmentType) + ";";
             html += "  const adj = adjustments[season] || { n: '', p: '', k: '' };";

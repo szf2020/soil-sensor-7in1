@@ -108,7 +108,7 @@ struct SeasonalAdjustment
 const SeasonalAdjustment SEASONAL_ADJUSTMENTS[] = {{"spring", 1.15F, 1.10F, 1.12F, "Agronomic Principles + FAO"},
                                                    {"summer", 1.08F, 1.05F, 1.20F, "Agronomic Principles + FAO"},
                                                    {"autumn", 1.06F, 1.12F, 1.15F, "Agronomic Principles + FAO"},
-                                                   {"winter", 0.85F, 1.08F, 1.10F, "Agronomic Principles + FAO"}};
+                                                   {"winter", 0.95F, 1.08F, 1.10F, "Agronomic Principles + FAO"}};
 
 // Корректировки типов выращивания
 struct GrowingEnvironmentAdjustment
