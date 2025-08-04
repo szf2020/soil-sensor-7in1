@@ -4,7 +4,6 @@
 Проверяет, что все культуры правильно отображаются и работают
 """
 
-import json
 import requests
 from typing import List, Dict, Any
 
