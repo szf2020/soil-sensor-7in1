@@ -40,6 +40,30 @@ struct CropConfig
     }
 };
 
+// Структура для процентов коррекции
+struct CorrectionPercentages
+{
+    float temperature;
+    float humidity;
+    float ec;
+    float ph;
+    float nitrogen;
+    float phosphorus;
+    float potassium;
+};
+
+// Структура для цветовых индикаторов
+struct ColorIndicators
+{
+    String temperature;
+    String humidity;
+    String ec;
+    String ph;
+    String nitrogen;
+    String phosphorus;
+    String potassium;
+};
+
 // Структура результата рекомендаций
 struct RecommendationResult
 {
@@ -50,6 +74,14 @@ struct RecommendationResult
     String recommendations;
     String healthStatus;
     String scientificNotes;
+    
+    // Новые поля для системного алгоритма
+    CropConfig tableValues;              // Исходные табличные значения
+    CropConfig growingTypeAdjusted;      // После коррекции типа выращивания
+    CropConfig finalCalculated;          // Итоговые расчетные значения
+    CropConfig scientificallyCompensated; // Научно компенсированные значения
+    CorrectionPercentages correctionPercentages;
+    ColorIndicators colorIndicators;
 };
 
 class CropRecommendationEngine : public ICropRecommendationEngine
@@ -76,15 +108,21 @@ class CropRecommendationEngine : public ICropRecommendationEngine
     String calculateSoilHealthStatus(const SensorData& data, const CropConfig& config);
     String generateScientificNotes(const SensorData& data, const CropConfig& config, const String& cropType,
                                    const String& soilType);
+    
+    // Новые методы для системного алгоритма
+    CropConfig getTableValues(const String& cropType) const;
+    CropConfig applyGrowingTypeCorrection(const CropConfig& table, const String& growingType);
+    CropConfig applySeasonalCorrection(const CropConfig& adjusted, const String& season);
+    CropConfig getScientificallyCompensated(const SensorData& data, const String& cropType);
+    CorrectionPercentages calculateCorrectionPercentages(const CropConfig& table, const CropConfig& final);
+    ColorIndicators calculateColorIndicators(const CropConfig& final, const CropConfig& scientific);
 
    public:
     CropRecommendationEngine();
 
     // Основной метод генерации рекомендаций
     RecommendationResult generateRecommendation(const SensorData& data, const String& cropType,
-                                                const String& growingType = "soil", const String& season = "spring",
-                                                const String& soilType = "loam"  // Добавляем тип почвы
-    );
+                                                const String& growingType = "outdoor", const String& season = "summer") override;
 
     // Получение списка доступных культур
     std::vector<String> getAvailableCrops() const;

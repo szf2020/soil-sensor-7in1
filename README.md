@@ -1,4 +1,4 @@
-# JXCT Soil Sensor v3.13.0
+# JXCT Soil Sensor v3.13.1
 
 **Профессиональная IoT система мониторинга почвы на базе ESP32**
 

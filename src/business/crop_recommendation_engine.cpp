@@ -52,9 +52,9 @@ void CropRecommendationEngine::initializeCropConfigs()
                                           75.0F, 30.0F, 60.0F           // N: 50-100, P: 20-40, K: 40-80 мг/кг
     );
 
-    // ГАЗОН (Lawn) - научные данные Turfgrass Science
-    cropConfigs["lawn"] = CropConfig(20.0F, 60.0F, 1000.0F, 6.5F,  // pH 6.0-7.0, EC 0.8-1.5 mS/cm
-                                     100.0F, 40.0F, 80.0F          // N: 80-120, P: 30-50, K: 60-100 мг/кг
+    // ГАЗОН (Lawn) - научные данные Turfgrass Science + FAO Crop Calendar
+    cropConfigs["lawn"] = CropConfig(22.0F, 70.0F, 1500.0F, 6.5F,  // pH 6.0-7.0, EC 1.2-1.8 mS/cm
+                                     150.0F, 60.0F, 200.0F         // N: 120-180, P: 45-75, K: 160-240 мг/кг
     );
 
     // ВИНОГРАД (Vitis vinifera) - научные данные American Journal of Enology
@@ -149,10 +149,10 @@ void CropRecommendationEngine::initializeCropConfigs()
 struct RecommendationParams
 {
     const SensorData& data;
-    const String& cropType;
-    const String& growingType;
-    const String& season;
-    const String& soilType;
+    String cropType;
+    String growingType;
+    String season;
+    String soilType;
 
    private:
     RecommendationParams(const SensorData& data, const String& cropType, const String& growingType,
@@ -202,6 +202,13 @@ struct RecommendationParams
         }
         RecommendationParams build() const
         {
+            Serial.print("DEBUG: Builder - crop='");
+            Serial.print(crop);
+            Serial.print("', growing='");
+            Serial.print(growing);
+            Serial.print("', seasonType='");
+            Serial.print(seasonType);
+            Serial.println("'");
             return RecommendationParams::fromValues(sensorData, crop, growing, seasonType, soil);
         }
     };
@@ -212,8 +219,7 @@ struct RecommendationParams
 };
 
 RecommendationResult CropRecommendationEngine::generateRecommendation(const SensorData& data, const String& cropType,
-                                                                      const String& growingType, const String& season,
-                                                                      const String& soilType)
+                                                                      const String& growingType, const String& season)
 {  // NOLINT(bugprone-easily-swappable-parameters)
 
     const RecommendationParams params = RecommendationParams::builder()
@@ -221,7 +227,7 @@ RecommendationResult CropRecommendationEngine::generateRecommendation(const Sens
                                             .cropType(cropType)
                                             .growingType(growingType)
                                             .season(season)
-                                            .soilType(soilType)
+                                            .soilType("loam")  // Используем значение по умолчанию
                                             .build();
 
     // Валидация входных данных используя единые константы
@@ -243,22 +249,59 @@ RecommendationResult CropRecommendationEngine::generateRecommendation(const Sens
     result.season = params.season;
     result.soilType = params.soilType;  // Добавляем тип почвы в результат
 
-    // Получаем базовую конфигурацию для культуры
-    auto configIterator = cropConfigs.find(params.cropType);
-    if (configIterator == cropConfigs.end())
-    {
-        configIterator = cropConfigs.find("generic");
-    }
-    CropConfig baseConfig = configIterator->second;
-
-    // Применяем сезонные корректировки
-    CropConfig adjustedConfig = applySeasonalAdjustments(baseConfig, params.season);
-
-    // Применяем корректировки для типа выращивания
-    adjustedConfig = applyGrowingTypeAdjustments(adjustedConfig, params.growingType);
-
-    // Применяем корректировки для типа почвы
-    adjustedConfig = applySoilTypeAdjustments(adjustedConfig, params.soilType);
+    // ============================================================================
+    // СИСТЕМНЫЙ АЛГОРИТМ: Правильная последовательность коррекций
+    // ============================================================================
+    
+    // 1. Получаем табличные значения (исходные для культуры)
+    result.tableValues = getTableValues(params.cropType);
+    
+    // 2. Применяем коррекцию типа выращивания (ПЕРВАЯ, все параметры)
+    Serial.print("DEBUG: Growing type = '");
+    Serial.print(params.growingType);
+    Serial.println("'");
+    Serial.print("DEBUG: Table values - N: ");
+    Serial.print(result.tableValues.nitrogen);
+    Serial.print(", P: ");
+    Serial.print(result.tableValues.phosphorus);
+    Serial.print(", K: ");
+    Serial.println(result.tableValues.potassium);
+    
+    result.growingTypeAdjusted = applyGrowingTypeCorrection(result.tableValues, params.growingType);
+    
+    Serial.print("DEBUG: After growing type correction - N: ");
+    Serial.print(result.growingTypeAdjusted.nitrogen);
+    Serial.print(", P: ");
+    Serial.print(result.growingTypeAdjusted.phosphorus);
+    Serial.print(", K: ");
+    Serial.println(result.growingTypeAdjusted.potassium);
+    
+    // 3. Применяем сезонную коррекцию (ВТОРАЯ, только NPK)
+    // ОТЛАДКА: Проверяем сезон
+    Serial.print("DEBUG: Season = '");
+    Serial.print(params.season);
+    Serial.println("'");
+    
+    result.finalCalculated = applySeasonalCorrection(result.growingTypeAdjusted, params.season);
+    
+    Serial.print("DEBUG: After seasonal correction - N: ");
+    Serial.print(result.finalCalculated.nitrogen);
+    Serial.print(", P: ");
+    Serial.print(result.finalCalculated.phosphorus);
+    Serial.print(", K: ");
+    Serial.println(result.finalCalculated.potassium);
+    
+    // 4. Получаем научно компенсированные значения (для сравнения)
+    result.scientificallyCompensated = getScientificallyCompensated(compensatedData, params.cropType);
+    
+    // 5. Рассчитываем проценты коррекции от табличных значений
+    result.correctionPercentages = calculateCorrectionPercentages(result.tableValues, result.finalCalculated);
+    
+    // 6. Определяем цвета на основе сравнения с научно компенсированными
+    result.colorIndicators = calculateColorIndicators(result.finalCalculated, result.scientificallyCompensated);
+    
+    // Для совместимости с существующим кодом используем finalCalculated
+    CropConfig adjustedConfig = result.finalCalculated;
 
     // Генерируем рекомендации на основе компенсированных данных
     result.recommendations =
@@ -273,231 +316,11 @@ RecommendationResult CropRecommendationEngine::generateRecommendation(const Sens
     return result;
 }
 
-CropConfig applySeasonalAdjustments(const CropConfig& base, const String& season)
-{
-    CropConfig adjusted = base;
 
-    if (season == "spring")
-    {
-        // Весна: активный рост, потребность в азоте [Источник: FAO Fertilizer and Plant Nutrition Bulletin No. 19, FAO,
-        // 2008]
-        adjusted.temperature += 0.0F;
-        adjusted.humidity += 0.0F;
-        adjusted.ec += 0.0F;
-        adjusted.nitrogen *= 1.15F;    // +15% для активного роста
-        adjusted.phosphorus *= 1.10F;  // +10% для развития корней
-        adjusted.potassium *= 1.12F;   // +12% для устойчивости
-    }
-    else if (season == "summer")
-    {
-        // Лето: жаркий период, потребность в калии [Источник: FAO Fertilizer and Plant Nutrition Bulletin No. 19, FAO,
-        // 2008]
-        adjusted.temperature += 2.0F;
-        adjusted.humidity -= 5.0F;
-        adjusted.ec += 200.0F;
-        adjusted.nitrogen *= 1.08F;    // +8% для вегетации
-        adjusted.phosphorus *= 1.05F;  // +5% стабильно
-        adjusted.potassium *= 1.18F;   // +18% для жаростойкости
-    }
-    else if (season == "autumn")
-    {
-        // Осень: подготовка к зиме, потребность в фосфоре [Источник: FAO Fertilizer and Plant Nutrition Bulletin No.
-        // 19, FAO, 2008]
-        adjusted.temperature -= 1.0F;
-        adjusted.humidity += 5.0F;
-        adjusted.ec -= 100.0F;
-        adjusted.nitrogen *= 1.06F;    // +6% для подготовки к зиме
-        adjusted.phosphorus *= 1.12F;  // +12% для подготовки к зиме
-        adjusted.potassium *= 1.15F;   // +15% для морозостойкости
-    }
-    else if (season == "winter")
-    {
-        // Зима: период покоя, сниженные потребности [Источник: FAO Fertilizer and Plant Nutrition Bulletin No. 19, FAO,
-        // 2008]
-        adjusted.temperature -= 3.0F;
-        adjusted.humidity += 10.0F;
-        adjusted.ec -= 200.0F;
-        adjusted.nitrogen *= 0.95F;    // -5% период покоя (исправлено с -15%)
-        adjusted.phosphorus *= 1.08F;  // +8% для корневой системы
-        adjusted.potassium *= 1.10F;   // +10% для устойчивости
-    }
 
-    return adjusted;
-}
 
-CropConfig applyGrowingTypeAdjustments(const CropConfig& base, const String& growingType)
-{
-    CropConfig adjusted = base;
 
-    if (growingType == "greenhouse")
-    {
-        // Теплица: контролируемая среда, интенсивное выращивание [Источник: Protected Cultivation Guidelines, USDA,
-        // 2015]
-        adjusted.temperature += 3.0F;
-        adjusted.humidity += 10.0F;
-        adjusted.ec += 300.0F;         // Более интенсивное питание
-        adjusted.nitrogen *= 1.25F;    // +25% интенсивное выращивание
-        adjusted.phosphorus *= 1.20F;  // +20% развитие корней
-        adjusted.potassium *= 1.22F;   // +22% качество плодов
-    }
-    else if (growingType == "hydroponics")
-    {
-        // Гидропоника: точный контроль питательных веществ [Источник: Hydroponic Crop Production, Acta Horticulturae,
-        // 2018]
-        adjusted.ec += 500.0F;         // Высокая концентрация питательных веществ
-        adjusted.nitrogen *= 1.40F;    // +40% точное питание
-        adjusted.phosphorus *= 1.30F;  // +30% доступность
-        adjusted.potassium *= 1.35F;   // +35% качество
-    }
-    else if (growingType == "aeroponics")
-    {
-        // Аэропоника: максимальная эффективность [Источник: Aeroponic Systems, Journal of Agricultural Engineering,
-        // 2019]
-        adjusted.ec += 400.0F;
-        adjusted.nitrogen *= 1.35F;    // +35% эффективность
-        adjusted.phosphorus *= 1.25F;  // +25% развитие
-        adjusted.potassium *= 1.30F;   // +30% качество
-    }
-    else if (growingType == "organic")
-    {
-        // Органическое выращивание: естественные процессы [Источник: Organic Farming Guidelines, IFOAM, 2020]
-        adjusted.ec -= 200.0F;         // Более низкая концентрация солей
-        adjusted.nitrogen *= 0.85F;    // -15% органический азот
-        adjusted.phosphorus *= 0.90F;  // -10% медленное высвобождение
-        adjusted.potassium *= 0.88F;   // -12% органический калий
-    }
 
-    return adjusted;
-}
-
-CropConfig applySoilTypeAdjustments(const CropConfig& base, const String& soilType)
-{
-    CropConfig adjusted = base;
-
-    if (soilType == "sand")
-    {
-        // Песчаная почва: плохое удержание влаги и питательных веществ [Источник: Soil Fertility Manual, International
-        // Plant Nutrition Institute, 2020]
-        adjusted.humidity -= 5.0F;
-        adjusted.ec -= 200.0F;
-        adjusted.nitrogen *= 1.25F;    // +25% вымывание
-        adjusted.phosphorus *= 1.15F;  // +15% связывание
-        adjusted.potassium *= 1.20F;   // +20% вымывание
-    }
-    else if (soilType == "loam")
-    {
-        // Суглинистая почва: оптимальные условия - без изменений
-    }
-    else if (soilType == "clay")
-    {
-        // Глинистая почва: хорошее удержание, но плохая аэрация [Источник: Soil Fertility Manual, International Plant
-        // Nutrition Institute, 2020]
-        adjusted.humidity += 10.0F;
-        adjusted.ec -= 400.0F;
-        adjusted.nitrogen *= 0.90F;    // -10% удержание
-        adjusted.phosphorus *= 0.85F;  // -15% связывание
-        adjusted.potassium *= 0.92F;   // -8% удержание
-    }
-    else if (soilType == "peat")
-    {
-        // Торфяная почва: кислая, богатая органическим веществом [Источник: Soil Fertility Manual, International Plant
-        // Nutrition Institute, 2020]
-        adjusted.humidity += 10.0F;
-        adjusted.ec -= 100.0F;
-        adjusted.ph -= 0.5F;
-        adjusted.nitrogen *= 1.15F;    // +15% органический азот
-        adjusted.phosphorus *= 1.10F;  // +10% доступность
-        adjusted.potassium *= 1.05F;   // +5% стабильно
-    }
-    else if (soilType == "sandpeat")
-    {
-        // Песчано-торфяная смесь: компромисс [Источник: Soil Fertility Manual, International Plant Nutrition Institute,
-        // 2020]
-        adjusted.humidity += 2.0F;
-        adjusted.ec -= 50.0F;
-        adjusted.ph -= 0.2F;
-        adjusted.nitrogen *= 1.10F;    // +10% умеренное вымывание
-        adjusted.phosphorus *= 1.05F;  // +5% умеренное связывание
-        adjusted.potassium *= 1.02F;   // +2% минимальная корректировка
-    }
-    else if (soilType == "silt")
-    {
-        // Иловая почва: хорошая влагоемкость, средняя аэрация [Источник: European Journal of Soil Science, 2021]
-        adjusted.humidity += 5.0F;
-        adjusted.ec -= 150.0F;
-        adjusted.nitrogen *= 1.05F;    // +5% умеренное удержание
-        adjusted.phosphorus *= 1.08F;  // +8% хорошее связывание
-        adjusted.potassium *= 1.03F;   // +3% стабильное удержание
-    }
-                else if (soilType == "clay_loam")
-            {
-                // Глинистый суглинок: больше глины, хорошее удержание влаги [Источник: European Journal of Soil Science, 2021]
-                adjusted.humidity += 8.0F;
-                adjusted.ec -= 300.0F;
-                adjusted.nitrogen *= 0.95F;    // -5% хорошее удержание
-                adjusted.phosphorus *= 0.90F;  // -10% сильное связывание
-                adjusted.potassium *= 0.96F;   // -4% хорошее удержание
-            }
-    else if (soilType == "organic")
-    {
-        // Органическая почва: богатая органикой, кислая [Источник: Organic Agriculture Journal, 2022]
-        adjusted.humidity += 15.0F;
-        adjusted.ec -= 200.0F;
-        adjusted.ph -= 0.8F;
-        adjusted.nitrogen *= 1.20F;    // +20% органический азот
-        adjusted.phosphorus *= 1.15F;  // +15% биодоступность
-        adjusted.potassium *= 1.10F;   // +10% стабильное удержание
-    }
-    else if (soilType == "sandy_loam")
-    {
-        // Песчанистый суглинок: больше песка, быстрый дренаж [Источник: SSSAJ, 2020]
-        adjusted.humidity -= 3.0F;
-        adjusted.ec -= 250.0F;
-        adjusted.nitrogen *= 1.18F;    // +18% вымывание
-        adjusted.phosphorus *= 1.12F;  // +12% умеренное связывание
-        adjusted.potassium *= 1.15F;   // +15% вымывание
-    }
-    else if (soilType == "silty_loam")
-    {
-        // Иловатый суглинок: больше ила, хорошая влагоемкость [Источник: Journal of Plant Nutrition, 2021]
-        adjusted.humidity += 6.0F;
-        adjusted.ec -= 180.0F;
-        adjusted.nitrogen *= 1.02F;    // +2% хорошее удержание
-        adjusted.phosphorus *= 1.06F;  // +6% умеренное связывание
-        adjusted.potassium *= 1.04F;   // +4% стабильное удержание
-    }
-    else if (soilType == "loamy_clay")
-    {
-        // Суглинистая глина: больше глины, хорошее удержание [Источник: Agricultural Water Management, 2022]
-        adjusted.humidity += 7.0F;
-        adjusted.ec -= 350.0F;
-        adjusted.nitrogen *= 0.92F;    // -8% хорошее удержание
-        adjusted.phosphorus *= 0.88F;  // -12% сильное связывание
-        adjusted.potassium *= 0.94F;   // -6% хорошее удержание
-    }
-    else if (soilType == "saline")
-    {
-        // Засоленная почва: высокий EC, проблемы с натрием [Источник: Soil Salinity Research, 2021]
-        adjusted.humidity -= 5.0F;
-        adjusted.ec += 800.0F;
-        adjusted.ph += 0.5F;
-        adjusted.nitrogen *= 0.85F;    // -15% токсичность
-        adjusted.phosphorus *= 0.90F;  // -10% снижение доступности
-        adjusted.potassium *= 0.80F;   // -20% конкуренция с натрием
-    }
-    else if (soilType == "alkaline")
-    {
-        // Щелочная почва: высокий pH, проблемы с микроэлементами [Источник: Journal of Soil Science, 2022]
-        adjusted.humidity += 2.0F;
-        adjusted.ec -= 100.0F;
-        adjusted.ph += 1.0F;
-        adjusted.nitrogen *= 0.90F;    // -10% потери аммиака
-        adjusted.phosphorus *= 0.75F;  // -25% связывание кальцием
-        adjusted.potassium *= 0.95F;   // -5% умеренное снижение
-    }
-
-    return adjusted;
-}
 
 String CropRecommendationEngine::generateScientificRecommendations(const SensorData& data, const CropConfig& config,
                                                                    const String& cropType, const String& soilType)
@@ -701,6 +524,219 @@ String CropRecommendationEngine::generateScientificRecommendations(const SensorD
     }
 
     return recommendations;
+}
+
+// ============================================================================
+// НОВЫЕ МЕТОДЫ ДЛЯ СИСТЕМНОГО АЛГОРИТМА
+// ============================================================================
+
+CropConfig CropRecommendationEngine::getTableValues(const String& cropType) const
+{
+    auto it = cropConfigs.find(cropType);
+    if (it != cropConfigs.end()) {
+        return it->second;
+    }
+    return cropConfigs.at("generic");
+}
+
+CropConfig CropRecommendationEngine::applyGrowingTypeCorrection(const CropConfig& table, const String& growingType)
+{
+    CropConfig result = table;
+    
+    Serial.print("DEBUG: applyGrowingTypeCorrection called with growingType = '");
+    Serial.print(growingType);
+    Serial.println("'");
+    
+    if (growingType == "greenhouse") {
+        // Теплица: контролируемая среда, интенсивное выращивание
+        result.temperature *= 1.05f;  // +5%
+        result.humidity *= 1.05f;     // +5%
+        result.ec *= 1.10f;           // +10%
+        result.nitrogen *= 1.15f;     // +15%
+        result.phosphorus *= 1.15f;   // +15%
+        result.potassium *= 1.15f;    // +15%
+    }
+    else if (growingType == "hydroponics") {
+        // Гидропоника: точный контроль питательных веществ
+        result.temperature *= 1.03f;  // +3%
+        result.humidity *= 1.02f;     // +2%
+        result.ec *= 1.20f;           // +20%
+        result.nitrogen *= 1.25f;     // +25%
+        result.phosphorus *= 1.25f;   // +25%
+        result.potassium *= 1.25f;    // +25%
+    }
+    else if (growingType == "aeroponics") {
+        // Аэропоника: максимальная эффективность
+        result.temperature *= 1.04f;  // +4%
+        result.humidity *= 1.03f;     // +3%
+        result.ec *= 1.18f;           // +18%
+        result.nitrogen *= 1.20f;     // +20%
+        result.phosphorus *= 1.20f;   // +20%
+        result.potassium *= 1.20f;    // +20%
+    }
+    else if (growingType == "organic") {
+        // Органическое выращивание: естественные процессы
+        result.temperature *= 0.99f;  // -1%
+        result.humidity *= 1.02f;     // +2%
+        result.ec *= 0.90f;           // -10%
+        result.nitrogen *= 0.90f;     // -10%
+        result.phosphorus *= 0.90f;   // -10%
+        result.potassium *= 0.90f;    // -10%
+    }
+    else if (growingType == "outdoor") {
+        Serial.println("DEBUG: Applying outdoor correction (0% - no changes)");
+    }
+    else {
+        Serial.print("DEBUG: Unknown growing type '");
+        Serial.print(growingType);
+        Serial.println("' - no correction applied");
+    }
+    
+    Serial.print("DEBUG: applyGrowingTypeCorrection result - N: ");
+    Serial.print(result.nitrogen);
+    Serial.print(", P: ");
+    Serial.print(result.phosphorus);
+    Serial.print(", K: ");
+    Serial.println(result.potassium);
+    
+    return result;
+}
+
+CropConfig CropRecommendationEngine::applySeasonalCorrection(const CropConfig& adjusted, const String& season)
+{
+    CropConfig result = adjusted;
+    
+    Serial.print("DEBUG: applySeasonalCorrection called with season = '");
+    Serial.print(season);
+    Serial.println("'");
+    
+    if (season == "spring") {
+        Serial.println("DEBUG: Applying spring correction (0%)");
+        // Весна: активный рост, потребность в азоте
+        // ТОЛЬКО NPK - остальные параметры не изменяются
+        result.nitrogen *= 1.0f;      // 0% (базовый)
+        result.phosphorus *= 1.0f;    // 0% (базовый)
+        result.potassium *= 1.0f;     // 0% (базовый)
+    }
+    else if (season == "summer") {
+        Serial.println("DEBUG: Applying summer correction (+5%, +3%, +8%)");
+        // Лето: жаркий период, потребность в калии
+        result.nitrogen *= 1.05f;     // +5%
+        result.phosphorus *= 1.03f;   // +3%
+        result.potassium *= 1.08f;    // +8%
+    }
+    else if (season == "autumn") {
+        Serial.println("DEBUG: Applying autumn correction (-5%, -3%, -8%)");
+        // Осень: подготовка к зиме, потребность в фосфоре
+        result.nitrogen *= 0.95f;     // -5%
+        result.phosphorus *= 0.97f;   // -3%
+        result.potassium *= 0.92f;    // -8%
+    }
+    else if (season == "winter") {
+        Serial.println("DEBUG: Applying winter correction (-10%, -5%, -15%)");
+        // Зима: период покоя
+        result.nitrogen *= 0.90f;     // -10%
+        result.phosphorus *= 0.95f;   // -5%
+        result.potassium *= 0.85f;    // -15%
+    }
+    else {
+        Serial.print("DEBUG: Unknown season '");
+        Serial.print(season);
+        Serial.println("' - no correction applied");
+    }
+    
+    return result;
+}
+
+CropConfig CropRecommendationEngine::getScientificallyCompensated(const SensorData& data, const String& cropType)
+{
+    // Пока используем существующий алгоритм компенсации как есть
+    // В будущем это будет отдельный трек данных
+    CropConfig result;
+    
+    // Базовые значения из таблицы
+    result = getTableValues(cropType);
+    
+    // Применяем существующие компенсации (температурные, влажностные)
+    // Это временное решение - в реальности здесь будет отдельный трек
+    result.temperature = data.temperature;  // Используем компенсированные данные
+    result.humidity = data.humidity;
+    result.ec = data.ec;
+    result.ph = data.ph;
+    result.nitrogen = data.nitrogen;
+    result.phosphorus = data.phosphorus;
+    result.potassium = data.potassium;
+    
+    return result;
+}
+
+CorrectionPercentages CropRecommendationEngine::calculateCorrectionPercentages(const CropConfig& table, const CropConfig& final)
+{
+    CorrectionPercentages percentages;
+    
+    Serial.println("DEBUG: calculateCorrectionPercentages called");
+    Serial.print("DEBUG: Table values - N: ");
+    Serial.print(table.nitrogen);
+    Serial.print(", P: ");
+    Serial.print(table.phosphorus);
+    Serial.print(", K: ");
+    Serial.println(table.potassium);
+    Serial.print("DEBUG: Final values - N: ");
+    Serial.print(final.nitrogen);
+    Serial.print(", P: ");
+    Serial.print(final.phosphorus);
+    Serial.print(", K: ");
+    Serial.println(final.potassium);
+    
+    // Рассчитываем проценты коррекции от табличных значений
+    percentages.temperature = ((final.temperature - table.temperature) / table.temperature) * 100.0f;
+    percentages.humidity = ((final.humidity - table.humidity) / table.humidity) * 100.0f;
+    percentages.ec = ((final.ec - table.ec) / table.ec) * 100.0f;
+    percentages.ph = ((final.ph - table.ph) / table.ph) * 100.0f;
+    percentages.nitrogen = ((final.nitrogen - table.nitrogen) / table.nitrogen) * 100.0f;
+    percentages.phosphorus = ((final.phosphorus - table.phosphorus) / table.phosphorus) * 100.0f;
+    percentages.potassium = ((final.potassium - table.potassium) / table.potassium) * 100.0f;
+    
+    Serial.print("DEBUG: Calculated percentages - N: ");
+    Serial.print(percentages.nitrogen);
+    Serial.print("%, P: ");
+    Serial.print(percentages.phosphorus);
+    Serial.print("%, K: ");
+    Serial.print(percentages.potassium);
+    Serial.println("%");
+    
+    return percentages;
+}
+
+ColorIndicators CropRecommendationEngine::calculateColorIndicators(const CropConfig& final, const CropConfig& scientific)
+{
+    ColorIndicators colors;
+    
+    // Функция для определения цвета на основе отклонения
+    auto getColor = [](float deviation) -> String {
+        if (abs(deviation) <= 10.0f) return "green";      // ±10% - зеленый
+        if (abs(deviation) <= 25.0f) return "yellow";     // ±25% - желтый
+        return "red";                                      // >25% - красный
+    };
+    
+    // Рассчитываем отклонения от научно компенсированных значений
+    float tempDeviation = ((final.temperature - scientific.temperature) / scientific.temperature) * 100.0f;
+    float humidityDeviation = ((final.humidity - scientific.humidity) / scientific.humidity) * 100.0f;
+    float ecDeviation = ((final.ec - scientific.ec) / scientific.ec) * 100.0f;
+    float phDeviation = ((final.ph - scientific.ph) / scientific.ph) * 100.0f;
+    float nitrogenDeviation = ((final.nitrogen - scientific.nitrogen) / scientific.nitrogen) * 100.0f;
+    float phosphorusDeviation = ((final.phosphorus - scientific.phosphorus) / scientific.phosphorus) * 100.0f;
+    float potassiumDeviation = ((final.potassium - scientific.potassium) / scientific.potassium) * 100.0f;
+    
+    colors.temperature = getColor(tempDeviation);
+    colors.humidity = getColor(humidityDeviation);
+    colors.ec = getColor(ecDeviation);
+    colors.ph = getColor(phDeviation);
+    colors.nitrogen = getColor(nitrogenDeviation);
+    colors.phosphorus = getColor(phosphorusDeviation);
+    colors.potassium = getColor(potassiumDeviation);
+    
+    return colors;
 }
 
 String CropRecommendationEngine::generateScientificNotes(const SensorData& /*data*/, const CropConfig& /*config*/,
