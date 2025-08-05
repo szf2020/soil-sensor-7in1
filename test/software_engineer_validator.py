@@ -16,8 +16,8 @@
 ВОПРОС: Правильна ли техническая реализация?
 """
 
-import json
-from typing import Dict, Any, List
+
+from typing import Dict, Any
 
 class SoftwareEngineerValidator:
     """Технический валидатор-программист"""
@@ -39,7 +39,7 @@ class SoftwareEngineerValidator:
         
         print(f"🔧 ТЕХНИЧЕСКИЙ АНАЛИЗ: {self.name}")
         print("=" * 60)
-        print(f"📊 ВХОДНЫЕ ДАННЫЕ:")
+        print("📊 ВХОДНЫЕ ДАННЫЕ:")
         print(f"   measured_nitrogen = {measured_nitrogen}")
         print(f"   general_threshold = {general_threshold}")
         print(f"   lawn_threshold = {lawn_threshold}")

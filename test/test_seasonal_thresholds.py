@@ -8,12 +8,12 @@ def test_seasonal_thresholds():
     """Тестирует сезонные корректировки порогов дефицита"""
     
     # Сезонные корректировки (из C++ кода) - ИСПРАВЛЕННЫЕ
-    seasonal_factors = {
-        "spring": {"nitrogen": 1.15, "phosphorus": 1.10, "potassium": 1.12},
-        "summer": {"nitrogen": 1.08, "phosphorus": 1.05, "potassium": 1.20},
-        "autumn": {"nitrogen": 1.06, "phosphorus": 1.12, "potassium": 1.15},
-        "winter": {"nitrogen": 0.95, "phosphorus": 1.08, "potassium": 1.10}  # Исправлено с 0.85
-    }
+    # seasonal_factors = {
+    #     "spring": {"nitrogen": 1.15, "phosphorus": 1.10, "potassium": 1.12},
+    #     "summer": {"nitrogen": 1.08, "phosphorus": 1.05, "potassium": 1.20},
+    #     "autumn": {"nitrogen": 1.06, "phosphorus": 1.12, "potassium": 1.15},
+    #     "winter": {"nitrogen": 0.95, "phosphorus": 1.08, "potassium": 1.10}  # Исправлено с 0.85
+    # }
     
     # Базовые пороги дефицита
     base_thresholds = {

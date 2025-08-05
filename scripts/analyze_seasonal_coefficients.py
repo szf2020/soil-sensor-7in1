@@ -9,7 +9,7 @@ import json
 import requests
 import time
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 class SeasonalCoefficientsAnalyzer:
     """Анализатор сезонных коэффициентов"""

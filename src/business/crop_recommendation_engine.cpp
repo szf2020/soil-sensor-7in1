@@ -202,13 +202,6 @@ struct RecommendationParams
         }
         RecommendationParams build() const
         {
-            Serial.print("DEBUG: Builder - crop='");
-            Serial.print(crop);
-            Serial.print("', growing='");
-            Serial.print(growing);
-            Serial.print("', seasonType='");
-            Serial.print(seasonType);
-            Serial.println("'");
             return RecommendationParams::fromValues(sensorData, crop, growing, seasonType, soil);
         }
     };
@@ -257,39 +250,11 @@ RecommendationResult CropRecommendationEngine::generateRecommendation(const Sens
     result.tableValues = getTableValues(params.cropType);
     
     // 2. Применяем коррекцию типа выращивания (ПЕРВАЯ, все параметры)
-    Serial.print("DEBUG: Growing type = '");
-    Serial.print(params.growingType);
-    Serial.println("'");
-    Serial.print("DEBUG: Table values - N: ");
-    Serial.print(result.tableValues.nitrogen);
-    Serial.print(", P: ");
-    Serial.print(result.tableValues.phosphorus);
-    Serial.print(", K: ");
-    Serial.println(result.tableValues.potassium);
-    
+    // 2. Применяем коррекцию типа выращивания (ПЕРВАЯ, все параметры)
     result.growingTypeAdjusted = applyGrowingTypeCorrection(result.tableValues, params.growingType);
     
-    Serial.print("DEBUG: After growing type correction - N: ");
-    Serial.print(result.growingTypeAdjusted.nitrogen);
-    Serial.print(", P: ");
-    Serial.print(result.growingTypeAdjusted.phosphorus);
-    Serial.print(", K: ");
-    Serial.println(result.growingTypeAdjusted.potassium);
-    
     // 3. Применяем сезонную коррекцию (ВТОРАЯ, только NPK)
-    // ОТЛАДКА: Проверяем сезон
-    Serial.print("DEBUG: Season = '");
-    Serial.print(params.season);
-    Serial.println("'");
-    
     result.finalCalculated = applySeasonalCorrection(result.growingTypeAdjusted, params.season);
-    
-    Serial.print("DEBUG: After seasonal correction - N: ");
-    Serial.print(result.finalCalculated.nitrogen);
-    Serial.print(", P: ");
-    Serial.print(result.finalCalculated.phosphorus);
-    Serial.print(", K: ");
-    Serial.println(result.finalCalculated.potassium);
     
     // 4. Получаем научно компенсированные значения (для сравнения)
     result.scientificallyCompensated = getScientificallyCompensated(compensatedData, params.cropType);
@@ -543,10 +508,6 @@ CropConfig CropRecommendationEngine::applyGrowingTypeCorrection(const CropConfig
 {
     CropConfig result = table;
     
-    Serial.print("DEBUG: applyGrowingTypeCorrection called with growingType = '");
-    Serial.print(growingType);
-    Serial.println("'");
-    
     if (growingType == "greenhouse") {
         // Теплица: контролируемая среда, интенсивное выращивание
         result.temperature *= 1.05f;  // +5%
@@ -583,21 +544,7 @@ CropConfig CropRecommendationEngine::applyGrowingTypeCorrection(const CropConfig
         result.phosphorus *= 0.90f;   // -10%
         result.potassium *= 0.90f;    // -10%
     }
-    else if (growingType == "outdoor") {
-        Serial.println("DEBUG: Applying outdoor correction (0% - no changes)");
-    }
-    else {
-        Serial.print("DEBUG: Unknown growing type '");
-        Serial.print(growingType);
-        Serial.println("' - no correction applied");
-    }
-    
-    Serial.print("DEBUG: applyGrowingTypeCorrection result - N: ");
-    Serial.print(result.nitrogen);
-    Serial.print(", P: ");
-    Serial.print(result.phosphorus);
-    Serial.print(", K: ");
-    Serial.println(result.potassium);
+    // outdoor: без изменений (0%)
     
     return result;
 }
@@ -606,12 +553,7 @@ CropConfig CropRecommendationEngine::applySeasonalCorrection(const CropConfig& a
 {
     CropConfig result = adjusted;
     
-    Serial.print("DEBUG: applySeasonalCorrection called with season = '");
-    Serial.print(season);
-    Serial.println("'");
-    
     if (season == "spring") {
-        Serial.println("DEBUG: Applying spring correction (0%)");
         // Весна: активный рост, потребность в азоте
         // ТОЛЬКО NPK - остальные параметры не изменяются
         result.nitrogen *= 1.0f;      // 0% (базовый)
@@ -619,30 +561,22 @@ CropConfig CropRecommendationEngine::applySeasonalCorrection(const CropConfig& a
         result.potassium *= 1.0f;     // 0% (базовый)
     }
     else if (season == "summer") {
-        Serial.println("DEBUG: Applying summer correction (+5%, +3%, +8%)");
         // Лето: жаркий период, потребность в калии
         result.nitrogen *= 1.05f;     // +5%
         result.phosphorus *= 1.03f;   // +3%
         result.potassium *= 1.08f;    // +8%
     }
     else if (season == "autumn") {
-        Serial.println("DEBUG: Applying autumn correction (-5%, -3%, -8%)");
         // Осень: подготовка к зиме, потребность в фосфоре
         result.nitrogen *= 0.95f;     // -5%
         result.phosphorus *= 0.97f;   // -3%
         result.potassium *= 0.92f;    // -8%
     }
     else if (season == "winter") {
-        Serial.println("DEBUG: Applying winter correction (-10%, -5%, -15%)");
         // Зима: период покоя
         result.nitrogen *= 0.90f;     // -10%
         result.phosphorus *= 0.95f;   // -5%
         result.potassium *= 0.85f;    // -15%
-    }
-    else {
-        Serial.print("DEBUG: Unknown season '");
-        Serial.print(season);
-        Serial.println("' - no correction applied");
     }
     
     return result;
@@ -674,20 +608,6 @@ CorrectionPercentages CropRecommendationEngine::calculateCorrectionPercentages(c
 {
     CorrectionPercentages percentages;
     
-    Serial.println("DEBUG: calculateCorrectionPercentages called");
-    Serial.print("DEBUG: Table values - N: ");
-    Serial.print(table.nitrogen);
-    Serial.print(", P: ");
-    Serial.print(table.phosphorus);
-    Serial.print(", K: ");
-    Serial.println(table.potassium);
-    Serial.print("DEBUG: Final values - N: ");
-    Serial.print(final.nitrogen);
-    Serial.print(", P: ");
-    Serial.print(final.phosphorus);
-    Serial.print(", K: ");
-    Serial.println(final.potassium);
-    
     // Рассчитываем проценты коррекции от табличных значений
     percentages.temperature = ((final.temperature - table.temperature) / table.temperature) * 100.0f;
     percentages.humidity = ((final.humidity - table.humidity) / table.humidity) * 100.0f;
@@ -696,14 +616,6 @@ CorrectionPercentages CropRecommendationEngine::calculateCorrectionPercentages(c
     percentages.nitrogen = ((final.nitrogen - table.nitrogen) / table.nitrogen) * 100.0f;
     percentages.phosphorus = ((final.phosphorus - table.phosphorus) / table.phosphorus) * 100.0f;
     percentages.potassium = ((final.potassium - table.potassium) / table.potassium) * 100.0f;
-    
-    Serial.print("DEBUG: Calculated percentages - N: ");
-    Serial.print(percentages.nitrogen);
-    Serial.print("%, P: ");
-    Serial.print(percentages.phosphorus);
-    Serial.print("%, K: ");
-    Serial.print(percentages.potassium);
-    Serial.println("%");
     
     return percentages;
 }
@@ -1044,19 +956,19 @@ void CropRecommendationEngine::applySeasonalCorrection(RecValues& rec, Season se
             rec.k *= 1.12F;  // +12% калия весной
             break;
         case Season::SUMMER:
-            rec.n *= 1.08F;  // +8% азота летом
-            rec.p *= 1.05F;  // +5% фосфора летом
-            rec.k *= 1.20F;  // +18% калия летом
+            rec.n *= 1.05F;  // +5% азота летом
+            rec.p *= 1.03F;  // +3% фосфора летом
+            rec.k *= 1.08F;  // +8% калия летом
             break;
         case Season::AUTUMN:
-            rec.n *= 1.06F;  // +6% азота осенью
-            rec.p *= 1.12F;  // +12% фосфора осенью
-            rec.k *= 1.15F;  // +15% калия осенью
+            rec.n *= 0.95F;  // -5% азота осенью
+            rec.p *= 0.97F;  // -3% фосфора осенью
+            rec.k *= 0.92F;  // -8% калия осенью
             break;
         case Season::WINTER:
-            rec.n *= 0.95F;  // -15% азота зимой
-            rec.p *= 1.08F;  // +8% фосфора зимой
-            rec.k *= 1.10F;  // +10% калия зимой
+            rec.n *= 0.90F;  // -10% азота зимой
+            rec.p *= 0.95F;  // -5% фосфора зимой
+            rec.k *= 0.85F;  // -15% калия зимой
             break;
     }
 

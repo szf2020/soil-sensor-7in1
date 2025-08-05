@@ -16,7 +16,7 @@
 ВОПРОС: Правильно ли это?
 """
 
-import json
+
 from typing import Dict, Any
 
 class ExternalAgronomistValidator:
@@ -40,7 +40,7 @@ class ExternalAgronomistValidator:
         
         print(f"🔍 АНАЛИЗ ВАЛИДАТОРА: {self.name}")
         print("=" * 60)
-        print(f"📊 ИЗМЕРЕННЫЕ ДАННЫЕ:")
+        print("📊 ИЗМЕРЕННЫЕ ДАННЫЕ:")
         print(f"   Азот в почве: {measured_nitrogen} мг/кг")
         print(f"   Общий порог дефицита: {general_threshold} мг/кг")
         print(f"   Порог для газона: {lawn_threshold} мг/кг")
