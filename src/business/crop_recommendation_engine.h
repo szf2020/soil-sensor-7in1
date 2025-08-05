@@ -100,9 +100,8 @@ class CropRecommendationEngine : public ICropRecommendationEngine
     // Используется SensorCompensationService для единообразной компенсации
 
     void initializeCropConfigs();
-    CropConfig applySeasonalAdjustments(const CropConfig& base, const String& season);
-    CropConfig applyGrowingTypeAdjustments(const CropConfig& base, const String& growingType);
-    CropConfig applySoilTypeAdjustments(const CropConfig& base, const String& soilType);  // Добавляем метод
+    // ❌ УДАЛЕНО: Старые функции корректировок - заменены на системный алгоритм
+    // ❌ УДАЛЕНО: applySeasonalAdjustments, applyGrowingTypeAdjustments, applySoilTypeAdjustments
     String generateScientificRecommendations(const SensorData& data, const CropConfig& config, const String& cropType,
                                              const String& soilType);
     String calculateSoilHealthStatus(const SensorData& data, const CropConfig& config);
