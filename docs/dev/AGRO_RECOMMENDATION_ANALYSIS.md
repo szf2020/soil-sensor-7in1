@@ -202,7 +202,7 @@ void sendSensorJson() {
 
 ### Шаг 5: Интеграция с JSON API
 1. **Модифицировать** `sendSensorJson()` в `src/web/routes_data.cpp`
-2. **Добавить в** вызов `generateRecommendation()` правильные параметры
+2. **Добавить** вызов `generateRecommendation()` с правильными параметрами
 3. **Добавить** все новые поля в JSON документ
 4. **Проверить** форматирование данных
 

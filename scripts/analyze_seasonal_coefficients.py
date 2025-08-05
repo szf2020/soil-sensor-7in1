@@ -144,9 +144,9 @@ class SeasonalCoefficientsAnalyzer:
             analyzed_sources.append(analysis)
             
             if analysis["coefficients_found"]:
-                print(f"   ✅ Найдены коэффициенты!")
+                print("   ✅ Найдены коэффициенты!")
             else:
-                print(f"   ⚠️ Коэффициенты не найдены")
+                print("   ⚠️ Коэффициенты не найдены")
                 
             time.sleep(2)  # Уважаем API
             
@@ -326,7 +326,7 @@ def main():
         with open("test_reports/seasonal_coefficients_analysis.json", "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
             
-        print(f"\n📄 Отчет сохранен: test_reports/seasonal_coefficients_analysis.json")
+        print("\n📄 Отчет сохранен: test_reports/seasonal_coefficients_analysis.json")
         
         return results["validation_status"] != "NEEDS_VERIFICATION"
         

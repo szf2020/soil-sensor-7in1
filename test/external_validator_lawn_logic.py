@@ -153,19 +153,19 @@ def main():
     print("📋 РЕЗУЛЬТАТЫ ВАЛИДАЦИИ:")
     print("=" * 60)
     
-    print(f"🔬 АГРОНОМИЧЕСКАЯ ОЦЕНКА:")
+    print("🔬 АГРОНОМИЧЕСКАЯ ОЦЕНКА:")
     print(f"   Уровень азота: {result['agronomic_assessment']['nitrogen_level']}")
     print(f"   Приоритет: {result['agronomic_assessment']['agronomic_priority']}")
     print(f"   Объяснение: {result['agronomic_assessment']['explanation']}")
     print()
     
-    print(f"🧠 ЛОГИКА РЕКОМЕНДАЦИЙ:")
+    print("🧠 ЛОГИКА РЕКОМЕНДАЦИЙ:")
     print(f"   Общая рекомендация нужна: {result['recommendation_logic']['general_recommendation_needed']}")
     print(f"   Рекомендация для газона нужна: {result['recommendation_logic']['lawn_recommendation_needed']}")
     print(f"   Объяснение: {result['recommendation_logic']['logic_explanation']}")
     print()
     
-    print(f"⚖️ ВЕРДИКТ ВАЛИДАТОРА:")
+    print("⚖️ ВЕРДИКТ ВАЛИДАТОРА:")
     print(f"   Решение: {result['verdict']['verdict']}")
     print(f"   Уверенность: {result['verdict']['confidence']}")
     print(f"   Обоснование: {result['verdict']['reasoning']}")

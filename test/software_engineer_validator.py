@@ -159,7 +159,7 @@ def main():
     print("📋 ТЕХНИЧЕСКИЕ РЕЗУЛЬТАТЫ:")
     print("=" * 60)
     
-    print(f"🔍 ВАЛИДАЦИЯ ВХОДНЫХ ДАННЫХ:")
+    print("🔍 ВАЛИДАЦИЯ ВХОДНЫХ ДАННЫХ:")
     print(f"   Азот валиден: {result['input_validation']['nitrogen_valid']}")
     print(f"   Пороги валидны: {result['input_validation']['thresholds_valid']}")
     print(f"   Тип данных валиден: {result['input_validation']['data_type_valid']}")
@@ -167,22 +167,22 @@ def main():
         print(f"   Проблемы: {result['input_validation']['issues']}")
     print()
     
-    print(f"🔄 ПОТОК ЛОГИКИ:")
+    print("🔄 ПОТОК ЛОГИКИ:")
     print(f"   Шаг 1: {result['logic_flow']['step1_general_check']}")
     print(f"   Шаг 2: {result['logic_flow']['step2_lawn_check']}")
     print(f"   Шаг 3: {result['logic_flow']['step3_lawn_specific']}")
     print(f"   Логика корректна: {result['logic_flow']['logic_correct']}")
     print()
     
-    print(f"💻 КОД-РЕВЬЮ:")
+    print("💻 КОД-РЕВЬЮ:")
     print(f"   Качество кода: {code_review['code_quality']}")
     print(f"   Реализация логики: {code_review['logic_implementation']}")
-    print(f"   Комментарии:")
+    print("   Комментарии:")
     for comment in code_review['comments']:
         print(f"     {comment}")
     print()
     
-    print(f"⚖️ ТЕХНИЧЕСКИЙ ВЕРДИКТ:")
+    print("⚖️ ТЕХНИЧЕСКИЙ ВЕРДИКТ:")
     print(f"   Решение: {result['technical_verdict']['verdict']}")
     print(f"   Уверенность: {result['technical_verdict']['confidence']}")
     print(f"   Обоснование: {result['technical_verdict']['reasoning']}")

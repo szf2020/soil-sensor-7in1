@@ -341,29 +341,14 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
         growingType = "indoor";
     }
     
-    Serial.print("DEBUG: config.environmentType = ");
-    Serial.println(config.environmentType);
-    Serial.print("DEBUG: growingType determined = '");
-    Serial.print(growingType);
-    Serial.println("'");
-    
     // Определяем сезон из времени
-    Serial.print("DEBUG: timeClient = ");
-    Serial.println(timeClient != nullptr ? "OK" : "NULL");
-    
     if (timeClient != nullptr) {
         time_t now = (time_t)timeClient->getEpochTime();
-        Serial.print("DEBUG: NTP time = ");
-        Serial.println(now);
-        Serial.print("DEBUG: NTP_TIMESTAMP_2000 = ");
-        Serial.println(NTP_TIMESTAMP_2000);
         
         if (now >= NTP_TIMESTAMP_2000) {
             struct tm* timeInfo = localtime(&now);
             if (timeInfo != nullptr) {
                 uint8_t month = timeInfo->tm_mon + 1;
-                Serial.print("DEBUG: Current month = ");
-                Serial.println(month);
                 
                 if (month >= 3 && month <= 5) {
                     season = "spring";
@@ -374,26 +359,15 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
                 } else {
                     season = "winter";
                 }
-                Serial.print("DEBUG: Season determined = '");
-                Serial.print(season);
-                Serial.println("'");
             } else {
-                Serial.println("DEBUG: timeInfo is NULL");
+                season = "summer";  // По умолчанию лето
             }
         } else {
-            Serial.println("DEBUG: NTP time < 2000, using default season");
             season = "summer";  // По умолчанию лето
         }
     } else {
-        Serial.println("DEBUG: timeClient is NULL, using default season");
         season = "summer";  // По умолчанию лето
     }
-    
-    Serial.print("DEBUG: Before generateRecommendation - season = '");
-    Serial.print(season);
-    Serial.print("', growingType = '");
-    Serial.print(growingType);
-    Serial.println("'");
     
     // Вызываем новый системный алгоритм
     RecommendationResult systematicResult = getCropEngine().generateRecommendation(
