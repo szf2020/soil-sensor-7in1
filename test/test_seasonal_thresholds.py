@@ -10,7 +10,7 @@ def test_seasonal_thresholds():
     # Сезонные корректировки (из C++ кода) - ИСПРАВЛЕННЫЕ
     # seasonal_factors = {
     #     "spring": {"nitrogen": 1.15, "phosphorus": 1.10, "potassium": 1.12},
-    #     "summer": {"nitrogen": 1.08, "phosphorus": 1.05, "potassium": 1.20},
+    #     "summer": {"nitrogen": 1.05, "phosphorus": 1.03, "potassium": 1.08},
     #     "autumn": {"nitrogen": 1.06, "phosphorus": 1.12, "potassium": 1.15},
     #     "winter": {"nitrogen": 0.95, "phosphorus": 1.08, "potassium": 1.10}  # Исправлено с 0.85
     # }
