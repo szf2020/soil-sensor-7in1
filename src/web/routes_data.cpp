@@ -94,71 +94,6 @@ SoilProfile uploadProfile = SoilProfile::SAND;
 
 // Функции сезонной коррекции NPK перенесены в бизнес-сервис CropRecommendationEngine
 
-RecValues computeRecommendations()
-{
-    // Используем бизнес-сервис для вычисления рекомендаций
-    const String cropId = String(config.cropId);
-
-    // Преобразуем конфигурацию в типы бизнес-логики
-    SoilProfile soilProfile = SoilProfile::SAND;
-    EnvironmentType envType = EnvironmentType::OUTDOOR;
-
-    // Используем массивы для устранения дублирования кода
-    static const std::array<SoilProfile, 13> soilProfiles = {{
-        SoilProfile::SAND,        // 0
-        SoilProfile::LOAM,        // 1
-        SoilProfile::PEAT,        // 2
-        SoilProfile::CLAY,        // 3
-        SoilProfile::SANDPEAT,    // 4
-        SoilProfile::SILT,        // 5 - НОВЫЙ
-        SoilProfile::CLAY_LOAM,   // 6 - НОВЫЙ
-        SoilProfile::ORGANIC,     // 7 - НОВЫЙ
-        SoilProfile::SANDY_LOAM,  // 8 - НОВЫЙ
-        SoilProfile::SILTY_LOAM,  // 9 - НОВЫЙ
-        SoilProfile::LOAMY_CLAY,  // 10 - НОВЫЙ
-        SoilProfile::SALINE,      // 11 - НОВЫЙ
-        SoilProfile::ALKALINE     // 12 - НОВЫЙ
-    }};
-
-    static const std::array<EnvironmentType, 3> envTypes = {{
-        EnvironmentType::OUTDOOR,     // 0
-        EnvironmentType::GREENHOUSE,  // 1
-        EnvironmentType::INDOOR       // 2
-    }};
-
-    const int soilIndex = (config.soilProfile >= 0 && config.soilProfile < 13) ? config.soilProfile : 0;
-    const int envIndex = (config.environmentType >= 0 && config.environmentType < 3) ? config.environmentType : 0;
-
-    soilProfile = soilProfiles[soilIndex];
-    envType = envTypes[envIndex];
-
-    // Получаем рекомендации от бизнес-сервиса
-    RecValues rec = getCropEngine().computeRecommendations(cropId, soilProfile, envType);
-
-    // Применяем сезонную коррекцию если включена
-    if (config.flags.seasonalAdjustEnabled)
-    {
-        time_t now = time(nullptr);
-        struct tm* timeInfo = localtime(&now);
-        const int month = timeInfo != nullptr ? timeInfo->tm_mon + 1 : 1;
-        
-        // Определяем сезон
-        Season season = Season::WINTER;
-        if (month >= 3 && month <= 5)
-            season = Season::SPRING;
-        else if (month >= 6 && month <= 8)
-            season = Season::SUMMER;
-        else if (month >= 9 && month <= 11)
-            season = Season::AUTUMN;
-        else
-            season = Season::WINTER;
-
-        const bool isGreenhouse = (config.environmentType == 1);
-        getCropEngine().applySeasonalCorrection(rec, season, isGreenhouse);
-    }
-
-    return rec;
-}
 }  // namespace
 
 void handleReadingsUpload()  // ✅ Убираем static - функция extern в header
@@ -314,23 +249,14 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     bool lenCheck = strlen(config.cropId) > 0;
     bool strCheck = strcmp(config.cropId, "none") != 0;
     
-    if (lenCheck && strCheck) {
-            // Получаем текущий сезон для корректировки порогов
-    const char* seasonName = getCurrentSeasonName();
-        
-        String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
-            String(config.cropId), npk, soilType, sensorData.ph, String(seasonName));
-        doc["crop_specific_recommendations"] = cropRecommendations;
-        
-        // ✅ Минимальное логирование для отладки
-        logDebugSafe("JSON API: crop='%s', rec_len=%d", config.cropId, cropRecommendations.length());
-    } else {
-        doc["crop_specific_recommendations"] = "";
-    }
+    // ✅ crop_specific_recommendations обрабатывается ниже в системном алгоритме
     
     // ============================================================================
     // СИСТЕМНЫЙ АЛГОРИТМ: Новые поля для системного расчета агрорекомендаций
     // ============================================================================
+    
+    // ✅ ОПТИМИЗАЦИЯ: Определяем сезон ОДИН РАЗ для всех операций
+    const char* seasonName = getCurrentSeasonName();
     
     // Получаем параметры для системного алгоритма
     String cropType = String(config.cropId);
@@ -344,37 +270,33 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
         growingType = "indoor";
     }
     
-    // Определяем сезон из времени
-    if (timeClient != nullptr) {
-        time_t now = (time_t)timeClient->getEpochTime();
-        
-        if (now >= NTP_TIMESTAMP_2000) {
-            struct tm* timeInfo = localtime(&now);
-            if (timeInfo != nullptr) {
-                uint8_t month = timeInfo->tm_mon + 1;
-                
-                if (month >= 3 && month <= 5) {
-                    season = "spring";
-                } else if (month >= 6 && month <= 8) {
-                    season = "summer";
-                } else if (month >= 9 && month <= 11) {
-                    season = "autumn";
-                } else {
-                    season = "winter";
-                }
-            } else {
-                season = "summer";  // По умолчанию лето
-            }
-        } else {
-            season = "summer";  // По умолчанию лето
-        }
-    } else {
-        season = "summer";  // По умолчанию лето
+    // ✅ ОПТИМИЗАЦИЯ: Используем уже определенный сезон
+    if (strcmp(seasonName, "Весна") == 0) {
+        season = "spring";
+    } else if (strcmp(seasonName, "Лето") == 0) {
+        season = "summer";
+    } else if (strcmp(seasonName, "Осень") == 0) {
+        season = "autumn";
+    } else if (strcmp(seasonName, "Зима") == 0) {
+        season = "winter";
     }
+    // Если "Н/Д" - оставляем "summer" по умолчанию
     
     // Вызываем новый системный алгоритм
     RecommendationResult systematicResult = getCropEngine().generateRecommendation(
         sensorData, cropType, growingType, season);
+    
+    // ✅ ОПТИМИЗАЦИЯ: Используем уже определенный сезон для crop_specific_recommendations
+    if (lenCheck && strCheck) {
+        String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
+            String(config.cropId), npk, soilType, sensorData.ph, String(seasonName));
+        doc["crop_specific_recommendations"] = cropRecommendations;
+        
+        // ✅ Минимальное логирование для отладки
+        logDebugSafe("JSON API: crop='%s', rec_len=%d", config.cropId, cropRecommendations.length());
+    } else {
+        doc["crop_specific_recommendations"] = "";
+    }
     
     // Добавляем новые поля в JSON
     // 1. Табличные значения (исходные для культуры)
@@ -427,8 +349,7 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     doc["rec_potassium"] = format_npk(systematicResult.finalCalculated.potassium);
 
     // ---- Дополнительная информация ----
-    // Сезон по текущему месяцу
-    const char* seasonName = getCurrentSeasonName();
+    // ✅ ОПТИМИЗАЦИЯ: Используем уже определенный сезон
     doc["season"] = seasonName;
 
     // Проверяем отклонения
