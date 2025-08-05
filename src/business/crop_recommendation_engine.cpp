@@ -215,12 +215,31 @@ RecommendationResult CropRecommendationEngine::generateRecommendation(const Sens
                                                                       const String& growingType, const String& season)
 {  // NOLINT(bugprone-easily-swappable-parameters)
 
+    // Получаем тип почвы из конфигурации
+    String soilTypeStr = "loam";  // По умолчанию
+    switch (config.soilProfile) {
+        case 0: soilTypeStr = "sand"; break;
+        case 1: soilTypeStr = "loam"; break;
+        case 2: soilTypeStr = "peat"; break;
+        case 3: soilTypeStr = "clay"; break;
+        case 4: soilTypeStr = "sand_peat"; break;
+        case 5: soilTypeStr = "silt"; break;
+        case 6: soilTypeStr = "clay_loam"; break;
+        case 7: soilTypeStr = "organic"; break;
+        case 8: soilTypeStr = "sandy_loam"; break;
+        case 9: soilTypeStr = "silty_loam"; break;
+        case 10: soilTypeStr = "loamy_clay"; break;
+        case 11: soilTypeStr = "saline"; break;
+        case 12: soilTypeStr = "alkaline"; break;
+        default: soilTypeStr = "loam"; break;
+    }
+    
     const RecommendationParams params = RecommendationParams::builder()
                                             .data(data)
                                             .cropType(cropType)
                                             .growingType(growingType)
                                             .season(season)
-                                            .soilType("loam")  // Используем значение по умолчанию
+                                            .soilType(soilTypeStr)
                                             .build();
 
     // Валидация входных данных используя единые константы
@@ -556,9 +575,9 @@ CropConfig CropRecommendationEngine::applySeasonalCorrection(const CropConfig& a
     if (season == "spring") {
         // Весна: активный рост, потребность в азоте
         // ТОЛЬКО NPK - остальные параметры не изменяются
-        result.nitrogen *= 1.0f;      // 0% (базовый)
-        result.phosphorus *= 1.0f;    // 0% (базовый)
-        result.potassium *= 1.0f;     // 0% (базовый)
+        result.nitrogen *= 1.15f;     // +15% (консервативный)
+        result.phosphorus *= 1.10f;   // +10% (консервативный)
+        result.potassium *= 1.12f;    // +12% (консервативный)
     }
     else if (season == "summer") {
         // Лето: жаркий период, потребность в калии
@@ -1054,7 +1073,7 @@ String CropRecommendationEngine::generateCropSpecificRecommendations(const Strin
     
     else if (cropName == "pepper" || cropName == "перец") {
         // Перец требует цинк при высоком фосфоре (антагонизм P→Zn)
-        if (npk.phosphorus > 100.0F) {  // Консервативный порог для антагонизма P→Zn
+        if (npk.phosphorus > 100.0F) {  // Консервативный порог для антагонизма P→Zn (исследования показывают 100 мг/кг)
             recommendations += "🌶️ Перец требует цинк при высоком фосфоре. ";
             recommendations += "Рекомендуется: внести хелат цинка (Zn-EDTA) или сульфат цинка (ZnSO4)\n";
         }

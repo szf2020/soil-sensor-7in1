@@ -36,6 +36,54 @@ extern NTPClient* timeClient;
 // extern String formatValue(float value, const char* unit, int precision);  // объявлено в jxct_format_utils.h
 // extern String getApSsid();  // объявлено в wifi_manager.h
 
+// Общая функция для определения текущего сезона
+const char* getCurrentSeasonName()
+{
+    if (timeClient == nullptr)
+    {
+        extern WiFiUDP ntpUDP;
+        timeClient = new NTPClient(ntpUDP, "pool.ntp.org", 0, 3600000);
+        timeClient->begin();
+    }
+
+    time_t now = timeClient ? (time_t)timeClient->getEpochTime() : time(nullptr);
+    if (now < NTP_TIMESTAMP_2000)
+    {
+        if (timeClient)
+        {
+            timeClient->forceUpdate();
+            now = (time_t)timeClient->getEpochTime();
+            if (now < NTP_TIMESTAMP_2000)
+            {
+                return "Н/Д";
+            }
+        }
+        else
+        {
+            return "Н/Д";
+        }
+    }
+    struct tm* timeInfo = localtime(&now);
+    if (!timeInfo)
+    {
+        return "Н/Д";
+    }
+    uint8_t month = timeInfo->tm_mon + 1;
+    if (month == 12 || month == 1 || month == 2)
+    {
+        return "Зима";
+    }
+    if (month >= 3 && month <= 5)
+    {
+        return "Весна";
+    }
+    if (month >= 6 && month <= 8)
+    {
+        return "Лето";
+    }
+    return "Осень";
+}
+
 // Буфер для загрузки файлов (калибровка через /readings)
 namespace
 {
@@ -267,53 +315,8 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     bool strCheck = strcmp(config.cropId, "none") != 0;
     
     if (lenCheck && strCheck) {
-        // Получаем текущий сезон для корректировки порогов
-        const char* seasonName = []()
-        {
-            if (timeClient == nullptr)
-            {
-                extern WiFiUDP ntpUDP;
-                timeClient = new NTPClient(ntpUDP, "pool.ntp.org", 0, 3600000);
-                timeClient->begin();
-            }
-
-            time_t now = timeClient ? (time_t)timeClient->getEpochTime() : time(nullptr);
-            if (now < NTP_TIMESTAMP_2000)
-            {
-                if (timeClient)
-                {
-                    timeClient->forceUpdate();
-                    now = (time_t)timeClient->getEpochTime();
-                    if (now < NTP_TIMESTAMP_2000)
-                    {
-                        return "Н/Д";
-                    }
-                }
-                else
-                {
-                    return "Н/Д";
-                }
-            }
-            struct tm* timeInfo = localtime(&now);
-            if (!timeInfo)
-            {
-                return "Н/Д";
-            }
-            uint8_t month = timeInfo->tm_mon + 1;
-            if (month == 12 || month == 1 || month == 2)
-            {
-                return "Зима";
-            }
-            if (month >= 3 && month <= 5)
-            {
-                return "Весна";
-            }
-            if (month >= 6 && month <= 8)
-            {
-                return "Лето";
-            }
-            return "Осень";
-        }();
+            // Получаем текущий сезон для корректировки порогов
+    const char* seasonName = getCurrentSeasonName();
         
         String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
             String(config.cropId), npk, soilType, sensorData.ph, String(seasonName));
@@ -425,55 +428,7 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
 
     // ---- Дополнительная информация ----
     // Сезон по текущему месяцу
-    const char* seasonName = []()
-    {
-        // Проверяем инициализацию NTP
-        if (timeClient == nullptr)
-        {
-            extern WiFiUDP ntpUDP;
-            timeClient = new NTPClient(ntpUDP, "pool.ntp.org", 0, 3600000);
-            timeClient->begin();
-        }
-
-        time_t now = timeClient ? (time_t)timeClient->getEpochTime() : time(nullptr);
-        // если время < 2000-01-01 считаем, что NTP ещё не синхронизирован
-        if (now < NTP_TIMESTAMP_2000)
-        {
-            // Пробуем обновить NTP
-            if (timeClient)
-            {
-                timeClient->forceUpdate();
-                now = (time_t)timeClient->getEpochTime();
-                if (now < NTP_TIMESTAMP_2000)
-                {
-                    return "Н/Д";
-                }
-            }
-            else
-            {
-                return "Н/Д";
-            }
-        }
-        struct tm* timeInfo = localtime(&now);
-        if (!timeInfo)
-        {
-            return "Н/Д";
-        }
-        uint8_t month = timeInfo->tm_mon + 1;
-        if (month == 12 || month == 1 || month == 2)
-        {
-            return "Зима";
-        }
-        if (month >= 3 && month <= 5)
-        {
-            return "Весна";
-        }
-        if (month >= 6 && month <= 8)
-        {
-            return "Лето";
-        }
-        return "Осень";
-    }();
+    const char* seasonName = getCurrentSeasonName();
     doc["season"] = seasonName;
 
     // Проверяем отклонения
