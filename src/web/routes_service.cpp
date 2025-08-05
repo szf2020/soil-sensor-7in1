@@ -50,6 +50,38 @@ void setupServiceRoutes()
     webServer.on("/service_status", HTTP_GET, sendServiceStatusJson);
     webServer.on(API_SYSTEM_STATUS, HTTP_GET, sendServiceStatusJson);
 
+    // ✅ ДОБАВЛЕНО: Маршрут для сброса блокировки ThingSpeak
+    webServer.on("/reset_thingspeak", HTTP_POST, 
+        []() {
+            logWebRequest("POST", "/reset_thingspeak", webServer.client().remoteIP().toString());
+            
+            if (!checkCSRFSafety()) {
+                webServer.send(HTTP_FORBIDDEN, HTTP_CONTENT_TYPE_PLAIN, "CSRF token invalid");
+                return;
+            }
+            
+            resetThingSpeakBlock();
+            webServer.send(HTTP_OK, "text/plain; charset=utf-8", "ThingSpeak блокировка сброшена");
+        }
+    );
+
+    // ✅ ДОБАВЛЕНО: Маршрут для диагностики ThingSpeak
+    webServer.on("/diagnose_thingspeak", HTTP_GET, 
+        []() {
+            logWebRequest("GET", "/diagnose_thingspeak", webServer.client().remoteIP().toString());
+            diagnoseThingSpeakStatus();
+            webServer.send(HTTP_OK, "text/plain; charset=utf-8", "Диагностика ThingSpeak выполнена (см. лог)");
+        }
+    );
+
+    // ✅ ДОБАВЛЕНО: Маршрут для получения диагностики ThingSpeak в JSON
+    webServer.on("/api/thingspeak_diagnostics", HTTP_GET, 
+        []() {
+            logWebRequest("GET", "/api/thingspeak_diagnostics", webServer.client().remoteIP().toString());
+            webServer.send(HTTP_OK, "application/json", getThingSpeakDiagnosticsJson());
+        }
+    );
+
     // Красивая страница сервисов (оригинальный дизайн)
     webServer.on(
         "/service", HTTP_GET,
@@ -79,6 +111,20 @@ void setupServiceRoutes()
             html += "<form method='post' action='/reboot' style='margin-bottom:10px'>";
             html += getCSRFHiddenField();
             html += generateButton(ButtonType::SECONDARY, ButtonConfig{"🔄", "Перезагрузить", ""}) + "</form>";
+            
+            // ✅ ДОБАВЛЕНО: Кнопки управления ThingSpeak
+            if (config.flags.thingSpeakEnabled) {
+                html += "<div style='margin-top:15px;padding:10px;background:#f8f9fa;border-radius:5px;'>";
+                html += "<h3>🔗 ThingSpeak Управление</h3>";
+                html += "<form method='post' action='/reset_thingspeak' style='margin-bottom:10px'>";
+                html += getCSRFHiddenField();
+                html += generateButton(ButtonType::SECONDARY, ButtonConfig{"🔓", "Сбросить блокировку", ""}) + "</form>";
+                html += "<form method='get' action='/diagnose_thingspeak' style='margin-bottom:10px'>";
+                html += generateButton(ButtonType::PRIMARY, ButtonConfig{"🔍", "Диагностика", ""}) + "</form>";
+                html += "<button type='button' onclick='showThingSpeakDiagnostics()' class='btn btn-info' style='margin-bottom:10px'>📊 Подробная диагностика</button>";
+                html += "</div>";
+            }
+            
             html += "</div>";
             html +=
                 "<div class='section' style='margin-top:15px;font-size:14px;color:#555'><b>API:</b> <a "
@@ -114,6 +160,34 @@ void setupServiceRoutes()
                 "('+d.sensor_last_error+')':''));";
             html += "document.getElementById('status-block').innerHTML=html;";
             html += "});}setInterval(updateStatus," + String(config.webUpdateInterval) + ");updateStatus();";
+            
+            // ✅ ДОБАВЛЕНО: JavaScript для отображения диагностики ThingSpeak
+            html += "function showThingSpeakDiagnostics() {";
+            html += "  fetch('/api/thingspeak_diagnostics')";
+            html += "    .then(response => response.json())";
+            html += "    .then(data => {";
+            html += "      let status = data.blocked ? '🔴 ЗАБЛОКИРОВАН' : (data.enabled ? '🟢 АКТИВЕН' : '⚪ ОТКЛЮЧЕН');";
+            html += "      let message = '=== ДИАГНОСТИКА THINGSPEAK ===\\n';";
+            html += "      message += 'Статус: ' + status + '\\n';";
+            html += "      message += 'WiFi: ' + (data.wifi_connected ? 'ПОДКЛЮЧЕН' : 'ОТКЛЮЧЕН') + '\\n';";
+            html += "      message += 'Данные: ' + (data.data_valid ? 'ВАЛИДНЫ' : 'НЕВАЛИДНЫ') + '\\n';";
+            html += "      message += 'Ошибок подряд: ' + data.consecutive_fail_count + '\\n';";
+            html += "      message += 'Интервал: ' + (data.interval_ms / 1000) + ' сек\\n';";
+            html += "      message += 'Последняя публикация: ' + (data.time_since_last_publish_ms / 1000) + ' сек назад\\n';";
+            html += "      if (data.blocked) {";
+            html += "        message += '🔴 БЛОКИРОВКА АКТИВНА!\\n';";
+            html += "        message += 'Осталось: ' + data.remaining_block_time_min + ' мин\\n';";
+            html += "      }";
+            html += "      if (data.last_error) {";
+            html += "        message += 'Последняя ошибка: ' + data.last_error + '\\n';";
+            html += "      }";
+            html += "      message += '==============================';";
+            html += "      alert(message);";
+            html += "    })";
+            html += "    .catch(error => {";
+            html += "      alert('Ошибка получения диагностики: ' + error);";
+            html += "    });";
+            html += "}";
             html += "</script>";
             html += generatePageFooter();
             webServer.send(200, "text/html; charset=utf-8", html);

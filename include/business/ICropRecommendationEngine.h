@@ -10,6 +10,10 @@
 #include <Arduino.h>
 #include "../sensor_types.h"  // Для SoilProfile
 
+// Включаем структуры для системного алгоритма
+struct SensorData;  // Предварительное объявление
+struct RecommendationResult;  // Предварительное объявление
+
 // Структура для рекомендаций
 struct RecValues
 {
@@ -65,12 +69,26 @@ class ICropRecommendationEngine
      * @param npk NPK данные
      * @param soilType Тип почвы
      * @param pH Значение pH
+     * @param season Текущий сезон для корректировки порогов
      * @return String Рекомендации
      */
     virtual String generateCropSpecificRecommendations(const String& cropName,
                                                       const NPKReferences& npk,
                                                       SoilType soilType,
-                                                      float pH) = 0;
+                                                      float pH,
+                                                      const String& season = "none") = 0;
+
+    /**
+     * @brief Генерирует системные агрорекомендации с полным расчетом коррекций
+     *
+     * @param data Данные датчиков
+     * @param cropType Тип культуры
+     * @param growingType Тип выращивания (outdoor, greenhouse, hydroponics, etc.)
+     * @param season Сезон (spring, summer, autumn, winter)
+     * @return RecommendationResult Полный результат с табличными, расчетными и научно компенсированными значениями
+     */
+    virtual RecommendationResult generateRecommendation(const SensorData& data, const String& cropType,
+                                                       const String& growingType = "outdoor", const String& season = "summer") = 0;
 };
 
 #endif  // ICROP_RECOMMENDATION_ENGINE_H

@@ -24,6 +24,7 @@
 #include "../business/sensor_calibration_service.h"
 #include "../../include/sensor_types.h"
 #include "../sensor_correction.h"
+#include "../business/crop_recommendation_engine.h"
 
 // Глобальный экземпляр сервиса калибровки
 extern SensorCalibrationService gCalibrationService;
@@ -34,6 +35,54 @@ extern NTPClient* timeClient;
 // extern String navHtml();  // объявлено в wifi_manager.h
 // extern String formatValue(float value, const char* unit, int precision);  // объявлено в jxct_format_utils.h
 // extern String getApSsid();  // объявлено в wifi_manager.h
+
+// Общая функция для определения текущего сезона
+const char* getCurrentSeasonName()
+{
+    if (timeClient == nullptr)
+    {
+        extern WiFiUDP ntpUDP;
+        timeClient = new NTPClient(ntpUDP, "pool.ntp.org", 0, 3600000);
+        timeClient->begin();
+    }
+
+    time_t now = timeClient ? (time_t)timeClient->getEpochTime() : time(nullptr);
+    if (now < NTP_TIMESTAMP_2000)
+    {
+        if (timeClient)
+        {
+            timeClient->forceUpdate();
+            now = (time_t)timeClient->getEpochTime();
+            if (now < NTP_TIMESTAMP_2000)
+            {
+                return "Н/Д";
+            }
+        }
+        else
+        {
+            return "Н/Д";
+        }
+    }
+    struct tm* timeInfo = localtime(&now);
+    if (!timeInfo)
+    {
+        return "Н/Д";
+    }
+    uint8_t month = timeInfo->tm_mon + 1;
+    if (month == 12 || month == 1 || month == 2)
+    {
+        return "Зима";
+    }
+    if (month >= 3 && month <= 5)
+    {
+        return "Весна";
+    }
+    if (month >= 6 && month <= 8)
+    {
+        return "Лето";
+    }
+    return "Осень";
+}
 
 // Буфер для загрузки файлов (калибровка через /readings)
 namespace
@@ -92,7 +141,7 @@ RecValues computeRecommendations()
         time_t now = time(nullptr);
         struct tm* timeInfo = localtime(&now);
         const int month = timeInfo != nullptr ? timeInfo->tm_mon + 1 : 1;
-
+        
         // Определяем сезон
         Season season = Season::WINTER;
         if (month >= 3 && month <= 5)
@@ -233,14 +282,15 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     doc["valid"] = isDataValid;
     doc["measurement_status"] = validationStatus;
 
-    const RecValues rec = computeRecommendations();
-    doc["rec_temperature"] = format_temperature(rec.t);
-    doc["rec_humidity"] = format_moisture(rec.hum);
-    doc["rec_ec"] = format_ec(rec.ec);
-    doc["rec_ph"] = format_ph(rec.ph);
-    doc["rec_nitrogen"] = format_npk(rec.n);
-    doc["rec_phosphorus"] = format_npk(rec.p);
-    doc["rec_potassium"] = format_npk(rec.k);
+    // ❌ ОТКЛЮЧАЕМ СТАРУЮ СИСТЕМУ - используем только новый системный алгоритм
+    // RecValues rec = computeRecommendations();
+    // doc["rec_temperature"] = format_temperature(rec.t);
+    // doc["rec_humidity"] = format_moisture(rec.hum);
+    // doc["rec_ec"] = format_ec(rec.ec);
+    // doc["rec_ph"] = format_ph(rec.ph);
+    // doc["rec_nitrogen"] = format_npk(rec.n);
+    // doc["rec_phosphorus"] = format_npk(rec.p);
+    // doc["rec_potassium"] = format_npk(rec.k);
 
     // ---- Рекомендации по взаимодействию питательных веществ ----
     NPKReferences npk{sensorData.nitrogen, sensorData.phosphorus, sensorData.potassium};
@@ -265,8 +315,11 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     bool strCheck = strcmp(config.cropId, "none") != 0;
     
     if (lenCheck && strCheck) {
+            // Получаем текущий сезон для корректировки порогов
+    const char* seasonName = getCurrentSeasonName();
+        
         String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
-            String(config.cropId), npk, soilType, sensorData.ph);
+            String(config.cropId), npk, soilType, sensorData.ph, String(seasonName));
         doc["crop_specific_recommendations"] = cropRecommendations;
         
         // ✅ Минимальное логирование для отладки
@@ -275,59 +328,107 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
         doc["crop_specific_recommendations"] = "";
     }
     
-
+    // ============================================================================
+    // СИСТЕМНЫЙ АЛГОРИТМ: Новые поля для системного расчета агрорекомендаций
+    // ============================================================================
+    
+    // Получаем параметры для системного алгоритма
+    String cropType = String(config.cropId);
+    String growingType = "outdoor";  // По умолчанию
+    String season = "summer";        // По умолчанию
+    
+    // Определяем тип выращивания из конфигурации
+    if (config.environmentType == 1) {
+        growingType = "greenhouse";
+    } else if (config.environmentType == 2) {
+        growingType = "indoor";
+    }
+    
+    // Определяем сезон из времени
+    if (timeClient != nullptr) {
+        time_t now = (time_t)timeClient->getEpochTime();
+        
+        if (now >= NTP_TIMESTAMP_2000) {
+            struct tm* timeInfo = localtime(&now);
+            if (timeInfo != nullptr) {
+                uint8_t month = timeInfo->tm_mon + 1;
+                
+                if (month >= 3 && month <= 5) {
+                    season = "spring";
+                } else if (month >= 6 && month <= 8) {
+                    season = "summer";
+                } else if (month >= 9 && month <= 11) {
+                    season = "autumn";
+                } else {
+                    season = "winter";
+                }
+            } else {
+                season = "summer";  // По умолчанию лето
+            }
+        } else {
+            season = "summer";  // По умолчанию лето
+        }
+    } else {
+        season = "summer";  // По умолчанию лето
+    }
+    
+    // Вызываем новый системный алгоритм
+    RecommendationResult systematicResult = getCropEngine().generateRecommendation(
+        sensorData, cropType, growingType, season);
+    
+    // Добавляем новые поля в JSON
+    // 1. Табличные значения (исходные для культуры)
+    doc["table_values"] = JsonObject();
+    doc["table_values"]["temperature"] = format_temperature(systematicResult.tableValues.temperature);
+    doc["table_values"]["humidity"] = format_moisture(systematicResult.tableValues.humidity);
+    doc["table_values"]["ec"] = format_ec(systematicResult.tableValues.ec);
+    doc["table_values"]["ph"] = format_ph(systematicResult.tableValues.ph);
+    doc["table_values"]["nitrogen"] = format_npk(systematicResult.tableValues.nitrogen);
+    doc["table_values"]["phosphorus"] = format_npk(systematicResult.tableValues.phosphorus);
+    doc["table_values"]["potassium"] = format_npk(systematicResult.tableValues.potassium);
+    
+    // 2. Итоговые расчетные значения (после всех коррекций)
+    doc["final_calculated"] = JsonObject();
+    doc["final_calculated"]["temperature"] = format_temperature(systematicResult.finalCalculated.temperature);
+    doc["final_calculated"]["humidity"] = format_moisture(systematicResult.finalCalculated.humidity);
+    doc["final_calculated"]["ec"] = format_ec(systematicResult.finalCalculated.ec);
+    doc["final_calculated"]["ph"] = format_ph(systematicResult.finalCalculated.ph);
+    doc["final_calculated"]["nitrogen"] = format_npk(systematicResult.finalCalculated.nitrogen);
+    doc["final_calculated"]["phosphorus"] = format_npk(systematicResult.finalCalculated.phosphorus);
+    doc["final_calculated"]["potassium"] = format_npk(systematicResult.finalCalculated.potassium);
+    
+    // 3. Проценты коррекции от табличных значений
+    doc["correction_percentages"] = JsonObject();
+    doc["correction_percentages"]["temperature"] = String(systematicResult.correctionPercentages.temperature, 1);
+    doc["correction_percentages"]["humidity"] = String(systematicResult.correctionPercentages.humidity, 1);
+    doc["correction_percentages"]["ec"] = String(systematicResult.correctionPercentages.ec, 1);
+    doc["correction_percentages"]["ph"] = String(systematicResult.correctionPercentages.ph, 1);
+    doc["correction_percentages"]["nitrogen"] = String(systematicResult.correctionPercentages.nitrogen, 1);
+    doc["correction_percentages"]["phosphorus"] = String(systematicResult.correctionPercentages.phosphorus, 1);
+    doc["correction_percentages"]["potassium"] = String(systematicResult.correctionPercentages.potassium, 1);
+    
+    // 4. Цветовые индикаторы на основе сравнения с научно компенсированными
+    doc["color_indicators"] = JsonObject();
+    doc["color_indicators"]["temperature"] = systematicResult.colorIndicators.temperature;
+    doc["color_indicators"]["humidity"] = systematicResult.colorIndicators.humidity;
+    doc["color_indicators"]["ec"] = systematicResult.colorIndicators.ec;
+    doc["color_indicators"]["ph"] = systematicResult.colorIndicators.ph;
+    doc["color_indicators"]["nitrogen"] = systematicResult.colorIndicators.nitrogen;
+    doc["color_indicators"]["phosphorus"] = systematicResult.colorIndicators.phosphorus;
+    doc["color_indicators"]["potassium"] = systematicResult.colorIndicators.potassium;
+    
+    // ✅ ДОБАВЛЯЕМ ПОЛЯ rec_* ИЗ НОВОГО СИСТЕМНОГО АЛГОРИТМА
+    doc["rec_temperature"] = format_temperature(systematicResult.finalCalculated.temperature);
+    doc["rec_humidity"] = format_moisture(systematicResult.finalCalculated.humidity);
+    doc["rec_ec"] = format_ec(systematicResult.finalCalculated.ec);
+    doc["rec_ph"] = format_ph(systematicResult.finalCalculated.ph);
+    doc["rec_nitrogen"] = format_npk(systematicResult.finalCalculated.nitrogen);
+    doc["rec_phosphorus"] = format_npk(systematicResult.finalCalculated.phosphorus);
+    doc["rec_potassium"] = format_npk(systematicResult.finalCalculated.potassium);
 
     // ---- Дополнительная информация ----
     // Сезон по текущему месяцу
-    const char* seasonName = []()
-    {
-        // Проверяем инициализацию NTP
-        if (timeClient == nullptr)
-        {
-            extern WiFiUDP ntpUDP;
-            timeClient = new NTPClient(ntpUDP, "pool.ntp.org", 0, 3600000);
-            timeClient->begin();
-        }
-
-        time_t now = timeClient ? (time_t)timeClient->getEpochTime() : time(nullptr);
-        // если время < 2000-01-01 считаем, что NTP ещё не синхронизирован
-        if (now < NTP_TIMESTAMP_2000)
-        {
-            // Пробуем обновить NTP
-            if (timeClient)
-            {
-                timeClient->forceUpdate();
-                now = (time_t)timeClient->getEpochTime();
-                if (now < NTP_TIMESTAMP_2000)
-                {
-                    return "Н/Д";
-                }
-            }
-            else
-            {
-                return "Н/Д";
-            }
-        }
-        struct tm* timeInfo = localtime(&now);
-        if (!timeInfo)
-        {
-            return "Н/Д";
-        }
-        uint8_t month = timeInfo->tm_mon + 1;
-        if (month == 12 || month == 1 || month == 2)
-        {
-            return "Зима";
-        }
-        if (month >= 3 && month <= 5)
-        {
-            return "Весна";
-        }
-        if (month >= 6 && month <= 8)
-        {
-            return "Лето";
-        }
-        return "Осень";
-    }();
+    const char* seasonName = getCurrentSeasonName();
     doc["season"] = seasonName;
 
     // Проверяем отклонения
@@ -789,26 +890,32 @@ void setupDataRoutes()
                 "showWithArrow('k_rec',    arrowSign(d.potassium   ,d.rec_potassium   ,tol.k   ), d.rec_potassium);";
             // === End arrow indicators ===
 
-            // Добавляем индикацию сезонных корректировок
-            html += "function updateSeasonalAdjustments(season) {";
-            html += "  const adjustments = {";
-            html += "    'Весна': { n: '+20%', p: '+15%', k: '+10%' },";
-            html += "    'Лето': { n: '-10%', p: '+5%', k: '+25%' },";
-            html += "    'Осень': { n: '-20%', p: '+10%', k: '+15%' },";
-            html += "    'Зима': { n: '-30%', p: '+5%', k: '+5%' }";
-            html += "  };";
-            html += "  const envType = " + String(config.environmentType) + ";";
-            html += "  const adj = adjustments[season] || { n: '', p: '', k: '' };";
-            html += "  ['n', 'p', 'k'].forEach(elem => {";
-            html += "    const span = document.getElementById(elem + '_season');";
-            html += "    if(span && adj && adj[elem]) {";
-            html += "      span.textContent = ` (${adj[elem]})`;";
-            html += "      span.className = 'season-adj ' + (adj[elem].charAt(0) === '+' ? 'up' : 'down');";
-            html += "    } else if(span) {";
-            html += "      span.textContent = '';";
-            html += "      span.className = 'season-adj';";
+            // Добавляем индикацию сезонных корректировок из новых данных JSON API
+            html += "function updateSeasonalAdjustments(d) {";
+            html += "  if (d.correction_percentages) {";
+            html += "    const percentages = d.correction_percentages;";
+            html += "    const spanN = document.getElementById('n_season');";
+            html += "    const spanP = document.getElementById('p_season');";
+            html += "    const spanK = document.getElementById('k_season');";
+            html += "    if(spanN && percentages.nitrogen !== undefined) {";
+            html += "      const valueN = parseFloat(percentages.nitrogen);";
+            html += "      const signN = valueN >= 0 ? '+' : '';";
+            html += "      spanN.textContent = ` (${signN}${valueN}%)`;";
+            html += "      spanN.className = 'season-adj ' + (valueN >= 0 ? 'up' : 'down');";
             html += "    }";
-            html += "  });";
+            html += "    if(spanP && percentages.phosphorus !== undefined) {";
+            html += "      const valueP = parseFloat(percentages.phosphorus);";
+            html += "      const signP = valueP >= 0 ? '+' : '';";
+            html += "      spanP.textContent = ` (${signP}${valueP}%)`;";
+            html += "      spanP.className = 'season-adj ' + (valueP >= 0 ? 'up' : 'down');";
+            html += "    }";
+            html += "    if(spanK && percentages.potassium !== undefined) {";
+            html += "      const valueK = parseFloat(percentages.potassium);";
+            html += "      const signK = valueK >= 0 ? '+' : '';";
+            html += "      spanK.textContent = ` (${signK}${valueK}%)`;";
+            html += "      spanK.className = 'season-adj ' + (valueK >= 0 ? 'up' : 'down');";
+            html += "    }";
+            html += "  }";
             html += "}";
 
             // 🌈 ОБНОВЛЕННАЯ ЛОГИКА ВАЛИДАЦИИ С СИНЕЙ ОКРАСКОЙ ДЛЯ ПОЛИВА
@@ -826,7 +933,7 @@ void setupDataRoutes()
                 R"(var seasonColor={'Лето':'green','Весна':'yellow','Осень':'yellow','Зима':'red','Н/Д':''}[d.season]||'';)";
             html += R"(var seasonHtml=seasonColor?(`<span class=\"${seasonColor}\">${d.season}</span>`):d.season;)";
             html += "document.getElementById('statusInfo').innerHTML=statusHtml+' | Сезон: '+seasonHtml;";
-            html += "updateSeasonalAdjustments(d.season);";
+            html += "updateSeasonalAdjustments(d);";
             
             // Обновление рекомендаций по взаимодействию питательных веществ
             html += "console.log('Sensor data received:', d);";

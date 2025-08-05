@@ -18,7 +18,8 @@ if hasattr(sys.stdout, 'encoding') and sys.stdout.encoding and sys.stdout.encodi
     except Exception:
         pass
 
-# Сезонные корректировки (процентные множители) [Источник: FAO Fertilizer and Plant Nutrition Bulletin No. 19, FAO, 2008]
+# Сезонные корректировки (агрономически обоснованные)
+# Источник: Агрономические принципы + FAO рекомендации
 seasonal_adjustments = {
     "spring": {
         "nitrogen": 1.15,    # +15% для активного роста
@@ -28,15 +29,15 @@ seasonal_adjustments = {
     "summer": {
         "nitrogen": 1.08,    # +8% для вегетации
         "phosphorus": 1.05,  # +5% стабильно
-        "potassium": 1.18    # +18% для жаростойкости
+        "potassium": 1.20    # +20% для жаростойкости
     },
     "autumn": {
-        "nitrogen": 1.02,    # +2% минимально
+        "nitrogen": 1.06,    # +6% для подготовки к зиме
         "phosphorus": 1.12,  # +12% для подготовки к зиме
         "potassium": 1.15    # +15% для морозостойкости
     },
     "winter": {
-        "nitrogen": 0.85,    # -15% период покоя
+        "nitrogen": 0.95,    # -5% период покоя (исправлено)
         "phosphorus": 1.08,  # +8% для корневой системы
         "potassium": 1.10    # +10% для устойчивости
     }

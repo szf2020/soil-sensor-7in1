@@ -84,14 +84,17 @@ void SensorCalibrationService::applyCalibration(SensorData& data, SoilProfile pr
     }
     else
     {
-        // Используем старую логику для совместимости
-        data.temperature = CalibrationManager::applyCalibration(data.temperature, profile);
-        data.humidity = CalibrationManager::applyCalibration(data.humidity, profile);
-        data.ec = CalibrationManager::applyCalibration(data.ec, profile);
-        data.ph = CalibrationManager::applyCalibration(data.ph, profile);
-        data.nitrogen = CalibrationManager::applyCalibration(data.nitrogen, profile);
-        data.phosphorus = CalibrationManager::applyCalibration(data.phosphorus, profile);
-        data.potassium = CalibrationManager::applyCalibration(data.potassium, profile);
+        // Убираем старую логику - просто оставляем исходные значения
+        // data.temperature = CalibrationManager::applyCalibration(data.temperature, profile);
+        // data.humidity = CalibrationManager::applyCalibration(data.humidity, profile);
+        // data.ec = CalibrationManager::applyCalibration(data.ec, profile);
+        // data.ph = CalibrationManager::applyCalibration(data.ph, profile);
+        // data.nitrogen = CalibrationManager::applyCalibration(data.nitrogen, profile);
+        // data.phosphorus = CalibrationManager::applyCalibration(data.phosphorus, profile);
+        // data.potassium = CalibrationManager::applyCalibration(data.potassium, profile);
+        
+        // Просто оставляем исходные значения без изменений
+        logDebugSafe("SensorCalibrationService: Используем исходные значения (калибровка не настроена)");
     }
 
     logDebugSafe("SensorCalibrationService: Калибровка применена");
@@ -109,8 +112,8 @@ float SensorCalibrationService::applySingleCalibration(float rawValue, SoilProfi
         }
     }
 
-    // Fallback к старой логике
-    return CalibrationManager::applyCalibration(rawValue, profile);
+    // Fallback - просто возвращаем исходное значение
+    return rawValue;
 }
 
 bool SensorCalibrationService::validateCalibrationData(

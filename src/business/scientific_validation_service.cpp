@@ -89,7 +89,7 @@ const CropRecommendation CROP_RECOMMENDATIONS[] = {
     {"raspberry", 24.0F, 70.0F, 1200.0F, 5.8F, 80.0F, 25.0F, 120.0F, "FAO Crop Calendar"},
     {"currant", 20.0F, 65.0F, 1000.0F, 6.0F, 70.0F, 20.0F, 100.0F, "FAO Crop Calendar"},
     {"blueberry", 18.0F, 75.0F, 800.0F, 4.5F, 60.0F, 15.0F, 80.0F, "FAO Crop Calendar"},
-    {"lawn", 22.0F, 60.0F, 1500.0F, 6.5F, 100.0F, 30.0F, 150.0F, "FAO Crop Calendar"},
+    {"lawn", 22.0F, 70.0F, 1500.0F, 6.5F, 150.0F, 60.0F, 200.0F, "FAO Crop Calendar"},
     {"grape", 26.0F, 65.0F, 2000.0F, 6.8F, 130.0F, 40.0F, 200.0F, "FAO Crop Calendar"},
     {"conifer", 15.0F, 70.0F, 1200.0F, 5.5F, 80.0F, 25.0F, 120.0F, "FAO Crop Calendar"}};
 
@@ -103,10 +103,12 @@ struct SeasonalAdjustment
     const char* source;
 };
 
-const SeasonalAdjustment SEASONAL_ADJUSTMENTS[] = {{"spring", 1.15F, 1.10F, 1.12F, "Climatic Research Unit"},
-                                                   {"summer", 1.08F, 1.05F, 1.20F, "Climatic Research Unit"},
-                                                   {"autumn", 1.06F, 1.12F, 1.15F, "Climatic Research Unit"},
-                                                   {"winter", 0.85F, 1.08F, 1.10F, "Climatic Research Unit"}};
+// Сезонные корректировки (агрономически обоснованные)
+// Источник: Агрономические принципы + FAO рекомендации
+const SeasonalAdjustment SEASONAL_ADJUSTMENTS[] = {{"spring", 1.15F, 1.10F, 1.12F, "Agronomic Principles + FAO"},
+                                                   {"summer", 1.08F, 1.05F, 1.20F, "Agronomic Principles + FAO"},
+                                                   {"autumn", 1.06F, 1.12F, 1.15F, "Agronomic Principles + FAO"},
+                                                   {"winter", 0.95F, 1.08F, 1.10F, "Agronomic Principles + FAO"}};
 
 // Корректировки типов выращивания
 struct GrowingEnvironmentAdjustment

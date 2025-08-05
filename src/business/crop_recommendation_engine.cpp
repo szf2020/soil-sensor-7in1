@@ -52,9 +52,9 @@ void CropRecommendationEngine::initializeCropConfigs()
                                           75.0F, 30.0F, 60.0F           // N: 50-100, P: 20-40, K: 40-80 мг/кг
     );
 
-    // ГАЗОН (Lawn) - научные данные Turfgrass Science
-    cropConfigs["lawn"] = CropConfig(20.0F, 60.0F, 1000.0F, 6.5F,  // pH 6.0-7.0, EC 0.8-1.5 mS/cm
-                                     100.0F, 40.0F, 80.0F          // N: 80-120, P: 30-50, K: 60-100 мг/кг
+    // ГАЗОН (Lawn) - научные данные Turfgrass Science + FAO Crop Calendar
+    cropConfigs["lawn"] = CropConfig(22.0F, 70.0F, 1500.0F, 6.5F,  // pH 6.0-7.0, EC 1.2-1.8 mS/cm
+                                     150.0F, 60.0F, 200.0F         // N: 120-180, P: 45-75, K: 160-240 мг/кг
     );
 
     // ВИНОГРАД (Vitis vinifera) - научные данные American Journal of Enology
@@ -149,10 +149,10 @@ void CropRecommendationEngine::initializeCropConfigs()
 struct RecommendationParams
 {
     const SensorData& data;
-    const String& cropType;
-    const String& growingType;
-    const String& season;
-    const String& soilType;
+    String cropType;
+    String growingType;
+    String season;
+    String soilType;
 
    private:
     RecommendationParams(const SensorData& data, const String& cropType, const String& growingType,
@@ -212,16 +212,34 @@ struct RecommendationParams
 };
 
 RecommendationResult CropRecommendationEngine::generateRecommendation(const SensorData& data, const String& cropType,
-                                                                      const String& growingType, const String& season,
-                                                                      const String& soilType)
+                                                                      const String& growingType, const String& season)
 {  // NOLINT(bugprone-easily-swappable-parameters)
 
+    // Получаем тип почвы из конфигурации
+    String soilTypeStr = "loam";  // По умолчанию
+    switch (config.soilProfile) {
+        case 0: soilTypeStr = "sand"; break;
+        case 1: soilTypeStr = "loam"; break;
+        case 2: soilTypeStr = "peat"; break;
+        case 3: soilTypeStr = "clay"; break;
+        case 4: soilTypeStr = "sand_peat"; break;
+        case 5: soilTypeStr = "silt"; break;
+        case 6: soilTypeStr = "clay_loam"; break;
+        case 7: soilTypeStr = "organic"; break;
+        case 8: soilTypeStr = "sandy_loam"; break;
+        case 9: soilTypeStr = "silty_loam"; break;
+        case 10: soilTypeStr = "loamy_clay"; break;
+        case 11: soilTypeStr = "saline"; break;
+        case 12: soilTypeStr = "alkaline"; break;
+        default: soilTypeStr = "loam"; break;
+    }
+    
     const RecommendationParams params = RecommendationParams::builder()
                                             .data(data)
                                             .cropType(cropType)
                                             .growingType(growingType)
                                             .season(season)
-                                            .soilType(soilType)
+                                            .soilType(soilTypeStr)
                                             .build();
 
     // Валидация входных данных используя единые константы
@@ -243,22 +261,31 @@ RecommendationResult CropRecommendationEngine::generateRecommendation(const Sens
     result.season = params.season;
     result.soilType = params.soilType;  // Добавляем тип почвы в результат
 
-    // Получаем базовую конфигурацию для культуры
-    auto configIterator = cropConfigs.find(params.cropType);
-    if (configIterator == cropConfigs.end())
-    {
-        configIterator = cropConfigs.find("generic");
-    }
-    CropConfig baseConfig = configIterator->second;
-
-    // Применяем сезонные корректировки
-    CropConfig adjustedConfig = applySeasonalAdjustments(baseConfig, params.season);
-
-    // Применяем корректировки для типа выращивания
-    adjustedConfig = applyGrowingTypeAdjustments(adjustedConfig, params.growingType);
-
-    // Применяем корректировки для типа почвы
-    adjustedConfig = applySoilTypeAdjustments(adjustedConfig, params.soilType);
+    // ============================================================================
+    // СИСТЕМНЫЙ АЛГОРИТМ: Правильная последовательность коррекций
+    // ============================================================================
+    
+    // 1. Получаем табличные значения (исходные для культуры)
+    result.tableValues = getTableValues(params.cropType);
+    
+    // 2. Применяем коррекцию типа выращивания (ПЕРВАЯ, все параметры)
+    // 2. Применяем коррекцию типа выращивания (ПЕРВАЯ, все параметры)
+    result.growingTypeAdjusted = applyGrowingTypeCorrection(result.tableValues, params.growingType);
+    
+    // 3. Применяем сезонную коррекцию (ВТОРАЯ, только NPK)
+    result.finalCalculated = applySeasonalCorrection(result.growingTypeAdjusted, params.season);
+    
+    // 4. Получаем научно компенсированные значения (для сравнения)
+    result.scientificallyCompensated = getScientificallyCompensated(compensatedData, params.cropType);
+    
+    // 5. Рассчитываем проценты коррекции от табличных значений
+    result.correctionPercentages = calculateCorrectionPercentages(result.tableValues, result.finalCalculated);
+    
+    // 6. Определяем цвета на основе сравнения с научно компенсированными
+    result.colorIndicators = calculateColorIndicators(result.finalCalculated, result.scientificallyCompensated);
+    
+    // Для совместимости с существующим кодом используем finalCalculated
+    CropConfig adjustedConfig = result.finalCalculated;
 
     // Генерируем рекомендации на основе компенсированных данных
     result.recommendations =
@@ -273,231 +300,11 @@ RecommendationResult CropRecommendationEngine::generateRecommendation(const Sens
     return result;
 }
 
-CropConfig applySeasonalAdjustments(const CropConfig& base, const String& season)
-{
-    CropConfig adjusted = base;
 
-    if (season == "spring")
-    {
-        // Весна: активный рост, потребность в азоте [Источник: FAO Fertilizer and Plant Nutrition Bulletin No. 19, FAO,
-        // 2008]
-        adjusted.temperature += 0.0F;
-        adjusted.humidity += 0.0F;
-        adjusted.ec += 0.0F;
-        adjusted.nitrogen *= 1.15F;    // +15% для активного роста
-        adjusted.phosphorus *= 1.10F;  // +10% для развития корней
-        adjusted.potassium *= 1.12F;   // +12% для устойчивости
-    }
-    else if (season == "summer")
-    {
-        // Лето: жаркий период, потребность в калии [Источник: FAO Fertilizer and Plant Nutrition Bulletin No. 19, FAO,
-        // 2008]
-        adjusted.temperature += 2.0F;
-        adjusted.humidity -= 5.0F;
-        adjusted.ec += 200.0F;
-        adjusted.nitrogen *= 1.08F;    // +8% для вегетации
-        adjusted.phosphorus *= 1.05F;  // +5% стабильно
-        adjusted.potassium *= 1.18F;   // +18% для жаростойкости
-    }
-    else if (season == "autumn")
-    {
-        // Осень: подготовка к зиме, потребность в фосфоре [Источник: FAO Fertilizer and Plant Nutrition Bulletin No.
-        // 19, FAO, 2008]
-        adjusted.temperature -= 1.0F;
-        adjusted.humidity += 5.0F;
-        adjusted.ec -= 100.0F;
-        adjusted.nitrogen *= 1.02F;    // +2% минимально
-        adjusted.phosphorus *= 1.12F;  // +12% для подготовки к зиме
-        adjusted.potassium *= 1.15F;   // +15% для морозостойкости
-    }
-    else if (season == "winter")
-    {
-        // Зима: период покоя, сниженные потребности [Источник: FAO Fertilizer and Plant Nutrition Bulletin No. 19, FAO,
-        // 2008]
-        adjusted.temperature -= 3.0F;
-        adjusted.humidity += 10.0F;
-        adjusted.ec -= 200.0F;
-        adjusted.nitrogen *= 0.85F;    // -15% период покоя
-        adjusted.phosphorus *= 1.08F;  // +8% для корневой системы
-        adjusted.potassium *= 1.10F;   // +10% для устойчивости
-    }
 
-    return adjusted;
-}
 
-CropConfig applyGrowingTypeAdjustments(const CropConfig& base, const String& growingType)
-{
-    CropConfig adjusted = base;
 
-    if (growingType == "greenhouse")
-    {
-        // Теплица: контролируемая среда, интенсивное выращивание [Источник: Protected Cultivation Guidelines, USDA,
-        // 2015]
-        adjusted.temperature += 3.0F;
-        adjusted.humidity += 10.0F;
-        adjusted.ec += 300.0F;         // Более интенсивное питание
-        adjusted.nitrogen *= 1.25F;    // +25% интенсивное выращивание
-        adjusted.phosphorus *= 1.20F;  // +20% развитие корней
-        adjusted.potassium *= 1.22F;   // +22% качество плодов
-    }
-    else if (growingType == "hydroponics")
-    {
-        // Гидропоника: точный контроль питательных веществ [Источник: Hydroponic Crop Production, Acta Horticulturae,
-        // 2018]
-        adjusted.ec += 500.0F;         // Высокая концентрация питательных веществ
-        adjusted.nitrogen *= 1.40F;    // +40% точное питание
-        adjusted.phosphorus *= 1.30F;  // +30% доступность
-        adjusted.potassium *= 1.35F;   // +35% качество
-    }
-    else if (growingType == "aeroponics")
-    {
-        // Аэропоника: максимальная эффективность [Источник: Aeroponic Systems, Journal of Agricultural Engineering,
-        // 2019]
-        adjusted.ec += 400.0F;
-        adjusted.nitrogen *= 1.35F;    // +35% эффективность
-        adjusted.phosphorus *= 1.25F;  // +25% развитие
-        adjusted.potassium *= 1.30F;   // +30% качество
-    }
-    else if (growingType == "organic")
-    {
-        // Органическое выращивание: естественные процессы [Источник: Organic Farming Guidelines, IFOAM, 2020]
-        adjusted.ec -= 200.0F;         // Более низкая концентрация солей
-        adjusted.nitrogen *= 0.85F;    // -15% органический азот
-        adjusted.phosphorus *= 0.90F;  // -10% медленное высвобождение
-        adjusted.potassium *= 0.88F;   // -12% органический калий
-    }
 
-    return adjusted;
-}
-
-CropConfig applySoilTypeAdjustments(const CropConfig& base, const String& soilType)
-{
-    CropConfig adjusted = base;
-
-    if (soilType == "sand")
-    {
-        // Песчаная почва: плохое удержание влаги и питательных веществ [Источник: Soil Fertility Manual, International
-        // Plant Nutrition Institute, 2020]
-        adjusted.humidity -= 5.0F;
-        adjusted.ec -= 200.0F;
-        adjusted.nitrogen *= 1.25F;    // +25% вымывание
-        adjusted.phosphorus *= 1.15F;  // +15% связывание
-        adjusted.potassium *= 1.20F;   // +20% вымывание
-    }
-    else if (soilType == "loam")
-    {
-        // Суглинистая почва: оптимальные условия - без изменений
-    }
-    else if (soilType == "clay")
-    {
-        // Глинистая почва: хорошее удержание, но плохая аэрация [Источник: Soil Fertility Manual, International Plant
-        // Nutrition Institute, 2020]
-        adjusted.humidity += 10.0F;
-        adjusted.ec -= 400.0F;
-        adjusted.nitrogen *= 0.90F;    // -10% удержание
-        adjusted.phosphorus *= 0.85F;  // -15% связывание
-        adjusted.potassium *= 0.92F;   // -8% удержание
-    }
-    else if (soilType == "peat")
-    {
-        // Торфяная почва: кислая, богатая органическим веществом [Источник: Soil Fertility Manual, International Plant
-        // Nutrition Institute, 2020]
-        adjusted.humidity += 10.0F;
-        adjusted.ec -= 100.0F;
-        adjusted.ph -= 0.5F;
-        adjusted.nitrogen *= 1.15F;    // +15% органический азот
-        adjusted.phosphorus *= 1.10F;  // +10% доступность
-        adjusted.potassium *= 1.05F;   // +5% стабильно
-    }
-    else if (soilType == "sandpeat")
-    {
-        // Песчано-торфяная смесь: компромисс [Источник: Soil Fertility Manual, International Plant Nutrition Institute,
-        // 2020]
-        adjusted.humidity += 2.0F;
-        adjusted.ec -= 50.0F;
-        adjusted.ph -= 0.2F;
-        adjusted.nitrogen *= 1.10F;    // +10% умеренное вымывание
-        adjusted.phosphorus *= 1.05F;  // +5% умеренное связывание
-        adjusted.potassium *= 1.02F;   // +2% минимальная корректировка
-    }
-    else if (soilType == "silt")
-    {
-        // Иловая почва: хорошая влагоемкость, средняя аэрация [Источник: European Journal of Soil Science, 2021]
-        adjusted.humidity += 5.0F;
-        adjusted.ec -= 150.0F;
-        adjusted.nitrogen *= 1.05F;    // +5% умеренное удержание
-        adjusted.phosphorus *= 1.08F;  // +8% хорошее связывание
-        adjusted.potassium *= 1.03F;   // +3% стабильное удержание
-    }
-                else if (soilType == "clay_loam")
-            {
-                // Глинистый суглинок: больше глины, хорошее удержание влаги [Источник: European Journal of Soil Science, 2021]
-                adjusted.humidity += 8.0F;
-                adjusted.ec -= 300.0F;
-                adjusted.nitrogen *= 0.95F;    // -5% хорошее удержание
-                adjusted.phosphorus *= 0.90F;  // -10% сильное связывание
-                adjusted.potassium *= 0.96F;   // -4% хорошее удержание
-            }
-    else if (soilType == "organic")
-    {
-        // Органическая почва: богатая органикой, кислая [Источник: Organic Agriculture Journal, 2022]
-        adjusted.humidity += 15.0F;
-        adjusted.ec -= 200.0F;
-        adjusted.ph -= 0.8F;
-        adjusted.nitrogen *= 1.20F;    // +20% органический азот
-        adjusted.phosphorus *= 1.15F;  // +15% биодоступность
-        adjusted.potassium *= 1.10F;   // +10% стабильное удержание
-    }
-    else if (soilType == "sandy_loam")
-    {
-        // Песчанистый суглинок: больше песка, быстрый дренаж [Источник: SSSAJ, 2020]
-        adjusted.humidity -= 3.0F;
-        adjusted.ec -= 250.0F;
-        adjusted.nitrogen *= 1.18F;    // +18% вымывание
-        adjusted.phosphorus *= 1.12F;  // +12% умеренное связывание
-        adjusted.potassium *= 1.15F;   // +15% вымывание
-    }
-    else if (soilType == "silty_loam")
-    {
-        // Иловатый суглинок: больше ила, хорошая влагоемкость [Источник: Journal of Plant Nutrition, 2021]
-        adjusted.humidity += 6.0F;
-        adjusted.ec -= 180.0F;
-        adjusted.nitrogen *= 1.02F;    // +2% хорошее удержание
-        adjusted.phosphorus *= 1.06F;  // +6% умеренное связывание
-        adjusted.potassium *= 1.04F;   // +4% стабильное удержание
-    }
-    else if (soilType == "loamy_clay")
-    {
-        // Суглинистая глина: больше глины, хорошее удержание [Источник: Agricultural Water Management, 2022]
-        adjusted.humidity += 7.0F;
-        adjusted.ec -= 350.0F;
-        adjusted.nitrogen *= 0.92F;    // -8% хорошее удержание
-        adjusted.phosphorus *= 0.88F;  // -12% сильное связывание
-        adjusted.potassium *= 0.94F;   // -6% хорошее удержание
-    }
-    else if (soilType == "saline")
-    {
-        // Засоленная почва: высокий EC, проблемы с натрием [Источник: Soil Salinity Research, 2021]
-        adjusted.humidity -= 5.0F;
-        adjusted.ec += 800.0F;
-        adjusted.ph += 0.5F;
-        adjusted.nitrogen *= 0.85F;    // -15% токсичность
-        adjusted.phosphorus *= 0.90F;  // -10% снижение доступности
-        adjusted.potassium *= 0.80F;   // -20% конкуренция с натрием
-    }
-    else if (soilType == "alkaline")
-    {
-        // Щелочная почва: высокий pH, проблемы с микроэлементами [Источник: Journal of Soil Science, 2022]
-        adjusted.humidity += 2.0F;
-        adjusted.ec -= 100.0F;
-        adjusted.ph += 1.0F;
-        adjusted.nitrogen *= 0.90F;    // -10% потери аммиака
-        adjusted.phosphorus *= 0.75F;  // -25% связывание кальцием
-        adjusted.potassium *= 0.95F;   // -5% умеренное снижение
-    }
-
-    return adjusted;
-}
 
 String CropRecommendationEngine::generateScientificRecommendations(const SensorData& data, const CropConfig& config,
                                                                    const String& cropType, const String& soilType)
@@ -622,7 +429,8 @@ String CropRecommendationEngine::generateScientificRecommendations(const SensorD
     }
 
     // Рекомендации по NPK с учетом типа почвы
-    if (data.nitrogen < config.nitrogen - 20.0F)
+    bool nitrogenDeficient = data.nitrogen < config.nitrogen - 20.0F;
+    if (nitrogenDeficient)
     {
         recommendations += "🌱 Азот (N) дефицитен. Рекомендуется: ";
         if (soilType == "sand")
@@ -700,6 +508,166 @@ String CropRecommendationEngine::generateScientificRecommendations(const SensorD
     }
 
     return recommendations;
+}
+
+// ============================================================================
+// НОВЫЕ МЕТОДЫ ДЛЯ СИСТЕМНОГО АЛГОРИТМА
+// ============================================================================
+
+CropConfig CropRecommendationEngine::getTableValues(const String& cropType) const
+{
+    auto it = cropConfigs.find(cropType);
+    if (it != cropConfigs.end()) {
+        return it->second;
+    }
+    return cropConfigs.at("generic");
+}
+
+CropConfig CropRecommendationEngine::applyGrowingTypeCorrection(const CropConfig& table, const String& growingType)
+{
+    CropConfig result = table;
+    
+    if (growingType == "greenhouse") {
+        // Теплица: контролируемая среда, интенсивное выращивание
+        result.temperature *= 1.05f;  // +5%
+        result.humidity *= 1.05f;     // +5%
+        result.ec *= 1.10f;           // +10%
+        result.nitrogen *= 1.15f;     // +15%
+        result.phosphorus *= 1.15f;   // +15%
+        result.potassium *= 1.15f;    // +15%
+    }
+    else if (growingType == "hydroponics") {
+        // Гидропоника: точный контроль питательных веществ
+        result.temperature *= 1.03f;  // +3%
+        result.humidity *= 1.02f;     // +2%
+        result.ec *= 1.20f;           // +20%
+        result.nitrogen *= 1.25f;     // +25%
+        result.phosphorus *= 1.25f;   // +25%
+        result.potassium *= 1.25f;    // +25%
+    }
+    else if (growingType == "aeroponics") {
+        // Аэропоника: максимальная эффективность
+        result.temperature *= 1.04f;  // +4%
+        result.humidity *= 1.03f;     // +3%
+        result.ec *= 1.18f;           // +18%
+        result.nitrogen *= 1.20f;     // +20%
+        result.phosphorus *= 1.20f;   // +20%
+        result.potassium *= 1.20f;    // +20%
+    }
+    else if (growingType == "organic") {
+        // Органическое выращивание: естественные процессы
+        result.temperature *= 0.99f;  // -1%
+        result.humidity *= 1.02f;     // +2%
+        result.ec *= 0.90f;           // -10%
+        result.nitrogen *= 0.90f;     // -10%
+        result.phosphorus *= 0.90f;   // -10%
+        result.potassium *= 0.90f;    // -10%
+    }
+    // outdoor: без изменений (0%)
+    
+    return result;
+}
+
+CropConfig CropRecommendationEngine::applySeasonalCorrection(const CropConfig& adjusted, const String& season)
+{
+    CropConfig result = adjusted;
+    
+    if (season == "spring") {
+        // Весна: активный рост, потребность в азоте
+        // ТОЛЬКО NPK - остальные параметры не изменяются
+        result.nitrogen *= 1.15f;     // +15% (консервативный)
+        result.phosphorus *= 1.10f;   // +10% (консервативный)
+        result.potassium *= 1.12f;    // +12% (консервативный)
+    }
+    else if (season == "summer") {
+        // Лето: жаркий период, потребность в калии
+        result.nitrogen *= 1.05f;     // +5%
+        result.phosphorus *= 1.03f;   // +3%
+        result.potassium *= 1.08f;    // +8%
+    }
+    else if (season == "autumn") {
+        // Осень: подготовка к зиме, потребность в фосфоре
+        result.nitrogen *= 0.95f;     // -5%
+        result.phosphorus *= 0.97f;   // -3%
+        result.potassium *= 0.92f;    // -8%
+    }
+    else if (season == "winter") {
+        // Зима: период покоя
+        result.nitrogen *= 0.90f;     // -10%
+        result.phosphorus *= 0.95f;   // -5%
+        result.potassium *= 0.85f;    // -15%
+    }
+    
+    return result;
+}
+
+CropConfig CropRecommendationEngine::getScientificallyCompensated(const SensorData& data, const String& cropType)
+{
+    // Пока используем существующий алгоритм компенсации как есть
+    // В будущем это будет отдельный трек данных
+    CropConfig result;
+    
+    // Базовые значения из таблицы
+    result = getTableValues(cropType);
+    
+    // Применяем существующие компенсации (температурные, влажностные)
+    // Это временное решение - в реальности здесь будет отдельный трек
+    result.temperature = data.temperature;  // Используем компенсированные данные
+    result.humidity = data.humidity;
+    result.ec = data.ec;
+    result.ph = data.ph;
+    result.nitrogen = data.nitrogen;
+    result.phosphorus = data.phosphorus;
+    result.potassium = data.potassium;
+    
+    return result;
+}
+
+CorrectionPercentages CropRecommendationEngine::calculateCorrectionPercentages(const CropConfig& table, const CropConfig& final)
+{
+    CorrectionPercentages percentages;
+    
+    // Рассчитываем проценты коррекции от табличных значений
+    percentages.temperature = ((final.temperature - table.temperature) / table.temperature) * 100.0f;
+    percentages.humidity = ((final.humidity - table.humidity) / table.humidity) * 100.0f;
+    percentages.ec = ((final.ec - table.ec) / table.ec) * 100.0f;
+    percentages.ph = ((final.ph - table.ph) / table.ph) * 100.0f;
+    percentages.nitrogen = ((final.nitrogen - table.nitrogen) / table.nitrogen) * 100.0f;
+    percentages.phosphorus = ((final.phosphorus - table.phosphorus) / table.phosphorus) * 100.0f;
+    percentages.potassium = ((final.potassium - table.potassium) / table.potassium) * 100.0f;
+    
+    return percentages;
+}
+
+ColorIndicators CropRecommendationEngine::calculateColorIndicators(const CropConfig& final, const CropConfig& scientific)
+{
+    ColorIndicators colors;
+    
+    // Функция для определения цвета на основе отклонения
+    auto getColor = [](float deviation) -> String {
+        if (abs(deviation) <= 10.0f) return "green";      // ±10% - зеленый
+        if (abs(deviation) <= 25.0f) return "yellow";     // ±25% - желтый
+        return "red";                                      // >25% - красный
+    };
+    
+    // Рассчитываем отклонения от научно компенсированных значений
+    float tempDeviation = ((final.temperature - scientific.temperature) / scientific.temperature) * 100.0f;
+    float humidityDeviation = ((final.humidity - scientific.humidity) / scientific.humidity) * 100.0f;
+    float ecDeviation = ((final.ec - scientific.ec) / scientific.ec) * 100.0f;
+    float phDeviation = ((final.ph - scientific.ph) / scientific.ph) * 100.0f;
+    float nitrogenDeviation = ((final.nitrogen - scientific.nitrogen) / scientific.nitrogen) * 100.0f;
+    float phosphorusDeviation = ((final.phosphorus - scientific.phosphorus) / scientific.phosphorus) * 100.0f;
+    float potassiumDeviation = ((final.potassium - scientific.potassium) / scientific.potassium) * 100.0f;
+    
+    colors.temperature = getColor(tempDeviation);
+    colors.humidity = getColor(humidityDeviation);
+    colors.ec = getColor(ecDeviation);
+    colors.ph = getColor(phDeviation);
+    colors.nitrogen = getColor(nitrogenDeviation);
+    colors.phosphorus = getColor(phosphorusDeviation);
+    colors.potassium = getColor(potassiumDeviation);
+    
+    return colors;
 }
 
 String CropRecommendationEngine::generateScientificNotes(const SensorData& /*data*/, const CropConfig& /*config*/,
@@ -998,20 +966,28 @@ RecValues CropRecommendationEngine::computeRecommendations(const String& cropId,
 
 void CropRecommendationEngine::applySeasonalCorrection(RecValues& rec, Season season, bool isGreenhouse)
 {
-    // Простая реализация сезонных корректировок
+    // ✅ ПРАВИЛЬНАЯ РЕАЛИЗАЦИЯ СЕЗОННЫХ КОРРЕКТИРОВОК (согласно документации)
     switch (season)
     {
         case Season::SPRING:
-            rec.n *= 1.1F;  // +10% азота весной
+            rec.n *= 1.15F;  // +15% азота весной
+            rec.p *= 1.10F;  // +10% фосфора весной
+            rec.k *= 1.12F;  // +12% калия весной
             break;
         case Season::SUMMER:
-            rec.k *= 1.15F;  // +15% калия летом
+            rec.n *= 1.05F;  // +5% азота летом
+            rec.p *= 1.03F;  // +3% фосфора летом
+            rec.k *= 1.08F;  // +8% калия летом
             break;
         case Season::AUTUMN:
-            rec.p *= 1.1F;  // +10% фосфора осенью
+            rec.n *= 0.95F;  // -5% азота осенью
+            rec.p *= 0.97F;  // -3% фосфора осенью
+            rec.k *= 0.92F;  // -8% калия осенью
             break;
         case Season::WINTER:
-            rec.ec *= 0.9F;  // -10% EC зимой
+            rec.n *= 0.90F;  // -10% азота зимой
+            rec.p *= 0.95F;  // -5% фосфора зимой
+            rec.k *= 0.85F;  // -15% калия зимой
             break;
     }
 
@@ -1029,9 +1005,21 @@ void CropRecommendationEngine::applySeasonalCorrection(RecValues& rec, Season se
 String CropRecommendationEngine::generateCropSpecificRecommendations(const String& cropName, 
                                                                    const NPKReferences& npk,
                                                                    SoilType soilType, 
-                                                                   float pH)
+                                                                   float pH,
+                                                                   const String& season)
 {
     String recommendations = "";
+    
+    // Используем стандартные пороги дефицита (без сезонных корректировок)
+    // Согласно логике: "сырые значения потом коррекция, затем научная компенсация и на этом все"
+    float nitrogenThreshold = 100.0F;
+    float phosphorusThreshold = 50.0F;
+    float potassiumThreshold = 150.0F;
+    
+    // Определяем общие дефициты на основе стандартных порогов
+    bool nitrogenDeficient = npk.nitrogen < nitrogenThreshold;
+    bool phosphorusDeficient = npk.phosphorus < phosphorusThreshold;
+    bool potassiumDeficient = npk.potassium < potassiumThreshold;
     
     // 🔍 СПЕЦИФИЧЕСКИЕ ТРЕБОВАНИЯ КУЛЬТУР К ДОПОЛНИТЕЛЬНЫМ ЭЛЕМЕНТАМ
     
@@ -1055,111 +1043,207 @@ String CropRecommendationEngine::generateCropSpecificRecommendations(const Strin
     }
     
     else if (cropName == "cucumber" || cropName == "огурец") {
-        // Огурцы требуют много калия и магния
-        if (npk.potassium < 200.0F) {
-            recommendations += "🥒 Огурцы → KNO3\n";
+        // Огурцы требуют много калия для качества плодов
+        // Проверяем только если общий дефицит калия не был уже определен
+        if (!potassiumDeficient && npk.potassium < 200.0F) {
+            recommendations += "🥒 Огурцы требуют калий для качества плодов. ";
+            recommendations += "Рекомендуется: внести калийную селитру (KNO3) или сульфат калия (K2SO4)\n";
         }
         
-        // Огурцы чувствительны к дефициту бора (исправлен порог)
-        if (pH > 7.0F) {  // Снижен с 7.5 до 7.0 для научной точности
-            recommendations += "🥒 Огурцы → бор H3BO3\n";
+        // Огурцы чувствительны к дефициту бора для завязывания плодов
+        if (pH > 7.5F) {  // Стандартный порог для доступности бора¹
+            recommendations += "🥒 Огурцы требуют бор для завязывания плодов. ";
+            recommendations += "Рекомендуется: внести борную кислоту (H3BO3) или борат натрия (Na2B4O7)\n";
         }
         
         // УДАЛЕНО: дублирует антагонизм K→Mg из nutrient_interactions
+        
+        // Огурцы требуют кальций для качества плодов
+        if (pH < 6.0F || npk.potassium > 250.0F) {
+            recommendations += "🥒 Огурцы требуют кальций для качества плодов. ";
+            recommendations += "Рекомендуется: внести кальциевую селитру (Ca(NO3)2) или хлорид кальция (CaCl2)\n";
+        }
+        
+        // Огурцы нуждаются в магнии для фотосинтеза
+        if (npk.potassium > 300.0F || pH > 7.0F) {
+            recommendations += "🥒 Огурцы требуют магний для фотосинтеза. ";
+            recommendations += "Рекомендуется: внести сульфат магния (MgSO4) или доломитовую муку\n";
+        }
     }
     
     else if (cropName == "pepper" || cropName == "перец") {
-        // Перец требует цинк при высоком фосфоре (исправлен порог)
-        if (npk.phosphorus > 100.0F) {  // Снижен с 250 до 100 для научной точности
-            recommendations += "🌶️ Перец → цинк Zn-EDTA\n";
+        // Перец требует цинк при высоком фосфоре (антагонизм P→Zn)
+        if (npk.phosphorus > 100.0F) {  // Консервативный порог для антагонизма P→Zn (исследования показывают 100 мг/кг)
+            recommendations += "🌶️ Перец требует цинк при высоком фосфоре. ";
+            recommendations += "Рекомендуется: внести хелат цинка (Zn-EDTA) или сульфат цинка (ZnSO4)\n";
         }
         
-        // Перец чувствителен к дефициту кальция
+        // Перец чувствителен к дефициту кальция (вершинная гниль)
         if (pH < 6.5F) {  // Расширен с 6.0 до 6.5
-            recommendations += "🌶️ Перец → кальций\n";
+            recommendations += "🌶️ Перец требует кальций против вершинной гнили. ";
+            recommendations += "Рекомендуется: внести кальциевую селитру (Ca(NO3)2) или хлорид кальция (CaCl2)\n";
         }
         
-        // Перец нуждается в боре для цветения
+        // Перец нуждается в боре для завязывания плодов
         if (pH > 7.0F || npk.potassium > 300.0F) {
             recommendations += "🌶️ Перец требует бор для завязывания плодов. ";
-            recommendations += "Рекомендуется: внести борную кислоту (H3BO3)\n";
+            recommendations += "Рекомендуется: внести борную кислоту (H3BO3) или борат натрия (Na2B4O7)\n";
+        }
+        
+        // Перец требует калий для качества плодов
+        // Проверяем только если общий дефицит калия не был уже определен
+        if (!potassiumDeficient && npk.potassium < 180.0F) {
+            recommendations += "🌶️ Перец требует калий для качества и остроты плодов. ";
+            recommendations += "Рекомендуется: внести сульфат калия (K2SO4) или хлористый калий (KCl)\n";
+        }
+        
+        // Перец нуждается в магнии для фотосинтеза
+        if (npk.potassium > 350.0F || pH > 7.0F) {
+            recommendations += "🌶️ Перец требует магний для фотосинтеза. ";
+            recommendations += "Рекомендуется: внести сульфат магния (MgSO4) или доломитовую муку\n";
         }
     }
     
     else if (cropName == "lettuce" || cropName == "салат") {
-        // Салат требует много азота и серы
+        // Салат требует серу для синтеза белка при высоком азоте
         if (npk.nitrogen > 250.0F) {
-            recommendations += "🥬 Салат → сера (NH4)2SO4\n";
+            recommendations += "🥬 Салат требует серу для синтеза белка. ";
+            recommendations += "Рекомендуется: внести сульфат аммония ((NH4)2SO4) или элементарную серу (S)\n";
         }
         
-        // Салат чувствителен к дефициту железа
+        // Салат чувствителен к дефициту железа при высоком pH (хлороз)
         if (pH > 7.0F) {
-            recommendations += "🥬 Салат → железо Fe-EDTA\n";
+            recommendations += "🥬 Салат требует железо для предотвращения хлороза. ";
+            recommendations += "Рекомендуется: внести хелатное железо (Fe-EDTA) или сульфат железа (FeSO4)\n";
+        }
+        
+        // Салат требует много азота для быстрого роста листьев
+        // Проверяем только если общий дефицит азота не был уже определен
+        if (!nitrogenDeficient && npk.nitrogen < 150.0F) {
+            recommendations += "🥬 Салат требует много азота для интенсивного роста листьев. ";
+            recommendations += "Рекомендуется: внести аммиачную селитру (NH4NO3) или мочевину (CO(NH2)2)\n";
+        }
+        
+        // Салат нуждается в кальции для качества листьев
+        if (pH < 6.0F || npk.potassium > 200.0F) {
+            recommendations += "🥬 Салат требует кальций для качества листьев. ";
+            recommendations += "Рекомендуется: внести кальциевую селитру (Ca(NO3)2) или хлорид кальция (CaCl2)\n";
         }
     }
     
     else if (cropName == "blueberry" || cropName == "черника") {
-        // Черника требует кислую почву и много железа
+        // Черника требует кислую почву (pH 4.0-5.5) для усвоения железа
         if (pH > 5.5F) {
-            recommendations += "🫐 Черника → подкислить\n";
+            recommendations += "🫐 Черника требует кислую почву для усвоения железа. ";
+            recommendations += "Рекомендуется: внести элементарную серу (S) или сульфат аммония ((NH4)2SO4)\n";
         }
         
-        // Черника чувствительна к дефициту железа
+        // Черника чувствительна к дефициту железа при высоком pH (хлороз)
         if (pH > 5.0F) {
-            recommendations += "🫐 Черника → Fe-EDTA\n";
+            recommendations += "🫐 Черника требует железо для предотвращения хлороза. ";
+            recommendations += "Рекомендуется: внести хелатное железо (Fe-EDTA) или сульфат железа (FeSO4)\n";
         }
         
-        // Черника нуждается в марганце в кислой почве
+        // Черника нуждается в марганце в кислой почве для фотосинтеза
         if (pH < 5.5F && npk.nitrogen > 100.0F) {
-            recommendations += "🫐 Черника → MnSO4\n";
+            recommendations += "🫐 Черника требует марганец для фотосинтеза. ";
+            recommendations += "Рекомендуется: внести сульфат марганца (MnSO4) или хелат марганца (Mn-EDTA)\n";
+        }
+        
+        // Черника требует аммонийный азот вместо нитратного
+        // Проверяем только если общий дефицит азота не был уже определен
+        if (!nitrogenDeficient && npk.nitrogen < 80.0F && pH < 5.5F) {
+            recommendations += "🫐 Черника предпочитает аммонийный азот. ";
+            recommendations += "Рекомендуется: внести сульфат аммония ((NH4)2SO4) вместо нитратов\n";
         }
     }
     
     else if (cropName == "strawberry" || cropName == "клубника") {
-        // Клубника требует кальций для качества ягод
+        // Клубника требует кальций для качества ягод (против гнили)
         if (pH < 6.0F) {
-            recommendations += "🍓 Клубника → Ca(NO3)2\n";
+            recommendations += "🍓 Клубника требует кальций для качества ягод. ";
+            recommendations += "Рекомендуется: внести кальциевую селитру (Ca(NO3)2) или хлорид кальция (CaCl2)\n";
         }
         
-        // Клубника нуждается в боре для опыления
+        // Клубника нуждается в боре для опыления и развития плодов
         if (pH > 6.5F || npk.potassium > 200.0F) {
-            recommendations += "🍓 Клубника → бор H3BO3\n";
+            recommendations += "🍓 Клубника требует бор для опыления и развития плодов. ";
+            recommendations += "Рекомендуется: внести борную кислоту (H3BO3) или борат натрия (Na2B4O7)\n";
         }
         
-        // Клубника чувствительна к дефициту цинка
+        // Клубника чувствительна к дефициту цинка при высоком фосфоре
         if (npk.phosphorus > 80.0F) {
-            recommendations += "🍓 Клубника → цинк Zn-EDTA\n";
+            recommendations += "🍓 Клубника требует цинк для синтеза ауксинов. ";
+            recommendations += "Рекомендуется: внести хелат цинка (Zn-EDTA) или сульфат цинка (ZnSO4)\n";
+        }
+        
+        // Клубника требует калий для качества ягод
+        // Проверяем только если общий дефицит калия не был уже определен
+        if (!potassiumDeficient && npk.potassium < 150.0F) {
+            recommendations += "🍓 Клубника требует калий для качества и сладости ягод. ";
+            recommendations += "Рекомендуется: внести сульфат калия (K2SO4) или хлористый калий (KCl)\n";
         }
     }
     
     else if (cropName == "apple" || cropName == "яблоня") {
-        // Яблоня требует кальций против горькой ямчатости
+        // Яблоня требует кальций против горькой ямчатости плодов
         if (pH < 6.5F || npk.potassium > 250.0F) {
-            recommendations += "🍎 Яблоня → кальций\n";
+            recommendations += "🍎 Яблоня требует кальций против горькой ямчатости плодов. ";
+            recommendations += "Рекомендуется: внести кальциевую селитру (Ca(NO3)2) или хлорид кальция (CaCl2)\n";
         }
         
-        // Яблоня нуждается в боре для развития плодов
+        // Яблоня нуждается в боре для развития плодов и опыления
         if (pH > 7.0F) {
-            recommendations += "🍎 Яблоня → бор H3BO3\n";
+            recommendations += "🍎 Яблоня требует бор для развития плодов и опыления. ";
+            recommendations += "Рекомендуется: внести борную кислоту (H3BO3) или борат натрия (Na2B4O7)\n";
         }
         
-        // Яблоня чувствительна к дефициту цинка (розеточность)
+        // Яблоня чувствительна к дефициту цинка (розеточность листьев)
         if (pH > 7.0F || npk.phosphorus > 60.0F) {
-            recommendations += "🍎 Яблоня → цинк ZnSO4\n";
+            recommendations += "🍎 Яблоня требует цинк для предотвращения розеточности листьев. ";
+            recommendations += "Рекомендуется: внести сульфат цинка (ZnSO4) или хелат цинка (Zn-EDTA)\n";
+        }
+        
+        // Яблоня требует калий для качества плодов
+        // Проверяем только если общий дефицит калия не был уже определен
+        if (!potassiumDeficient && npk.potassium < 180.0F) {
+            recommendations += "🍎 Яблоня требует калий для качества и лежкости плодов. ";
+            recommendations += "Рекомендуется: внести сульфат калия (K2SO4) или хлористый калий (KCl)\n";
+        }
+        
+        // Яблоня нуждается в магнии для фотосинтеза
+        if (npk.potassium > 300.0F || pH > 7.0F) {
+            recommendations += "🍎 Яблоня требует магний для фотосинтеза. ";
+            recommendations += "Рекомендуется: внести сульфат магния (MgSO4) или доломитовую муку\n";
         }
     }
     
     else if (cropName == "grape" || cropName == "виноград") {
-        // Виноград требует калий для качества ягод
-        if (npk.potassium < 200.0F) {
-            recommendations += "🍇 Виноград → K2SO4\n";
+        // Виноград требует калий для качества ягод и сахаристости
+        // Проверяем только если общий дефицит калия не был уже определен
+        if (!potassiumDeficient && npk.potassium < 200.0F) {
+            recommendations += "🍇 Виноград требует калий для качества ягод и сахаристости. ";
+            recommendations += "Рекомендуется: внести сульфат калия (K2SO4) или хлористый калий (KCl)\n";
         }
         
         // УДАЛЕНО: дублирует антагонизм K→Mg из nutrient_interactions
         
-        // Виноград чувствителен к дефициту бора
+        // Виноград чувствителен к дефициту бора для опыления
         if (pH > 7.0F) {
-            recommendations += "🍇 Виноград → бор H3BO3\n";
+            recommendations += "🍇 Виноград требует бор для опыления и развития ягод. ";
+            recommendations += "Рекомендуется: внести борную кислоту (H3BO3) или борат натрия (Na2B4O7)\n";
+        }
+        
+        // Виноград требует кальций для качества ягод
+        if (pH < 6.0F || npk.potassium > 250.0F) {
+            recommendations += "🍇 Виноград требует кальций для качества ягод. ";
+            recommendations += "Рекомендуется: внести кальциевую селитру (Ca(NO3)2) или хлорид кальция (CaCl2)\n";
+        }
+        
+        // Виноград нуждается в магнии для фотосинтеза
+        if (npk.potassium > 300.0F || pH > 7.0F) {
+            recommendations += "🍇 Виноград требует магний для фотосинтеза. ";
+            recommendations += "Рекомендуется: внести сульфат магния (MgSO4) или доломитовую муку\n";
         }
     }
     
@@ -1177,7 +1261,8 @@ String CropRecommendationEngine::generateCropSpecificRecommendations(const Strin
         }
         
         // Шпинат требует много азота для быстрого роста
-        if (npk.nitrogen < 200.0F) {
+        // Проверяем только если общий дефицит азота не был уже определен
+        if (!nitrogenDeficient && npk.nitrogen < 200.0F) {
             recommendations += "🥬 Шпинат требует много азота для интенсивного роста листьев. ";
             recommendations += "Рекомендуется: внести азотные удобрения (NH4NO3)\n";
         }
@@ -1185,7 +1270,8 @@ String CropRecommendationEngine::generateCropSpecificRecommendations(const Strin
     
     else if (cropName == "basil" || cropName == "базилик") {
         // Базилик требует калий для развития эфирных масел
-        if (npk.potassium < 200.0F) {
+        // Проверяем только если общий дефицит калия не был уже определен
+        if (!potassiumDeficient && npk.potassium < 200.0F) {
             recommendations += "🌿 Базилик требует калий для синтеза эфирных масел. ";
             recommendations += "Рекомендуется: внести калийную селитру (KNO3)\n";
         }
@@ -1205,19 +1291,22 @@ String CropRecommendationEngine::generateCropSpecificRecommendations(const Strin
     
     else if (cropName == "cannabis" || cropName == "конопля") {
         // Конопля требует много азота в вегетативной фазе
-        if (npk.nitrogen < 160.0F) {
+        // Проверяем только если общий дефицит азота не был уже определен
+        if (!nitrogenDeficient && npk.nitrogen < 160.0F) {
             recommendations += "🌿 Конопля требует много азота для роста листьев. ";
             recommendations += "Рекомендуется: внести азотные удобрения (NH4NO3)\n";
         }
         
         // Конопля нуждается в фосфоре для цветения
-        if (npk.phosphorus < 40.0F) {
+        // Проверяем только если общий дефицит фосфора не был уже определен
+        if (!phosphorusDeficient && npk.phosphorus < 40.0F) {
             recommendations += "🌿 Конопля требует фосфор для развития соцветий. ";
             recommendations += "Рекомендуется: внести фосфорные удобрения (H3PO4)\n";
         }
         
         // Конопля требует калий для качества продукции
-        if (npk.potassium < 200.0F) {
+        // Проверяем только если общий дефицит калия не был уже определен
+        if (!potassiumDeficient && npk.potassium < 200.0F) {
             recommendations += "🌿 Конопля требует калий для синтеза активных веществ. ";
             recommendations += "Рекомендуется: внести калийную селитру (KNO3)\n";
         }
@@ -1237,12 +1326,14 @@ String CropRecommendationEngine::generateCropSpecificRecommendations(const Strin
     
     else if (cropName == "wheat" || cropName == "пшеница") {
         // Пшеница требует много азота для формирования белка
-        if (npk.nitrogen < 200.0F) {
+        // Проверяем только если общий дефицит азота не был уже определен
+        if (!nitrogenDeficient && npk.nitrogen < 200.0F) {
             recommendations += "🌾 Пшеница → азот NH4NO3\n";
         }
         
         // Пшеница нуждается в фосфоре для развития корневой системы
-        if (npk.phosphorus < 50.0F) {
+        // Проверяем только если общий дефицит фосфора не был уже определен
+        if (!phosphorusDeficient && npk.phosphorus < 50.0F) {
             recommendations += "🌾 Пшеница → фосфор\n";
         }
         
@@ -1252,14 +1343,16 @@ String CropRecommendationEngine::generateCropSpecificRecommendations(const Strin
         }
         
         // Пшеница нуждается в калии для устойчивости к болезням
-        if (npk.potassium < 150.0F) {
+        // Проверяем только если общий дефицит калия не был уже определен
+        if (!potassiumDeficient && npk.potassium < 150.0F) {
             recommendations += "🌾 Пшеница → калий KCl\n";
         }
     }
     
     else if (cropName == "potato" || cropName == "картофель") {
         // Картофель требует много калия для качества клубней
-        if (npk.potassium < 250.0F) {
+        // Проверяем только если общий дефицит калия не был уже определен
+        if (!potassiumDeficient && npk.potassium < 250.0F) {
             recommendations += "🥔 Картофель требует калий для качества клубней. ";
             recommendations += "Рекомендуется: внести калийную селитру (KNO3)\n";
         }
@@ -1351,13 +1444,15 @@ String CropRecommendationEngine::generateCropSpecificRecommendations(const Strin
     
     else if (cropName == "soybean" || cropName == "соя") {
         // Соя требует фосфор для азотфиксации
-        if (npk.phosphorus < 40.0F) {
+        // Проверяем только если общий дефицит фосфора не был уже определен
+        if (!phosphorusDeficient && npk.phosphorus < 40.0F) {
             recommendations += "🌱 Соя требует фосфор для работы клубеньковых бактерий. ";
             recommendations += "Рекомендуется: внести суперфосфат (Ca(H2PO4)2)\n";
         }
         
         // Соя нуждается в калии для налива бобов
-        if (npk.potassium < 200.0F) {
+        // Проверяем только если общий дефицит калия не был уже определен
+        if (!potassiumDeficient && npk.potassium < 200.0F) {
             recommendations += "🌱 Соя требует калий для формирования бобов. ";
             recommendations += "Рекомендуется: внести хлорид калия (KCl)\n";
         }
@@ -1389,7 +1484,8 @@ String CropRecommendationEngine::generateCropSpecificRecommendations(const Strin
         }
         
         // Морковь требует калий для качества и лежкости
-        if (npk.potassium < 200.0F) {
+        // Проверяем только если общий дефицит калия не был уже определен
+        if (!potassiumDeficient && npk.potassium < 200.0F) {
             recommendations += "🥕 Морковь требует калий для сладости и лежкости. ";
             recommendations += "Рекомендуется: внести калийную селитру (KNO3)\n";
         }
@@ -1404,28 +1500,56 @@ String CropRecommendationEngine::generateCropSpecificRecommendations(const Strin
     // 🌱 ДОБАВЛЯЕМ НЕДОСТАЮЩИЕ КУЛЬТУРЫ
     
     else if (cropName == "lawn" || cropName == "газон") {
-        // Газон требует регулярный азот для роста
-        if (npk.nitrogen < 80.0F) {
-            recommendations += "🌱 Газон требует азот для активного роста травы. ";
-            recommendations += "Рекомендуется: внести азотные удобрения (NH4NO3)\n";
-        }
-        
-        // Газон нуждается в калии для устойчивости к засухе
-        if (npk.potassium < 100.0F) {
-            recommendations += "🌱 Газон требует калий для устойчивости к стрессам. ";
-            recommendations += "Рекомендуется: внести калийную селитру (KNO3)\n";
-        }
-        
-        // Газон чувствителен к дефициту железа (желтые пятна)
-        if (pH > 7.0F) {
-            recommendations += "🌱 Газон требует железо для предотвращения хлороза. ";
-            recommendations += "Рекомендуется: внести хелатное железо (Fe-EDTA)\n";
+        // Газон требует азот для роста листьев (N:P:K = 3:1:2 для газонов)
+        // Проверяем только если общий дефицит азота не был уже определен
+        // Используем стандартный порог без сезонных корректировок
+        if (!nitrogenDeficient && npk.nitrogen < 120.0F) {
+            recommendations += "🌱 Газон требует азот для активного роста листьев. ";
+            recommendations += "Рекомендуется: внести мочевину (CO(NH2)2) или аммиачную селитру (NH4NO3)\n";
         }
         
         // Газон нуждается в фосфоре для развития корневой системы
-        if (npk.phosphorus < 30.0F) {
-            recommendations += "🌱 Газон требует фосфор для развития корней. ";
-            recommendations += "Рекомендуется: внести суперфосфат (Ca(H2PO4)2)\n";
+        // Проверяем только если общий дефицит фосфора не был уже определен
+        if (!phosphorusDeficient && npk.phosphorus < 40.0F) {
+            recommendations += "🌱 Газон требует фосфор для развития корневой системы. ";
+            recommendations += "Рекомендуется: внести суперфосфат (Ca(H2PO4)2) или диаммофос (NH4H2PO4)\n";
+        }
+        
+        // Газон требует калий для устойчивости к засухе и болезням
+        // Проверяем только если общий дефицит калия не был уже определен
+        if (!potassiumDeficient && npk.potassium < 80.0F) {
+            recommendations += "🌱 Газон требует калий для устойчивости к стрессам и болезням. ";
+            recommendations += "Рекомендуется: внести хлористый калий (KCl) или сульфат калия (K2SO4)\n";
+        }
+        
+        // Газон чувствителен к дефициту железа при высоком pH (желтые пятна)
+        if (pH > 7.0F) {
+            recommendations += "🌱 Газон требует железо для предотвращения хлороза. ";
+            recommendations += "Рекомендуется: внести хелатное железо (Fe-EDTA) или сульфат железа (FeSO4)\n";
+        }
+        
+        // Газон нуждается в кальции для структуры почвы
+        if (pH < 6.0F) {
+            recommendations += "🌱 Газон требует кальций для улучшения структуры почвы. ";
+            recommendations += "Рекомендуется: внести кальциевую селитру (Ca(NO3)2) или известь (CaCO3)\n";
+        }
+        
+        // Газон чувствителен к дефициту магния при высоком калии
+        if (npk.potassium > 200.0F && pH > 6.5F) {
+            recommendations += "🌱 Высокий калий может блокировать магний у газона. ";
+            recommendations += "Рекомендуется: внести сульфат магния (MgSO4) или доломитовую муку\n";
+        }
+        
+        // Газон требует серу для синтеза белка (особенно при высоком азоте)
+        if (npk.nitrogen > 150.0F && pH > 7.0F) {
+            recommendations += "🌱 Газон требует серу для синтеза белка. ";
+            recommendations += "Рекомендуется: внести сульфат аммония ((NH4)2SO4) или элементарную серу\n";
+        }
+        
+        // Газон нуждается в микроэлементах при интенсивном использовании
+        if (npk.nitrogen > 200.0F && npk.phosphorus > 60.0F) {
+            recommendations += "🌱 Газон требует микроэлементы при интенсивном питании. ";
+            recommendations += "Рекомендуется: внести комплексное микроудобрение (Zn, Mn, Cu, B)\n";
         }
     }
     
