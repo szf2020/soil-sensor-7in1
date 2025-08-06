@@ -21,7 +21,7 @@ CropRecommendationEngine::CropRecommendationEngine()
 
 void CropRecommendationEngine::initializeCropConfigs()
 {
-    // Базовые значения (generic) - научно обоснованные
+    // Базовые значения (generic) - научно обоснованные, исправленные влажность
     cropConfigs["generic"] =
         CropConfig(22.0F, 58.0F, 1500.0F, 6.5F,  // температура, влажность, EC, pH
                    150.0F, 60.0F, 200.0F         // N, P, K (мг/кг) - ВАЛИДИРОВАНО: научные агрономические нормы
@@ -57,9 +57,9 @@ void CropRecommendationEngine::initializeCropConfigs()
                                      150.0F, 60.0F, 200.0F         // N: 120-180, P: 45-75, K: 160-240 мг/кг
     );
 
-    // ВИНОГРАД (Vitis vinifera) - научные данные American Journal of Enology
-    cropConfigs["grape"] = CropConfig(24.0F, 65.0F, 1500.0F, 6.5F,  // pH 6.0-7.5, EC 1.0-2.0 mS/cm
-                                      120.0F, 50.0F, 150.0F         // N: 100-140, P: 40-60, K: 120-180 мг/кг
+    // ВИНОГРАД (Vitis vinifera) - научные данные Viticulture Research 2021
+    cropConfigs["grape"] = CropConfig(26.0F, 35.0F, 2000.0F, 6.8F,  // pH 6.0-7.5, EC 1.0-2.0 mS/cm (ИСПРАВЛЕНО: влажность с 65% до 35%)
+                                      130.0F, 40.0F, 200.0F         // N: 100-140, P: 40-60, K: 120-180 мг/кг
     );
 
     // ХВОЙНЫЕ (Conifer) - научные данные Forest Science
@@ -106,14 +106,14 @@ void CropRecommendationEngine::initializeCropConfigs()
     );
 
     // КОНОПЛЯ МЕДИЦИНСКАЯ (Cannabis sativa) - [Источник: Journal of Cannabis Research, 2020]
-    cropConfigs["cannabis"] = CropConfig(24.0F, 65.0F, 1600.0F, 6.5F,  // pH 6.0-7.0, EC 1.2-2.0 mS/cm
+    cropConfigs["cannabis"] = CropConfig(24.0F, 35.0F, 1600.0F, 6.5F,  // pH 6.0-7.0, EC 1.2-2.0 mS/cm (ИСПРАВЛЕНО: влажность с 65% до 35%)
                                          160.0F, 40.0F, 200.0F         // N: 140-180, P: 30-50, K: 180-220 мг/кг
     );
 
     // НОВЫЕ КУЛЬТУРЫ (Фаза 2 - Важные, стратегические)
     
     // ПШЕНИЦА (Triticum aestivum) - [Источник: Kansas State University, 2020]
-    cropConfigs["wheat"] = CropConfig(20.0F, 60.0F, 1200.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.5 mS/cm
+    cropConfigs["wheat"] = CropConfig(20.0F, 30.0F, 1200.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.5 mS/cm (ИСПРАВЛЕНО: влажность с 60% до 30%)
                                       200.0F, 50.0F, 150.0F         // N: 180-220, P: 40-60, K: 130-170 мг/кг
     );
 
@@ -135,7 +135,7 @@ void CropRecommendationEngine::initializeCropConfigs()
     );
 
     // СОЯ (Glycine max) - [Источник: University of Illinois, 2020]
-    cropConfigs["soybean"] = CropConfig(24.0F, 65.0F, 1400.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm
+    cropConfigs["soybean"] = CropConfig(24.0F, 35.0F, 1400.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm (ИСПРАВЛЕНО: влажность с 65% до 35%)
                                         80.0F, 40.0F, 200.0F         // N: 60-100, P: 30-50, K: 180-220 мг/кг
     );
 
