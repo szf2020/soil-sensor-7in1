@@ -280,16 +280,16 @@ RecommendationResult CropRecommendationEngine::generateRecommendation(const Sens
     // 3. Применяем коррекцию типа почвы (ВТОРАЯ, консервативные коэффициенты)
     result.soilTypeAdjusted = applySoilTypeCorrection(result.growingTypeAdjusted, params.soilType);
     
-    // 4. Применяем сезонную коррекцию (ТРЕТЬЯ, только NPK)
+    // 4. Применяем сезонную коррекцию (ЧЕТВЕРТАЯ, только NPK)
     result.finalCalculated = applySeasonalCorrection(result.soilTypeAdjusted, params.season);
     
-    // 4. Получаем научно компенсированные значения (для сравнения)
+    // 5. Получаем научно компенсированные значения (для сравнения)
     result.scientificallyCompensated = getScientificallyCompensated(compensatedData, params.cropType);
     
-    // 5. Рассчитываем проценты коррекции от табличных значений
+    // 6. Рассчитываем проценты коррекции от табличных значений
     result.correctionPercentages = calculateCorrectionPercentages(result.tableValues, result.finalCalculated);
     
-    // 6. Определяем цвета на основе сравнения с научно компенсированными
+    // 7. Определяем цвета на основе сравнения с научно компенсированными
     result.colorIndicators = calculateColorIndicators(result.finalCalculated, result.scientificallyCompensated);
     
     // Для совместимости с существующим кодом используем finalCalculated
@@ -677,14 +677,13 @@ CropConfig CropRecommendationEngine::getScientificallyCompensated(const SensorDa
     // Базовые значения из таблицы
     result = getTableValues(cropType);
     
-    // Применяем существующие компенсации (температурные, влажностные)
-    // Это временное решение - в реальности здесь будет отдельный трек
-    result.temperature = data.temperature;  // Используем компенсированные данные
+    // ✅ ИСПРАВЛЕНО: Оставляем scientificallyCompensated в VWC единицах
+    // Температура: не меняется при компенсации
+    result.temperature = data.temperature;
     
-    // Влажность: конвертируем VWC в ASM для отображения во второй колонке
-    SensorCompensationService compensationService;
-    SoilType soilType = static_cast<SoilType>(config.soilProfile);
-    result.humidity = compensationService.vwcToAsm(data.humidity / 100.0F, soilType);
+    // Влажность: оставляем в VWC для корректных сравнений
+    // Конвертация в ASM только для отображения во второй колонке
+    result.humidity = data.humidity;
     
     result.ec = data.ec;
     result.ph = data.ph;
@@ -731,8 +730,9 @@ ColorIndicators CropRecommendationEngine::calculateColorIndicators(const CropCon
     float phosphorusDeviation = ((final.phosphorus - scientific.phosphorus) / scientific.phosphorus) * 100.0f;
     float potassiumDeviation = ((final.potassium - scientific.potassium) / scientific.potassium) * 100.0f;
     
-    colors.temperature = getColor(tempDeviation);
-    colors.humidity = getColor(humidityDeviation);
+    // ✅ ИСПРАВЛЕНО: Не красим температуру (не меняется) и влажность (результат пересчета)
+    colors.temperature = "gray";  // Температура не меняется при компенсации
+    colors.humidity = "gray";     // Влажность - результат пересчета VWC→ASM
     colors.ec = getColor(ecDeviation);
     colors.ph = getColor(phDeviation);
     colors.nitrogen = getColor(nitrogenDeviation);

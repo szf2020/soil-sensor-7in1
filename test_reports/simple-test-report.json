@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-08-06T22:24:16.333742",
+  "timestamp": "2025-08-06T22:41:38.067606",
   "version": "3.7.0",
   "platform": "Windows",
   "test_results": {
@@ -30,7 +30,7 @@
     },
     "esp32_build": {
       "status": "PASS",
-      "firmware_size": 1414064
+      "firmware_size": 1413808
     },
     "esp32_tests": {
       "status": "SKIPPED",
