@@ -164,8 +164,9 @@ void handleProfileSave()
 // ✅ Функция для безопасной санитизации JSON строк
 String sanitizeForJson(const String& input) {
     String sanitized = input;
-    sanitized.replace("\"", "\\\"");
-    sanitized.replace("\\", "\\\\");
+    sanitized.replace("\\", "\\\\");  // Сначала обратные слеши
+    sanitized.replace("\"", "\\\"");  // Потом кавычки
+    sanitized.replace("/", "\\/");    // Экранирование слешей
     sanitized.replace("\n", "\\n");
     sanitized.replace("\r", "\\r");
     sanitized.replace("\t", "\\t");
