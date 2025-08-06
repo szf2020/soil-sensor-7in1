@@ -14,6 +14,25 @@
 struct SensorData;  // Предварительное объявление
 struct RecommendationResult;  // Предварительное объявление
 
+// Структура конфигурации культуры
+struct CropConfig
+{
+    float temperature;  // °C
+    float humidity;     // %
+    float ec;           // μS/cm
+    float ph;           // pH
+    float nitrogen;     // мг/кг
+    float phosphorus;   // мг/кг
+    float potassium;    // мг/кг
+
+    CropConfig() : temperature(0), humidity(0), ec(0), ph(0), nitrogen(0), phosphorus(0), potassium(0) {}
+
+    CropConfig(float t, float h, float e, float p, float n, float ph, float k)
+        : temperature(t), humidity(h), ec(e), ph(p), nitrogen(n), phosphorus(ph), potassium(k)
+    {
+    }
+};
+
 // Структура для рекомендаций
 struct RecValues
 {
@@ -89,6 +108,14 @@ class ICropRecommendationEngine
      */
     virtual RecommendationResult generateRecommendation(const SensorData& data, const String& cropType,
                                                        const String& growingType = "outdoor", const String& season = "summer") = 0;
+
+    /**
+     * @brief Получает конфигурацию культуры
+     *
+     * @param cropType Тип культуры
+     * @return CropConfig Конфигурация культуры или generic если не найдена
+     */
+    virtual CropConfig getCropConfig(const String& cropType) const = 0;
 };
 
 #endif  // ICROP_RECOMMENDATION_ENGINE_H

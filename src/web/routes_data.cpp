@@ -288,14 +288,15 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
         doc["crop_specific_recommendations"] = "";
     }
     
-    // ✅ ОПТИМИЗАЦИЯ: Убираем избыточные поля - оставляем только rec_*
-    doc["rec_temperature"] = format_temperature(sensorData.temperature);
-    doc["rec_humidity"] = format_moisture(asmHumidity);
-    doc["rec_ec"] = format_ec(sensorData.ec);
-    doc["rec_ph"] = format_ph(sensorData.ph);
-    doc["rec_nitrogen"] = format_npk(sensorData.nitrogen);
-    doc["rec_phosphorus"] = format_npk(sensorData.phosphorus);
-    doc["rec_potassium"] = format_npk(sensorData.potassium);
+    // ✅ РЕКОМЕНДУЕМЫЕ ЗНАЧЕНИЯ ДЛЯ ВЫБРАННОЙ КУЛЬТУРЫ
+    CropConfig cropConfig = getCropEngine().getCropConfig(String(config.cropId));
+    doc["rec_temperature"] = format_temperature(cropConfig.temperature);
+    doc["rec_humidity"] = format_moisture(cropConfig.humidity);
+    doc["rec_ec"] = format_ec(cropConfig.ec);
+    doc["rec_ph"] = format_ph(cropConfig.ph);
+    doc["rec_nitrogen"] = format_npk(cropConfig.nitrogen);
+    doc["rec_phosphorus"] = format_npk(cropConfig.phosphorus);
+    doc["rec_potassium"] = format_npk(cropConfig.potassium);
 
     // ---- Дополнительная информация ----
     doc["season"] = seasonName;
@@ -789,7 +790,7 @@ void setupDataRoutes()
             // Recommendation arrows (target vs current)
             html +=
                 "showWithArrow('temp_rec', arrowSign(d.temperature ,d.rec_temperature ,tol.temp), d.rec_temperature);";
-            html += "showWithArrow('hum_rec',  arrowSign(d.humidity    ,d.rec_humidity    ,tol.hum ), d.rec_humidity + ' ASM');";
+            html += "showWithArrow('hum_rec',  arrowSign(d.humidity    ,d.rec_humidity    ,tol.hum ), d.rec_humidity);";
             html += "showWithArrow('ec_rec',   arrowSign(d.ec          ,d.rec_ec          ,tol.ec  ), d.rec_ec);";
             html += "showWithArrow('ph_rec',   arrowSign(d.ph          ,d.rec_ph          ,tol.ph  ), d.rec_ph);";
             html += "showWithArrow('n_rec',    arrowSign(d.nitrogen    ,d.rec_nitrogen    ,tol.n   ), d.rec_nitrogen);";
