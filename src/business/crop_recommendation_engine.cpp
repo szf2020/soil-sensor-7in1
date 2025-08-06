@@ -10,6 +10,7 @@
 #include "../../include/jxct_constants.h"
 #include "../../include/logger.h"
 #include "validation_utils.h"  // Для централизованной валидации
+#include "sensor_compensation_service.h"  // Для конвертации VWC ↔ ASM
 
 // УДАЛЕНО: Внутренние функции компенсации
 // Используется SensorCompensationService для единообразной компенсации
@@ -679,7 +680,12 @@ CropConfig CropRecommendationEngine::getScientificallyCompensated(const SensorDa
     // Применяем существующие компенсации (температурные, влажностные)
     // Это временное решение - в реальности здесь будет отдельный трек
     result.temperature = data.temperature;  // Используем компенсированные данные
-    result.humidity = data.humidity;
+    
+    // Влажность: конвертируем VWC в ASM для отображения во второй колонке
+    SensorCompensationService compensationService;
+    SoilType soilType = static_cast<SoilType>(config.soilProfile);
+    result.humidity = compensationService.vwcToAsm(data.humidity, soilType);
+    
     result.ec = data.ec;
     result.ph = data.ph;
     result.nitrogen = data.nitrogen;

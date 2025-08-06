@@ -233,10 +233,7 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     NPKReferences npk{sensorData.nitrogen, sensorData.phosphorus, sensorData.potassium};
     SoilType soilType = static_cast<SoilType>(config.soilProfile);
     
-    // Влажность в ASM (Available Soil Moisture) - пересчитанная из VWC
-    SensorCompensationService compensationService;
-    float asm_humidity = compensationService.vwcToAsm(sensorData.humidity, soilType);
-    doc["humidity_asm"] = format_moisture(asm_humidity);
+
     
     // Получаем рекомендации по антагонизмам
     String antagonismRecommendations = getNutrientInteractionService().generateAntagonismRecommendations(
@@ -611,31 +608,31 @@ void setupDataRoutes()
                 }
             }
 
-            html += "<div class='section'><table class='data'><thead><tr><th></th><th>RAW</th><th>Компенс.</th><th>ASM</th><th>" +
+            html += "<div class='section'><table class='data'><thead><tr><th></th><th>RAW</th><th>Компенс.</th><th>" +
                     recHeader + "</th></tr></thead><tbody>";
             html +=
                 "<tr><td>🌡️ Температура, °C</td><td><span id='temp_raw'></span></td><td><span "
-                "id='temp'></span></td><td>-</td><td><span id='temp_rec'></span></td></tr>";
+                "id='temp'></span></td><td><span id='temp_rec'></span></td></tr>";
             html +=
                 "<tr><td>💧 Влажность, %</td><td><span id='hum_raw'></span> VWC</td><td><span "
-                "id='hum'></span> VWC</td><td><span id='hum_asm'></span> ASM</td><td><span id='hum_rec'></span> ASM</td></tr>";
+                "id='hum'></span> ASM</td><td><span id='hum_rec'></span> ASM</td></tr>";
             html +=
-                "<tr><td>⚡ EC, µS/cm</td><td><span id='ec_raw'></span></td><td><span id='ec'></span></td><td>-</td><td><span "
+                "<tr><td>⚡ EC, µS/cm</td><td><span id='ec_raw'></span></td><td><span id='ec'></span></td><td><span "
                 "id='ec_rec'></span></td></tr>";
             html +=
-                "<tr><td>⚗️ pH</td><td><span id='ph_raw'></span></td><td><span id='ph'></span></td><td>-</td><td><span "
+                "<tr><td>⚗️ pH</td><td><span id='ph_raw'></span></td><td><span id='ph'></span></td><td><span "
                 "id='ph_rec'></span></td></tr>";
             html +=
                 "<tr><td>🌿 Азот (N), мг/кг</td><td><span id='n_raw'></span></td><td><span "
-                "id='n'></span></td><td>-</td><td><span id='n_rec'></span><span id='n_season' "
+                "id='n'></span></td><td><span id='n_rec'></span><span id='n_season' "
                 "class='season-adj'></span></td></tr>";
             html +=
                 "<tr><td>🌱 Фосфор (P), мг/кг</td><td><span id='p_raw'></span></td><td><span "
-                "id='p'></span></td><td>-</td><td><span id='p_rec'></span><span id='p_season' "
+                "id='p'></span></td><td><span id='p_rec'></span><span id='p_season' "
                 "class='season-adj'></span></td></tr>";
             html +=
                 "<tr><td>🍎 Калий (K), мг/кг</td><td><span id='k_raw'></span></td><td><span "
-                "id='k'></span></td><td>-</td><td><span id='k_rec'></span><span id='k_season' "
+                "id='k'></span></td><td><span id='k_rec'></span><span id='k_season' "
                 "class='season-adj'></span></td></tr>";
             html += "</tbody></table></div>";
 
@@ -847,9 +844,8 @@ void setupDataRoutes()
 
             // Compensated vs RAW arrows
             html += "showWithArrow('temp', arrowSign(d.raw_temperature ,d.temperature ,tol.temp), d.temperature);";
-            // Влажность: VWC → ASM → Рекомендации
-            html += "showWithArrow('hum',  arrowSign(d.raw_humidity    ,d.humidity    ,tol.hum ), d.humidity + ' VWC');";
-            html += "showWithArrow('hum_asm',  arrowSign(d.humidity    ,d.humidity_asm    ,tol.hum ), d.humidity_asm + ' ASM');";
+            // Влажность: VWC → ASM
+            html += "showWithArrow('hum',  arrowSign(d.raw_humidity    ,d.humidity    ,tol.hum ), d.humidity + ' ASM');";
             html += "showWithArrow('ec',   arrowSign(d.raw_ec          ,d.ec          ,tol.ec  ), d.ec);";
             html += "showWithArrow('ph',   arrowSign(d.raw_ph          ,d.ph          ,tol.ph  ), d.ph);";
             html += "showWithArrow('n',    arrowSign(d.raw_nitrogen    ,d.nitrogen    ,tol.n   ), d.nitrogen);";
@@ -859,7 +855,7 @@ void setupDataRoutes()
             // Recommendation arrows (target vs current)
             html +=
                 "showWithArrow('temp_rec', arrowSign(d.temperature ,d.rec_temperature ,tol.temp), d.rec_temperature);";
-            html += "showWithArrow('hum_rec',  arrowSign(d.humidity_asm    ,d.rec_humidity    ,tol.hum ), d.rec_humidity + ' ASM');";
+            html += "showWithArrow('hum_rec',  arrowSign(d.humidity    ,d.rec_humidity    ,tol.hum ), d.rec_humidity + ' ASM');";
             html += "showWithArrow('ec_rec',   arrowSign(d.ec          ,d.rec_ec          ,tol.ec  ), d.rec_ec);";
             html += "showWithArrow('ph_rec',   arrowSign(d.ph          ,d.rec_ph          ,tol.ph  ), d.rec_ph);";
             html += "showWithArrow('n_rec',    arrowSign(d.nitrogen    ,d.rec_nitrogen    ,tol.n   ), d.rec_nitrogen);";
