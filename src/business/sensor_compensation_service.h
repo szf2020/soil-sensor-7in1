@@ -178,6 +178,24 @@ class SensorCompensationService : public ISensorCompensationService
      * @return NPKCoefficients Коэффициенты NPK
      */
     NPKCoefficients getNPKCoefficients(SoilType soilType) const;
+
+    /**
+     * @brief Пересчитывает VWC в ASM (Available Soil Moisture)
+     *
+     * @param vwc Объемная влажность почвы (сырые данные датчика)
+     * @param soilType Тип почвы
+     * @return float ASM в процентах (0-100%)
+     */
+    float vwcToAsm(float vwc, SoilType soilType) const;
+
+    /**
+     * @brief Пересчитывает ASM в VWC (Volumetric Water Content)
+     *
+     * @param asmValue Available Soil Moisture в процентах (0-100%)
+     * @param soilType Тип почвы
+     * @return float VWC в процентах от объема почвы
+     */
+    float asmToVwc(float asmValue, SoilType soilType) const;
 };
 
 #endif  // SENSOR_COMPENSATION_SERVICE_H
