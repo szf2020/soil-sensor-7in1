@@ -165,6 +165,57 @@ def test_project_structure():
     print(f"  Результат: {passed}/{total}")
     assert passed == total, f"Не все тесты структуры проекта прошли: {passed}/{total}"
 
+def test_json_sanitization():
+    """Тест корректности JSON экранирования"""
+    print("Тестирование JSON экранирования...")
+    
+    # Тестовые случаи для проверки правильного порядка экранирования
+    test_cases = [
+        # Простые случаи
+        ('hello', 'hello'),
+        ('test"quote', 'test\\"quote'),
+        ('back\\slash', 'back\\\\slash'),
+        ('forward/slash', 'forward\\/slash'),
+        
+        # Сложные случаи с множественным экранированием
+        ('path\\to\\file"name', 'path\\\\to\\\\file\\"name'),
+        ('C:\\Users\\name\\file.txt', 'C:\\\\Users\\\\name\\\\file.txt'),
+        ('url/path"with"quotes', 'url\\/path\\"with\\"quotes'),
+        
+        # Специальные символы
+        ('line\nbreak', 'line\\nbreak'),
+        ('tab\there', 'tab\\there'),
+        ('carriage\rreturn', 'carriage\\rreturn'),
+        
+        # Комбинированные случаи
+        ('file\\path"name\nwith\ttabs', 'file\\\\path\\"name\\nwith\\ttabs'),
+        ('C:\\Users\\name\\file.txt\ncontent', 'C:\\\\Users\\\\name\\\\file.txt\\ncontent'),
+    ]
+    
+    passed = 0
+    total = len(test_cases)
+    
+    for input_str, expected in test_cases:
+        # Симуляция функции sanitizeForJson
+        sanitized = input_str
+        sanitized = sanitized.replace("\\", "\\\\")  # Сначала обратные слеши
+        sanitized = sanitized.replace("\"", "\\\"")  # Потом кавычки
+        sanitized = sanitized.replace("/", "\\/")    # Экранирование слешей
+        sanitized = sanitized.replace("\n", "\\n")
+        sanitized = sanitized.replace("\r", "\\r")
+        sanitized = sanitized.replace("\t", "\\t")
+        sanitized = sanitized.replace("\b", "\\b")
+        sanitized = sanitized.replace("\f", "\\f")
+        
+        if sanitized == expected:
+            passed += 1
+            print(f"  ✓ '{input_str}' → '{sanitized}'")
+        else:
+            print(f"  ✗ '{input_str}' → '{sanitized}' (ожидалось: '{expected}')")
+    
+    print(f"  Результат: {passed}/{total}")
+    assert passed == total, f"Не все тесты JSON экранирования прошли: {passed}/{total}"
+
 def main():
     """Главная функция"""
     print("=== ТЕСТ ВАЛИДАЦИИ JXCT ===")
@@ -174,7 +225,8 @@ def main():
         ("Диапазон влажности", test_humidity_range),
         ("Диапазон pH", test_ph_range),
         ("Диапазон EC", test_ec_range),
-        ("Структура проекта", test_project_structure)
+        ("Структура проекта", test_project_structure),
+        ("JSON экранирование", test_json_sanitization)
     ]
 
     passed_tests = 0

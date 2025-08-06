@@ -21,24 +21,7 @@
 // Структуры для устранения проблемы с легко перепутываемыми параметрами (удалены - теперь в sensor_types.h)
 // CropCompensationParams и CropECCompensationParams определены в sensor_types.h
 
-// Структура конфигурации культуры
-struct CropConfig
-{
-    float temperature;  // °C
-    float humidity;     // %
-    float ec;           // μS/cm
-    float ph;           // pH
-    float nitrogen;     // мг/кг
-    float phosphorus;   // мг/кг
-    float potassium;    // мг/кг
-
-    CropConfig() : temperature(0), humidity(0), ec(0), ph(0), nitrogen(0), phosphorus(0), potassium(0) {}
-
-    CropConfig(float t, float h, float e, float p, float n, float ph, float k)
-        : temperature(t), humidity(h), ec(e), ph(p), nitrogen(n), phosphorus(ph), potassium(k)
-    {
-    }
-};
+// CropConfig определена в ICropRecommendationEngine.h
 
 // Структура для процентов коррекции
 struct CorrectionPercentages
@@ -78,6 +61,7 @@ struct RecommendationResult
     // Новые поля для системного алгоритма
     CropConfig tableValues;              // Исходные табличные значения
     CropConfig growingTypeAdjusted;      // После коррекции типа выращивания
+    CropConfig soilTypeAdjusted;         // После коррекции типа почвы (НОВОЕ!)
     CropConfig finalCalculated;          // Итоговые расчетные значения
     CropConfig scientificallyCompensated; // Научно компенсированные значения
     CorrectionPercentages correctionPercentages;
@@ -111,6 +95,7 @@ class CropRecommendationEngine : public ICropRecommendationEngine
     // Новые методы для системного алгоритма
     CropConfig getTableValues(const String& cropType) const;
     CropConfig applyGrowingTypeCorrection(const CropConfig& table, const String& growingType);
+    CropConfig applySoilTypeCorrection(const CropConfig& adjusted, const String& soilType);
     CropConfig applySeasonalCorrection(const CropConfig& adjusted, const String& season);
     CropConfig getScientificallyCompensated(const SensorData& data, const String& cropType);
     CorrectionPercentages calculateCorrectionPercentages(const CropConfig& table, const CropConfig& final);

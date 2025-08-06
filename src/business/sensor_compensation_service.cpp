@@ -248,3 +248,94 @@ float SensorCompensationService::temperatureToKelvin(float celsius)
 // УДАЛЕНО: Старые функции заменены на научные формулы модели Арчи
 // float calculateECTemperatureFactor(float temperature) - УДАЛЕНО
 // float calculateECHumidityFactor(float humidity, SoilType soilType) - УДАЛЕНО
+
+// ============================================================================
+// ФУНКЦИИ ДЛЯ ПЕРЕСЧЕТА VWC ↔ ASM (Available Soil Moisture)
+// ============================================================================
+
+float SensorCompensationService::vwcToAsm(float vwc, SoilType soilType) const
+{
+    // Получаем параметры почвы
+    SoilParameters params = getSoilParameters(soilType);
+    
+    // ASM = (VWC - PWP) / (FC - PWP) * 100%
+    // Где: VWC - объемная влажность почвы (сырые данные датчика)
+    //      FC - полевая влагоемкость (Field Capacity)
+    //      PWP - точка увядания (Permanent Wilting Point)
+    
+    // ✅ Получаем PWP через приватный метод (убрали дублирование)
+    float pwp = getPWP(soilType);
+    
+    float fc = params.fieldCapacity;
+    
+    // Защита от деления на ноль
+    if (fc <= pwp) {
+        return 0.0F;
+    }
+    
+        // Пересчет VWC в ASM
+    float asmValue = (vwc - pwp) / (fc - pwp) * 100.0F;
+
+    // Ограничиваем значения от 0 до 100%
+    if (asmValue < 0.0F) asmValue = 0.0F;
+    if (asmValue > 100.0F) asmValue = 100.0F;
+    
+    // Отладочная информация
+    logDebugSafe("VWC→ASM: vwc=%.3f, fc=%.3f, pwp=%.3f, asm=%.1f%%", vwc, fc, pwp, asmValue);
+    
+    // Проверяем реалистичность VWC
+    if (vwc > 0.50F) {
+        logWarn("VWC слишком высок: " + String(vwc * 100.0F, 1) + "% - возможно ошибка датчика");
+    }
+
+    return asmValue;
+}
+
+float SensorCompensationService::asmToVwc(float asmValue, SoilType soilType) const
+{
+    // Получаем параметры почвы
+    SoilParameters params = getSoilParameters(soilType);
+
+    // VWC = PWP + (ASM / 100%) * (FC - PWP)
+    // Обратный пересчет ASM в VWC
+
+    // ✅ Получаем PWP через приватный метод (убрали дублирование)
+    float pwp = getPWP(soilType);
+
+    float fc = params.fieldCapacity;
+
+    // Защита от деления на ноль
+    if (fc <= pwp) {
+        return pwp;
+    }
+
+    // Пересчет ASM в VWC
+    float vwc = pwp + (asmValue / 100.0F) * (fc - pwp);
+
+    // Ограничиваем значения
+    if (vwc < pwp) vwc = pwp;
+    if (vwc > fc) vwc = fc;
+
+    return vwc;
+}
+
+// ✅ Приватный метод для получения PWP (убираем дублирование)
+float SensorCompensationService::getPWP(SoilType soilType) const
+{
+    switch (soilType) {
+        case SoilType::SAND: return 0.05F;
+        case SoilType::SANDY_LOAM: return 0.08F;
+        case SoilType::LOAM: return 0.12F;
+        case SoilType::SILTY_LOAM: return 0.15F;
+        case SoilType::CLAY_LOAM: return 0.18F;
+        case SoilType::CLAY: return 0.20F;
+        case SoilType::PEAT: return 0.25F;
+        case SoilType::SILT: return 0.10F;
+        case SoilType::ORGANIC: return 0.20F;
+        case SoilType::SANDPEAT: return 0.12F;
+        case SoilType::LOAMY_CLAY: return 0.22F;
+        case SoilType::SALINE: return 0.12F;
+        case SoilType::ALKALINE: return 0.15F;
+        default: return 0.12F;
+    }
+}

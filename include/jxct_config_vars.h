@@ -11,7 +11,7 @@ constexpr unsigned long SENSOR_READ_INTERVAL =
     2000;  // 2 сек (было 1 сек) - оптимальный баланс точности и производительности
 constexpr unsigned long MQTT_PUBLISH_INTERVAL = 1800000;  // 30 мин (1800000 мс) - правильная единица измерения
 constexpr unsigned long THINGSPEAK_INTERVAL = 600000;     // 10 мин (было 15 мин) - более частые обновления
-constexpr unsigned long WEB_UPDATE_INTERVAL = 3000;  // 3 сек (было 5 сек) - максимальная отзывчивость веб-интерфейса
+constexpr unsigned long WEB_UPDATE_INTERVAL = 5000; // 5 сек - оптимизированная производительность
 
 // Константы для системы - v2.5.0 подготовка к OTA
 #define HTTP_PORT 80                 // Порт веб-сервера

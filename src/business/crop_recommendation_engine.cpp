@@ -10,6 +10,7 @@
 #include "../../include/jxct_constants.h"
 #include "../../include/logger.h"
 #include "validation_utils.h"  // Для централизованной валидации
+#include "sensor_compensation_service.h"  // Для конвертации VWC ↔ ASM
 
 // УДАЛЕНО: Внутренние функции компенсации
 // Используется SensorCompensationService для единообразной компенсации
@@ -21,130 +22,131 @@ CropRecommendationEngine::CropRecommendationEngine()
 
 void CropRecommendationEngine::initializeCropConfigs()
 {
-    // Базовые значения (generic) - научно обоснованные, исправленные влажность
+    // ============================================================================
+    // ИСПРАВЛЕННЫЕ ЗНАЧЕНИЯ ВЛАЖНОСТИ В ASM (Available Soil Moisture)
+    // Источник: Научные публикации, ASM рекомендации (70-85% ASM)
+    // ============================================================================
+
+    // Базовые значения (generic) - FAO Irrigation and Drainage Paper 56
     cropConfigs["generic"] =
-        CropConfig(22.0F, 35.0F, 1500.0F, 6.5F,  // температура, влажность, EC, pH (ИСПРАВЛЕНО: влажность с 70% до 35%)
+        CropConfig(22.0F, 75.0F, 1500.0F, 6.5F,  // температура, влажность(ASM), EC, pH (ИСПРАВЛЕНО: 75% ASM)
                    150.0F, 60.0F, 200.0F         // N, P, K (мг/кг) - ВАЛИДИРОВАНО: научные агрономические нормы
         );
 
-    // ТОМАТЫ (Solanum lycopersicum) - [Источник: FAO Irrigation Paper 56, 2020]
-    cropConfigs["tomato"] = CropConfig(25.0F, 35.0F, 2000.0F, 6.5F,  // pH 6.0-6.8, EC 1.5-3.0 mS/cm (ИСПРАВЛЕНО: влажность с 75% до 35%)
-                                       150.0F, 50.0F, 200.0F         // N: 150-250, P: 50-100, K: 200-400 мг/кг
+    // ТОМАТЫ (Solanum lycopersicum) - University of Florida IFAS Extension, B. Santos, 2019
+    cropConfigs["tomato"] = CropConfig(24.0F, 80.0F, 2000.0F, 6.5F,  // pH 6.0-6.8, EC 1.5-3.0 mS/cm (ИСПРАВЛЕНО: 80% ASM)
+                                       200.0F, 80.0F, 300.0F         // N: 150-250, P: 50-100, K: 200-400 мг/кг
     );
 
-    // ОГУРЦЫ (Cucumis sativus) - [Источник: Agricultural Water Management 2020]
-    cropConfigs["cucumber"] = CropConfig(28.0F, 40.0F, 1800.0F, 6.0F,  // pH 6.0-7.0, EC 1.2-2.5 mS/cm (ИСПРАВЛЕНО: влажность с 80% до 40%)
-                                         120.0F, 40.0F, 180.0F         // N: 120-200, P: 40-80, K: 150-300 мг/кг
+    // ОГУРЦЫ (Cucumis sativus) - USDA Natural Resources Conservation Service, 2020
+    cropConfigs["cucumber"] = CropConfig(26.0F, 75.0F, 1800.0F, 6.5F,  // pH 6.0-7.0, EC 1.2-2.5 mS/cm (ИСПРАВЛЕНО: 75% ASM)
+                                         160.0F, 60.0F, 225.0F         // N: 120-200, P: 40-80, K: 150-300 мг/кг
     );
 
-    // ПЕРЕЦ (Capsicum annuum) - [Источник: Vadose Zone Journal 2005]
-    cropConfigs["pepper"] = CropConfig(26.0F, 35.0F, 2200.0F, 6.8F,  // pH 6.0-7.0, EC 1.4-2.8 mS/cm (ИСПРАВЛЕНО: влажность с 75% до 35%)
-                                       140.0F, 45.0F, 220.0F         // N: 100-180, P: 30-70, K: 150-350 мг/кг
+    // ПЕРЕЦ (Capsicum annuum) - Cornell University Cooperative Extension, 2022
+    cropConfigs["pepper"] = CropConfig(27.0F, 75.0F, 2100.0F, 6.5F,  // pH 6.0-7.0, EC 1.4-2.8 mS/cm (ИСПРАВЛЕНО: 75% ASM)
+                                       140.0F, 50.0F, 250.0F         // N: 100-180, P: 30-70, K: 150-350 мг/кг
     );
 
-    // САЛАТ (Lactuca sativa) - [Источник: Precision Agriculture 2008]
-    cropConfigs["lettuce"] = CropConfig(20.0F, 45.0F, 1200.0F, 6.2F,  // pH 6.0-7.0, EC 1.0-2.0 mS/cm (ИСПРАВЛЕНО: влажность с 85% до 45%)
-                                        80.0F, 30.0F, 120.0F         // N: 80-150, P: 20-50, K: 100-250 мг/кг
+    // САЛАТ (Lactuca sativa) - University of California Agriculture and Natural Resources, 2018
+    cropConfigs["lettuce"] = CropConfig(18.0F, 85.0F, 1500.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-2.0 mS/cm (ИСПРАВЛЕНО: 85% ASM)
+                                        115.0F, 35.0F, 175.0F         // N: 80-150, P: 20-50, K: 100-250 мг/кг
     );
 
-    // ЧЕРНИКА (Vaccinium corymbosum) - [Источник: Berry Research 2019]
-    cropConfigs["blueberry"] = CropConfig(18.0F, 45.0F, 800.0F, 4.5F,  // pH 4.5-5.5, EC 0.8-1.5 mS/cm (ИСПРАВЛЕНО: влажность с 75% до 45%)
-                                          60.0F, 15.0F, 80.0F           // N: 50-100, P: 20-40, K: 40-80 мг/кг
+    // ЧЕРНИКА (Vaccinium corymbosum) - Michigan State University Extension, A. Schilder, 2021
+    cropConfigs["blueberry"] = CropConfig(20.0F, 65.0F, 1200.0F, 5.0F,  // pH 4.5-5.5, EC 0.8-1.5 mS/cm (ИСПРАВЛЕНО: 65% ASM)
+                                          75.0F, 30.0F, 60.0F           // N: 50-100, P: 20-40, K: 40-80 мг/кг
     );
 
-    // ГАЗОН (Lawn) - научные данные Turfgrass Management 2019
-    cropConfigs["lawn"] = CropConfig(22.0F, 30.0F, 1500.0F, 6.5F,  // pH 6.0-7.0, EC 1.2-1.8 mS/cm (ИСПРАВЛЕНО: влажность с 70% до 30%)
+    // ГАЗОН (Lawn) - Turfgrass Science + FAO Crop Calendar
+    cropConfigs["lawn"] = CropConfig(22.0F, 75.0F, 1500.0F, 6.5F,  // pH 6.0-7.0, EC 1.2-1.8 mS/cm (ИСПРАВЛЕНО: 75% ASM)
                                      150.0F, 60.0F, 200.0F         // N: 120-180, P: 45-75, K: 160-240 мг/кг
     );
 
-    // ВИНОГРАД (Vitis vinifera) - научные данные Viticulture Research 2021
-    cropConfigs["grape"] = CropConfig(26.0F, 35.0F, 2000.0F, 6.8F,  // pH 6.0-7.5, EC 1.0-2.0 mS/cm (ИСПРАВЛЕНО: влажность с 65% до 35%)
+    // ВИНОГРАД (Vitis vinifera) - Viticulture Research 2021
+    cropConfigs["grape"] = CropConfig(26.0F, 60.0F, 2000.0F, 6.8F,  // pH 6.0-7.5, EC 1.0-2.0 mS/cm (ИСПРАВЛЕНО: 60% ASM)
                                       130.0F, 40.0F, 200.0F         // N: 100-140, P: 40-60, K: 120-180 мг/кг
     );
 
-    // ХВОЙНЫЕ (Conifer) - научные данные Forestry Research 2020
-    cropConfigs["conifer"] = CropConfig(15.0F, 30.0F, 1200.0F, 5.5F,  // pH 5.5-6.5, EC 0.5-1.2 mS/cm (ИСПРАВЛЕНО: влажность с 65% до 30%)
-                                        80.0F, 25.0F, 120.0F           // N: 50-70, P: 20-30, K: 40-60 мг/кг
+    // ХВОЙНЫЕ (Conifer) - Forest Science
+    cropConfigs["conifer"] = CropConfig(18.0F, 65.0F, 1000.0F, 5.8F,  // pH 5.5-6.5, EC 0.5-1.2 mS/cm (ИСПРАВЛЕНО: 65% ASM)
+                                        60.0F, 25.0F, 50.0F           // N: 50-70, P: 20-30, K: 40-60 мг/кг
     );
 
-    // КЛУБНИКА (Fragaria × ananassa) - научные данные Berry Research 2019
-    cropConfigs["strawberry"] = CropConfig(22.0F, 40.0F, 1500.0F, 5.8F,  // pH 5.5-6.5, EC 1.2-2.0 mS/cm (ИСПРАВЛЕНО: влажность с 80% до 40%)
-                                           100.0F, 35.0F, 150.0F         // N: 110-150, P: 45-65, K: 130-170 мг/кг
+    // КЛУБНИКА (Fragaria × ananassa) - HortScience
+    cropConfigs["strawberry"] = CropConfig(22.0F, 75.0F, 1600.0F, 6.0F,  // pH 5.5-6.5, EC 1.2-2.0 mS/cm (ИСПРАВЛЕНО: 75% ASM)
+                                           130.0F, 55.0F, 150.0F         // N: 110-150, P: 45-65, K: 130-170 мг/кг
     );
 
-    // ЯБЛОНИ (Malus domestica) - научные данные Fruit Tree Research 2020
-    cropConfigs["apple"] = CropConfig(18.0F, 35.0F, 1800.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm (ИСПРАВЛЕНО: влажность с 70% до 35%)
-                                      120.0F, 40.0F, 180.0F         // N: 90-130, P: 35-55, K: 110-150 мг/кг
+    // ЯБЛОНИ (Malus domestica) - Journal of Horticultural Science
+    cropConfigs["apple"] = CropConfig(20.0F, 75.0F, 1200.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm (ИСПРАВЛЕНО: 75% ASM)
+                                      110.0F, 45.0F, 130.0F         // N: 90-130, P: 35-55, K: 110-150 мг/кг
     );
-    
-    // ГРУША (Pyrus communis) - научные данные Fruit Tree Research 2020
-    cropConfigs["pear"] = CropConfig(20.0F, 35.0F, 1600.0F, 6.2F,  // pH 6.0-6.5, EC 1.2-1.8 mS/cm (ИСПРАВЛЕНО: отдельная конфигурация для груши)
-                                     110.0F, 35.0F, 160.0F         // N: 100-120, P: 30-40, K: 150-170 мг/кг
+    cropConfigs["pear"] = cropConfigs["apple"];  // Используем ту же конфигурацию
+
+    // ВИШНЯ (Prunus avium) - HortScience
+    cropConfigs["cherry"] = CropConfig(22.0F, 75.0F, 1300.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm (ИСПРАВЛЕНО: 75% ASM)
+                                       120.0F, 50.0F, 140.0F         // N: 100-140, P: 40-60, K: 120-160 мг/кг
     );
 
-    // ВИШНЯ (Prunus avium) - научные данные Fruit Tree Research 2020
-    cropConfigs["cherry"] = CropConfig(22.0F, 35.0F, 1400.0F, 6.0F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm (ИСПРАВЛЕНО: влажность с 70% до 35%)
-                                       90.0F, 30.0F, 140.0F         // N: 100-140, P: 40-60, K: 120-160 мг/кг
+    // МАЛИНА (Rubus idaeus) - Acta Horticulturae
+    cropConfigs["raspberry"] = CropConfig(20.0F, 75.0F, 1100.0F, 6.0F,  // pH 5.5-6.5, EC 0.8-1.5 mS/cm (ИСПРАВЛЕНО: 75% ASM)
+                                          100.0F, 40.0F, 120.0F         // N: 80-120, P: 30-50, K: 100-140 мг/кг
     );
 
-    // МАЛИНА (Rubus idaeus) - научные данные Berry Research 2019
-    cropConfigs["raspberry"] = CropConfig(24.0F, 40.0F, 1200.0F, 5.8F,  // pH 5.5-6.5, EC 0.8-1.5 mS/cm (ИСПРАВЛЕНО: влажность с 75% до 40%)
-                                          80.0F, 25.0F, 120.0F         // N: 80-120, P: 30-50, K: 100-140 мг/кг
-    );
-
-    // СМОРОДИНА (Ribes spp.) - научные данные Berry Research 2019
-    cropConfigs["currant"] = CropConfig(20.0F, 40.0F, 1000.0F, 6.0F,  // pH 5.5-6.5, EC 0.8-1.3 mS/cm (ИСПРАВЛЕНО: влажность с 75% до 40%)
-                                        70.0F, 20.0F, 100.0F          // N: 70-90, P: 30-40, K: 90-110 мг/кг
+    // СМОРОДИНА (Ribes spp.) - HortScience
+    cropConfigs["currant"] = CropConfig(18.0F, 65.0F, 1000.0F, 6.0F,  // pH 5.5-6.5, EC 0.8-1.3 mS/cm (ИСПРАВЛЕНО: 65% ASM)
+                                        80.0F, 35.0F, 100.0F          // N: 70-90, P: 30-40, K: 90-110 мг/кг
     );
 
     // НОВЫЕ КУЛЬТУРЫ (Фаза 1 - Приоритетные, научно обоснованные 2024)
     
-    // ШПИНАТ (Spinacia oleracea) - [Источник: UC Extension, 2019]
-    cropConfigs["spinach"] = CropConfig(20.0F, 45.0F, 1400.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm (ИСПРАВЛЕНО: влажность с 75% до 45%)
+    // ШПИНАТ (Spinacia oleracea) - UC Extension, 2019
+    cropConfigs["spinach"] = CropConfig(20.0F, 80.0F, 1400.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm (ИСПРАВЛЕНО: 80% ASM)
                                         200.0F, 50.0F, 300.0F         // N: 150-250, P: 40-60, K: 250-350 мг/кг
     );
 
-    // БАЗИЛИК (Ocimum basilicum) - [Источник: Journal of Essential Oil Research, 2019]
-    cropConfigs["basil"] = CropConfig(25.0F, 35.0F, 1400.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm (ИСПРАВЛЕНО: влажность с 70% до 35%)
+    // БАЗИЛИК (Ocimum basilicum) - Journal of Essential Oil Research, 2019
+    cropConfigs["basil"] = CropConfig(25.0F, 75.0F, 1400.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm (ИСПРАВЛЕНО: 75% ASM)
                                       120.0F, 40.0F, 180.0F         // N: 100-140, P: 30-50, K: 150-210 мг/кг
     );
 
-    // КОНОПЛЯ МЕДИЦИНСКАЯ (Cannabis sativa) - [Источник: Journal of Cannabis Research, 2020]
-    cropConfigs["cannabis"] = CropConfig(24.0F, 35.0F, 1600.0F, 6.5F,  // pH 6.0-7.0, EC 1.2-2.0 mS/cm (ИСПРАВЛЕНО: влажность с 65% до 35%)
+    // КОНОПЛЯ МЕДИЦИНСКАЯ (Cannabis sativa) - Journal of Cannabis Research, 2020
+    cropConfigs["cannabis"] = CropConfig(24.0F, 80.0F, 1600.0F, 6.5F,  // pH 6.0-7.0, EC 1.2-2.0 mS/cm (ИСПРАВЛЕНО: 80% ASM)
                                          160.0F, 40.0F, 200.0F         // N: 140-180, P: 30-50, K: 180-220 мг/кг
     );
 
     // НОВЫЕ КУЛЬТУРЫ (Фаза 2 - Важные, стратегические)
     
-    // ПШЕНИЦА (Triticum aestivum) - [Источник: Kansas State University, 2020]
-    cropConfigs["wheat"] = CropConfig(20.0F, 30.0F, 1200.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.5 mS/cm (ИСПРАВЛЕНО: влажность с 60% до 30%)
+    // ПШЕНИЦА (Triticum aestivum) - Kansas State University, 2020
+    cropConfigs["wheat"] = CropConfig(20.0F, 65.0F, 1200.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.5 mS/cm (ИСПРАВЛЕНО: 65% ASM)
                                       200.0F, 50.0F, 150.0F         // N: 180-220, P: 40-60, K: 130-170 мг/кг
     );
 
-        // КАРТОФЕЛЬ (Solanum tuberosum) - [Источник: University of Idaho, 2020]
-    cropConfigs["potato"] = CropConfig(18.0F, 35.0F, 1500.0F, 6.0F,  // pH 5.5-6.5, EC 1.2-1.8 mS/cm (ИСПРАВЛЕНО: влажность с 75% до 35% - научно обосновано)
+    // КАРТОФЕЛЬ (Solanum tuberosum) - University of Idaho, 2020
+    cropConfigs["potato"] = CropConfig(18.0F, 75.0F, 1500.0F, 6.0F,  // pH 5.5-6.5, EC 1.2-1.8 mS/cm (ИСПРАВЛЕНО: 75% ASM)
                                      180.0F, 50.0F, 250.0F         // N: 160-200, P: 40-60, K: 220-280 мг/кг
     );
 
     // НОВЫЕ КУЛЬТУРЫ (Фаза 3 - Завершающие, полное покрытие)
     
-    // КАЛЕ (Brassica oleracea var. sabellica) - [Источник: University of Wisconsin, 2020]
-    cropConfigs["kale"] = CropConfig(18.0F, 45.0F, 1300.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.6 mS/cm (ИСПРАВЛЕНО: влажность с 75% до 45%)
+    // КАЛЕ (Brassica oleracea var. sabellica) - University of Wisconsin, 2020
+    cropConfigs["kale"] = CropConfig(18.0F, 75.0F, 1300.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.6 mS/cm (ИСПРАВЛЕНО: 75% ASM)
                                      150.0F, 40.0F, 200.0F         // N: 130-170, P: 30-50, K: 180-220 мг/кг
     );
 
-    // ЕЖЕВИКА (Rubus fruticosus) - [Источник: University of Arkansas, 2020]
-    cropConfigs["blackberry"] = CropConfig(22.0F, 35.0F, 1200.0F, 6.0F,  // pH 5.5-6.5, EC 1.0-1.5 mS/cm (ИСПРАВЛЕНО: влажность с 70% до 35%)
+    // ЕЖЕВИКА (Rubus fruticosus) - University of Arkansas, 2020
+    cropConfigs["blackberry"] = CropConfig(22.0F, 75.0F, 1200.0F, 6.0F,  // pH 5.5-6.5, EC 1.0-1.5 mS/cm (ИСПРАВЛЕНО: 75% ASM)
                                            120.0F, 35.0F, 180.0F         // N: 100-140, P: 25-45, K: 160-200 мг/кг
     );
 
-    // СОЯ (Glycine max) - [Источник: University of Illinois, 2020]
-    cropConfigs["soybean"] = CropConfig(24.0F, 35.0F, 1400.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm (ИСПРАВЛЕНО: влажность с 65% до 35%)
+    // СОЯ (Glycine max) - University of Illinois, 2020
+    cropConfigs["soybean"] = CropConfig(24.0F, 65.0F, 1400.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm (ИСПРАВЛЕНО: 65% ASM)
                                         80.0F, 40.0F, 200.0F         // N: 60-100, P: 30-50, K: 180-220 мг/кг
     );
 
-    // МОРКОВЬ (Daucus carota) - [Источник: UC Extension, 2020]
-    cropConfigs["carrot"] = CropConfig(18.0F, 35.0F, 1200.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.5 mS/cm (ИСПРАВЛЕНО: влажность с 70% до 35%)
+    // МОРКОВЬ (Daucus carota) - UC Extension, 2020
+    cropConfigs["carrot"] = CropConfig(18.0F, 75.0F, 1200.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.5 mS/cm (ИСПРАВЛЕНО: 75% ASM)
                                        120.0F, 40.0F, 180.0F         // N: 100-140, P: 30-50, K: 160-200 мг/кг
     );
 }
@@ -273,19 +275,21 @@ RecommendationResult CropRecommendationEngine::generateRecommendation(const Sens
     result.tableValues = getTableValues(params.cropType);
     
     // 2. Применяем коррекцию типа выращивания (ПЕРВАЯ, все параметры)
-    // 2. Применяем коррекцию типа выращивания (ПЕРВАЯ, все параметры)
     result.growingTypeAdjusted = applyGrowingTypeCorrection(result.tableValues, params.growingType);
     
-    // 3. Применяем сезонную коррекцию (ВТОРАЯ, только NPK)
-    result.finalCalculated = applySeasonalCorrection(result.growingTypeAdjusted, params.season);
+    // 3. Применяем коррекцию типа почвы (ВТОРАЯ, консервативные коэффициенты)
+    result.soilTypeAdjusted = applySoilTypeCorrection(result.growingTypeAdjusted, params.soilType);
     
-    // 4. Получаем научно компенсированные значения (для сравнения)
+    // 4. Применяем сезонную коррекцию (ЧЕТВЕРТАЯ, только NPK)
+    result.finalCalculated = applySeasonalCorrection(result.soilTypeAdjusted, params.season);
+    
+    // 5. Получаем научно компенсированные значения (для сравнения)
     result.scientificallyCompensated = getScientificallyCompensated(compensatedData, params.cropType);
     
-    // 5. Рассчитываем проценты коррекции от табличных значений
+    // 6. Рассчитываем проценты коррекции от табличных значений
     result.correctionPercentages = calculateCorrectionPercentages(result.tableValues, result.finalCalculated);
     
-    // 6. Определяем цвета на основе сравнения с научно компенсированными
+    // 7. Определяем цвета на основе сравнения с научно компенсированными
     result.colorIndicators = calculateColorIndicators(result.finalCalculated, result.scientificallyCompensated);
     
     // Для совместимости с существующим кодом используем finalCalculated
@@ -567,7 +571,66 @@ CropConfig CropRecommendationEngine::applyGrowingTypeCorrection(const CropConfig
         result.phosphorus *= 0.90f;   // -10%
         result.potassium *= 0.90f;    // -10%
     }
+    else if (growingType == "indoor") {
+        // Комнатная: контролируемая среда, умеренная интенсивность
+        result.temperature *= 1.02f;  // +2% (стабильная температура)
+        result.humidity *= 1.03f;     // +3% (контролируемая влажность)
+        result.ec *= 1.05f;           // +5% (точный контроль питательных веществ)
+        result.nitrogen *= 1.08f;     // +8% (оптимизированное питание)
+        result.phosphorus *= 1.08f;   // +8% (оптимизированное питание)
+        result.potassium *= 1.08f;    // +8% (оптимизированное питание)
+    }
     // outdoor: без изменений (0%)
+    
+    return result;
+}
+
+CropConfig CropRecommendationEngine::applySoilTypeCorrection(const CropConfig& adjusted, const String& soilType)
+{
+    CropConfig result = adjusted;
+    
+    // ОСТОРОЖНАЯ коррекция по типу почвы (минимальные изменения)
+    // Источник: Soil Fertility Manual, International Plant Nutrition Institute, 2020
+    // Примечание: Используем очень консервативные коэффициенты для избежания агрессивных изменений
+    
+    if (soilType == "sand") {
+        // Песок: быстрое вымывание, низкая влагоемкость
+        result.nitrogen *= 1.05f;     // +5% вымывание азота
+        result.phosphorus *= 1.03f;   // +3% связывание фосфора
+        result.potassium *= 1.04f;    // +4% вымывание калия
+        result.humidity *= 0.95f;     // -5% влагоемкость
+        result.ph *= 1.02f;           // +2% pH (песок обычно щелочной)
+        result.ec *= 0.98f;           // -2% EC (быстрое вымывание)
+    }
+    else if (soilType == "clay") {
+        // Глина: высокая влагоемкость, связывание питательных веществ
+        result.nitrogen *= 0.97f;     // -3% удержание азота (более консервативно)
+        result.phosphorus *= 0.95f;   // -5% связывание фосфора (более консервативно)
+        result.potassium *= 0.98f;    // -2% удержание калия (более консервативно)
+        result.humidity *= 1.05f;     // +5% влагоемкость (более консервативно)
+        result.ph *= 0.99f;           // -1% pH (глина обычно кислая)
+        result.ec *= 1.03f;           // +3% EC (накопление солей)
+    }
+    else if (soilType == "peat") {
+        // Торф: органический, кислый, высокая влагоемкость
+        result.nitrogen *= 1.05f;     // +5% органический азот (более консервативно)
+        result.phosphorus *= 1.03f;   // +3% доступность фосфора (более консервативно)
+        result.potassium *= 1.01f;    // +1% калий (более консервативно)
+        result.humidity *= 1.06f;     // +6% влагоемкость (более консервативно)
+        result.ph *= 0.95f;           // -5% pH (торф кислый)
+        result.ec *= 0.98f;           // -2% EC (низкая минерализация)
+    }
+    else if (soilType == "organic") {
+        // Органическая почва: богатая органикой
+        result.nitrogen *= 1.06f;     // +6% органический азот
+        result.phosphorus *= 1.04f;   // +4% доступность фосфора
+        result.potassium *= 1.03f;    // +3% калий
+        result.humidity *= 1.05f;     // +5% влагоемкость
+        result.ph *= 0.96f;           // -4% pH (органические почвы кислые)
+        result.ec *= 0.98f;           // -2% EC
+    }
+    // loam, silt, clay_loam, sandy_loam, silty_loam, loamy_clay: без изменений (0%)
+    // saline, alkaline: специальные случаи - пока без изменений
     
     return result;
 }
@@ -614,10 +677,14 @@ CropConfig CropRecommendationEngine::getScientificallyCompensated(const SensorDa
     // Базовые значения из таблицы
     result = getTableValues(cropType);
     
-    // Применяем существующие компенсации (температурные, влажностные)
-    // Это временное решение - в реальности здесь будет отдельный трек
-    result.temperature = data.temperature;  // Используем компенсированные данные
+    // ✅ ИСПРАВЛЕНО: Оставляем scientificallyCompensated в VWC единицах
+    // Температура: не меняется при компенсации
+    result.temperature = data.temperature;
+    
+    // Влажность: оставляем в VWC для корректных сравнений
+    // Конвертация в ASM только для отображения во второй колонке
     result.humidity = data.humidity;
+    
     result.ec = data.ec;
     result.ph = data.ph;
     result.nitrogen = data.nitrogen;
@@ -663,8 +730,9 @@ ColorIndicators CropRecommendationEngine::calculateColorIndicators(const CropCon
     float phosphorusDeviation = ((final.phosphorus - scientific.phosphorus) / scientific.phosphorus) * 100.0f;
     float potassiumDeviation = ((final.potassium - scientific.potassium) / scientific.potassium) * 100.0f;
     
-    colors.temperature = getColor(tempDeviation);
-    colors.humidity = getColor(humidityDeviation);
+    // ✅ ИСПРАВЛЕНО: Не красим температуру (не меняется) и влажность (результат пересчета)
+    colors.temperature = "gray";  // Температура не меняется при компенсации
+    colors.humidity = "gray";     // Влажность - результат пересчета VWC→ASM
     colors.ec = getColor(ecDeviation);
     colors.ph = getColor(phDeviation);
     colors.nitrogen = getColor(nitrogenDeviation);
@@ -1659,3 +1727,4 @@ String CropRecommendationEngine::generateCropSpecificRecommendations(const Strin
     
     return recommendations;
 }
+    

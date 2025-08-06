@@ -25,6 +25,7 @@
 #include "../../include/sensor_types.h"
 #include "../sensor_correction.h"
 #include "../business/crop_recommendation_engine.h"
+#include "../business/sensor_compensation_service.h"
 
 // Глобальный экземпляр сервиса калибровки
 extern SensorCalibrationService gCalibrationService;
@@ -160,6 +161,20 @@ void handleProfileSave()
 }
 }  // namespace
 
+// ✅ Функция для безопасной санитизации JSON строк
+String sanitizeForJson(const String& input) {
+    String sanitized = input;
+    sanitized.replace("\\", "\\\\");  // Сначала обратные слеши
+    sanitized.replace("\"", "\\\"");  // Потом кавычки
+    sanitized.replace("/", "\\/");    // Экранирование слешей
+    sanitized.replace("\n", "\\n");
+    sanitized.replace("\r", "\\r");
+    sanitized.replace("\t", "\\t");
+    sanitized.replace("\b", "\\b");
+    sanitized.replace("\f", "\\f");
+    return sanitized;
+}
+
 void sendSensorJson()  // ✅ Убираем static - функция extern в header
 {
     // unified JSON response for sensor data
@@ -171,8 +186,10 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     }
 
     StaticJsonDocument<SENSOR_JSON_DOC_SIZE> doc;
-    doc["temperature"] = format_temperature(sensorData.temperature);
+    // Температура НЕ компенсируется - используем сырые данные
+    doc["temperature"] = format_temperature(sensorData.raw_temperature);
     doc["humidity"] = format_moisture(sensorData.humidity);
+    
     doc["ec"] = format_ec(sensorData.ec);
     doc["ph"] = format_ph(sensorData.ph);
     doc["nitrogen"] = format_npk(sensorData.nitrogen);
@@ -231,6 +248,8 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     NPKReferences npk{sensorData.nitrogen, sensorData.phosphorus, sensorData.potassium};
     SoilType soilType = static_cast<SoilType>(config.soilProfile);
     
+
+    
     // Получаем рекомендации по антагонизмам
     String antagonismRecommendations = getNutrientInteractionService().generateAntagonismRecommendations(
         npk, soilType, sensorData.ph);
@@ -242,8 +261,12 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
         logDebugSafe("JSON API: cropId was empty, set to 'none'");
     }
     
-    // ✅ Добавляем cropId в JSON
-    doc["crop_id"] = String(config.cropId);
+    // ✅ Добавляем cropId в JSON (БЕЗОПАСНО)
+                doc["crop_id"] = sanitizeForJson(String(config.cropId));
+            
+            // ✅ ОТЛАДОЧНОЕ ЛОГИРОВАНИЕ для проблемы отображения культуры
+            logDebugSafe("JSON API: cropId='%s', len=%d, envType=%d", 
+                        config.cropId, strlen(config.cropId), config.environmentType);
     
     // Проверяем валидность crop_id
     bool lenCheck = strlen(config.cropId) > 0;
@@ -252,104 +275,45 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     // ✅ crop_specific_recommendations обрабатывается ниже в системном алгоритме
     
     // ============================================================================
-    // СИСТЕМНЫЙ АЛГОРИТМ: Новые поля для системного расчета агрорекомендаций
+    // ОПТИМИЗИРОВАННЫЙ АЛГОРИТМ: Только необходимые расчеты
     // ============================================================================
     
-    // ✅ ОПТИМИЗАЦИЯ: Определяем сезон ОДИН РАЗ для всех операций
+    // ✅ ОПТИМИЗАЦИЯ: Определяем сезон ОДИН РАЗ
     const char* seasonName = getCurrentSeasonName();
     
-    // Получаем параметры для системного алгоритма
-    String cropType = String(config.cropId);
-    String growingType = "outdoor";  // По умолчанию
-    String season = "summer";        // По умолчанию
+    // ✅ ОПТИМИЗАЦИЯ: Простая конвертация VWC → ASM для второй колонки
+    SensorCompensationService compensationService;
+    float asmHumidity = compensationService.vwcToAsm(sensorData.humidity / 100.0F, soilType);
+    doc["humidity"] = format_moisture(asmHumidity);
     
-    // Определяем тип выращивания из конфигурации
-    if (config.environmentType == 1) {
-        growingType = "greenhouse";
-    } else if (config.environmentType == 2) {
-        growingType = "indoor";
-    }
-    
-    // ✅ ОПТИМИЗАЦИЯ: Используем уже определенный сезон
-    if (strcmp(seasonName, "Весна") == 0) {
-        season = "spring";
-    } else if (strcmp(seasonName, "Лето") == 0) {
-        season = "summer";
-    } else if (strcmp(seasonName, "Осень") == 0) {
-        season = "autumn";
-    } else if (strcmp(seasonName, "Зима") == 0) {
-        season = "winter";
-    }
-    // Если "Н/Д" - оставляем "summer" по умолчанию
-    
-    // Вызываем новый системный алгоритм
-    RecommendationResult systematicResult = getCropEngine().generateRecommendation(
-        sensorData, cropType, growingType, season);
-    
-    // ✅ ОПТИМИЗАЦИЯ: Используем уже определенный сезон для crop_specific_recommendations
+    // ✅ ВОЗВРАЩАЕМ УМНЫЕ РЕКОМЕНДАЦИИ
     if (lenCheck && strCheck) {
+        // Используем научно компенсированные значения для умных рекомендаций
+        NPKReferences scientificNPK;
+        scientificNPK.nitrogen = sensorData.nitrogen;
+        scientificNPK.phosphorus = sensorData.phosphorus;
+        scientificNPK.potassium = sensorData.potassium;
+        
         String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
-            String(config.cropId), npk, soilType, sensorData.ph, String(seasonName));
+            String(config.cropId), scientificNPK, soilType, sensorData.ph, String(seasonName));
         doc["crop_specific_recommendations"] = cropRecommendations;
         
-        // ✅ Минимальное логирование для отладки
         logDebugSafe("JSON API: crop='%s', rec_len=%d", config.cropId, cropRecommendations.length());
     } else {
         doc["crop_specific_recommendations"] = "";
     }
     
-    // Добавляем новые поля в JSON
-    // 1. Табличные значения (исходные для культуры)
-    doc["table_values"] = JsonObject();
-    doc["table_values"]["temperature"] = format_temperature(systematicResult.tableValues.temperature);
-    doc["table_values"]["humidity"] = format_moisture(systematicResult.tableValues.humidity);
-    doc["table_values"]["ec"] = format_ec(systematicResult.tableValues.ec);
-    doc["table_values"]["ph"] = format_ph(systematicResult.tableValues.ph);
-    doc["table_values"]["nitrogen"] = format_npk(systematicResult.tableValues.nitrogen);
-    doc["table_values"]["phosphorus"] = format_npk(systematicResult.tableValues.phosphorus);
-    doc["table_values"]["potassium"] = format_npk(systematicResult.tableValues.potassium);
-    
-    // 2. Итоговые расчетные значения (после всех коррекций)
-    doc["final_calculated"] = JsonObject();
-    doc["final_calculated"]["temperature"] = format_temperature(systematicResult.finalCalculated.temperature);
-    doc["final_calculated"]["humidity"] = format_moisture(systematicResult.finalCalculated.humidity);
-    doc["final_calculated"]["ec"] = format_ec(systematicResult.finalCalculated.ec);
-    doc["final_calculated"]["ph"] = format_ph(systematicResult.finalCalculated.ph);
-    doc["final_calculated"]["nitrogen"] = format_npk(systematicResult.finalCalculated.nitrogen);
-    doc["final_calculated"]["phosphorus"] = format_npk(systematicResult.finalCalculated.phosphorus);
-    doc["final_calculated"]["potassium"] = format_npk(systematicResult.finalCalculated.potassium);
-    
-    // 3. Проценты коррекции от табличных значений
-    doc["correction_percentages"] = JsonObject();
-    doc["correction_percentages"]["temperature"] = String(systematicResult.correctionPercentages.temperature, 1);
-    doc["correction_percentages"]["humidity"] = String(systematicResult.correctionPercentages.humidity, 1);
-    doc["correction_percentages"]["ec"] = String(systematicResult.correctionPercentages.ec, 1);
-    doc["correction_percentages"]["ph"] = String(systematicResult.correctionPercentages.ph, 1);
-    doc["correction_percentages"]["nitrogen"] = String(systematicResult.correctionPercentages.nitrogen, 1);
-    doc["correction_percentages"]["phosphorus"] = String(systematicResult.correctionPercentages.phosphorus, 1);
-    doc["correction_percentages"]["potassium"] = String(systematicResult.correctionPercentages.potassium, 1);
-    
-    // 4. Цветовые индикаторы на основе сравнения с научно компенсированными
-    doc["color_indicators"] = JsonObject();
-    doc["color_indicators"]["temperature"] = systematicResult.colorIndicators.temperature;
-    doc["color_indicators"]["humidity"] = systematicResult.colorIndicators.humidity;
-    doc["color_indicators"]["ec"] = systematicResult.colorIndicators.ec;
-    doc["color_indicators"]["ph"] = systematicResult.colorIndicators.ph;
-    doc["color_indicators"]["nitrogen"] = systematicResult.colorIndicators.nitrogen;
-    doc["color_indicators"]["phosphorus"] = systematicResult.colorIndicators.phosphorus;
-    doc["color_indicators"]["potassium"] = systematicResult.colorIndicators.potassium;
-    
-    // ✅ ДОБАВЛЯЕМ ПОЛЯ rec_* ИЗ НОВОГО СИСТЕМНОГО АЛГОРИТМА
-    doc["rec_temperature"] = format_temperature(systematicResult.finalCalculated.temperature);
-    doc["rec_humidity"] = format_moisture(systematicResult.finalCalculated.humidity);
-    doc["rec_ec"] = format_ec(systematicResult.finalCalculated.ec);
-    doc["rec_ph"] = format_ph(systematicResult.finalCalculated.ph);
-    doc["rec_nitrogen"] = format_npk(systematicResult.finalCalculated.nitrogen);
-    doc["rec_phosphorus"] = format_npk(systematicResult.finalCalculated.phosphorus);
-    doc["rec_potassium"] = format_npk(systematicResult.finalCalculated.potassium);
+    // ✅ РЕКОМЕНДУЕМЫЕ ЗНАЧЕНИЯ ДЛЯ ВЫБРАННОЙ КУЛЬТУРЫ
+    CropConfig cropConfig = getCropEngine().getCropConfig(String(config.cropId));
+    doc["rec_temperature"] = format_temperature(cropConfig.temperature);
+    doc["rec_humidity"] = format_moisture(cropConfig.humidity);
+    doc["rec_ec"] = format_ec(cropConfig.ec);
+    doc["rec_ph"] = format_ph(cropConfig.ph);
+    doc["rec_nitrogen"] = format_npk(cropConfig.nitrogen);
+    doc["rec_phosphorus"] = format_npk(cropConfig.phosphorus);
+    doc["rec_potassium"] = format_npk(cropConfig.potassium);
 
     // ---- Дополнительная информация ----
-    // ✅ ОПТИМИЗАЦИЯ: Используем уже определенный сезон
     doc["season"] = seasonName;
 
     // Проверяем отклонения
@@ -553,6 +517,45 @@ void setupDataRoutes()
                 {
                     recHeader = "Смородина";
                 }
+                // НОВЫЕ КУЛЬТУРЫ (Фаза 1 - Приоритетные, научно обоснованные 2024)
+                else if (strcmp(cropId, "spinach") == 0)
+                {
+                    recHeader = "Шпинат";
+                }
+                else if (strcmp(cropId, "basil") == 0)
+                {
+                    recHeader = "Базилик";
+                }
+                else if (strcmp(cropId, "cannabis") == 0)
+                {
+                    recHeader = "Конопля";
+                }
+                // НОВЫЕ КУЛЬТУРЫ (Фаза 2 - Важные, стратегические)
+                else if (strcmp(cropId, "wheat") == 0)
+                {
+                    recHeader = "Пшеница";
+                }
+                else if (strcmp(cropId, "potato") == 0)
+                {
+                    recHeader = "Картофель";
+                }
+                // НОВЫЕ КУЛЬТУРЫ (Фаза 3 - Завершающие, полное покрытие)
+                else if (strcmp(cropId, "kale") == 0)
+                {
+                    recHeader = "Кале";
+                }
+                else if (strcmp(cropId, "blackberry") == 0)
+                {
+                    recHeader = "Ежевика";
+                }
+                else if (strcmp(cropId, "soybean") == 0)
+                {
+                    recHeader = "Соя";
+                }
+                else if (strcmp(cropId, "carrot") == 0)
+                {
+                    recHeader = "Морковь";
+                }
             }
 
             html += "<div class='section'><table class='data'><thead><tr><th></th><th>RAW</th><th>Компенс.</th><th>" +
@@ -561,8 +564,8 @@ void setupDataRoutes()
                 "<tr><td>🌡️ Температура, °C</td><td><span id='temp_raw'></span></td><td><span "
                 "id='temp'></span></td><td><span id='temp_rec'></span></td></tr>";
             html +=
-                "<tr><td>💧 Влажность, %</td><td><span id='hum_raw'></span></td><td><span "
-                "id='hum'></span></td><td><span id='hum_rec'></span></td></tr>";
+                "<tr><td>💧 Влажность, %</td><td><span id='hum_raw'></span> VWC</td><td><span "
+                "id='hum'></span> ASM</td><td><span id='hum_rec'></span> ASM</td></tr>";
             html +=
                 "<tr><td>⚡ EC, µS/cm</td><td><span id='ec_raw'></span></td><td><span id='ec'></span></td><td><span "
                 "id='ec_rec'></span></td></tr>";
@@ -674,7 +677,7 @@ void setupDataRoutes()
             html += "<li><strong>Стрелки ↑↓</strong> показывают направление изменений после компенсации</li>";
             html += "<li><strong>Сезонные корректировки</strong> учитывают потребности растений в разные периоды</li>";
             html += "<li><strong>Валидность данных</strong> проверяется по диапазонам и логическим связям</li>";
-            html += "<li><strong>Интервал обновления:</strong> каждые 3 секунды</li>";
+            html += "<li><strong>Интервал обновления:</strong> каждые 10 секунд</li>";
             html += "</ul>";
             html += "</div>";
 
@@ -790,8 +793,9 @@ void setupDataRoutes()
             html += "function showWithArrow(id,sign,value){document.getElementById(id).textContent=sign+value;}";
 
             // Compensated vs RAW arrows
-            html += "showWithArrow('temp', arrowSign(d.raw_temperature ,d.temperature ,tol.temp), d.temperature);";
-            html += "showWithArrow('hum',  arrowSign(d.raw_humidity    ,d.humidity    ,tol.hum ), d.humidity);";
+            // Температура и влажность БЕЗ стрелок (просто значения)
+            html += "showWithArrow('temp', '', d.temperature);";
+            html += "showWithArrow('hum',  '', d.humidity);";
             html += "showWithArrow('ec',   arrowSign(d.raw_ec          ,d.ec          ,tol.ec  ), d.ec);";
             html += "showWithArrow('ph',   arrowSign(d.raw_ph          ,d.ph          ,tol.ph  ), d.ph);";
             html += "showWithArrow('n',    arrowSign(d.raw_nitrogen    ,d.nitrogen    ,tol.n   ), d.nitrogen);";
@@ -909,8 +913,9 @@ void setupDataRoutes()
             html += "var ck=parseFloat(d.potassium||0);";
             
             // 🌈 РАСКРАСКА КОМПЕНСИРОВАННЫХ ЗНАЧЕНИЙ ПО ОТКЛОНЕНИЮ ОТ RAW
-            html += "applyColor('temp', colorCompensationDeviation(ct, parseFloat(d.raw_temperature||0)));";
-            html += "applyColor('hum',  colorCompensationDeviation(ch, parseFloat(d.raw_humidity||0)));";
+            // Температура и влажность НЕ окрашиваем (серый цвет)
+            html += "applyColor('temp', '');";  // Серый цвет (без окраски)
+            html += "applyColor('hum',  '');";  // Серый цвет (без окраски)
             html += "applyColor('ec',   colorCompensationDeviation(ce, parseFloat(d.raw_ec||0)));";
             html += "applyColor('ph',   colorCompensationDeviation(cph, parseFloat(d.raw_ph||0)));";
             html += "applyColor('n',    colorCompensationDeviation(cn, parseFloat(d.raw_nitrogen||0)));";
@@ -937,7 +942,7 @@ void setupDataRoutes()
             
             // Добавляем автоматический запуск обновления
             html += "updateSensor();";
-            html += "setInterval(updateSensor, 3000);";
+            html += "setInterval(updateSensor, 5000);"; // Оптимизированный интервал
 
 
             
@@ -1066,7 +1071,7 @@ void setupDataRoutes()
             html += "  }";
             html += "}";
 
-            html += "setInterval(updateSensor,3000);";
+            // УДАЛЕНО: Дублированный setInterval - оставляем только один
             html += "updateSensor();";
             html += "loadCorrectionSettings();";
             html += "</script>";

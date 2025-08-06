@@ -198,8 +198,8 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
         config.outlierThreshold = OUTLIER_THRESHOLD_DEFAULT;
     }
 
-    // Soil profile и агро-поля
-    config.soilProfile = preferences.getUChar("soilProfile", 0);
+    // Soil profile и агро-поля (изменяем по умолчанию с песка на суглинок)
+    config.soilProfile = preferences.getUChar("soilProfile", 1);  // 1 = LOAM вместо 0 = SAND
     config.latitude = preferences.getFloat("lat", 0.0F);
     config.longitude = preferences.getFloat("lon", 0.0F);
     preferences.getString("cropId", config.cropId, sizeof(config.cropId));
@@ -407,8 +407,8 @@ void resetConfig()  // NOLINT(misc-use-internal-linkage)
     config.kalmanEnabled = 0;      // отключен по умолчанию
     config.adaptiveFiltering = 0;  // отключена по умолчанию
 
-    // Soil profile и агро-поля
-    config.soilProfile = 0;
+    // Soil profile и агро-поля (изменяем по умолчанию с песка на суглинок)
+    config.soilProfile = 1;  // 1 = LOAM вместо 0 = SAND
     config.latitude = 0.0F;
     config.longitude = 0.0F;
     strlcpy(config.cropId, "", sizeof(config.cropId));
