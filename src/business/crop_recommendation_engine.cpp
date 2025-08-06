@@ -76,7 +76,11 @@ void CropRecommendationEngine::initializeCropConfigs()
     cropConfigs["apple"] = CropConfig(18.0F, 35.0F, 1800.0F, 6.5F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm (ИСПРАВЛЕНО: влажность с 70% до 35%)
                                       120.0F, 40.0F, 180.0F         // N: 90-130, P: 35-55, K: 110-150 мг/кг
     );
-    cropConfigs["pear"] = cropConfigs["apple"];  // Используем ту же конфигурацию
+    
+    // ГРУША (Pyrus communis) - научные данные Fruit Tree Research 2020
+    cropConfigs["pear"] = CropConfig(20.0F, 35.0F, 1600.0F, 6.2F,  // pH 6.0-6.5, EC 1.2-1.8 mS/cm (ИСПРАВЛЕНО: отдельная конфигурация для груши)
+                                     110.0F, 35.0F, 160.0F         // N: 100-120, P: 30-40, K: 150-170 мг/кг
+    );
 
     // ВИШНЯ (Prunus avium) - научные данные Fruit Tree Research 2020
     cropConfigs["cherry"] = CropConfig(22.0F, 35.0F, 1400.0F, 6.0F,  // pH 6.0-7.0, EC 1.0-1.8 mS/cm (ИСПРАВЛЕНО: влажность с 70% до 35%)
