@@ -185,7 +185,8 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     }
 
     StaticJsonDocument<SENSOR_JSON_DOC_SIZE> doc;
-    doc["temperature"] = format_temperature(sensorData.temperature);
+    // Температура НЕ компенсируется - используем сырые данные
+    doc["temperature"] = format_temperature(sensorData.raw_temperature);
     doc["humidity"] = format_moisture(sensorData.humidity);
     
     doc["ec"] = format_ec(sensorData.ec);
@@ -791,9 +792,9 @@ void setupDataRoutes()
             html += "function showWithArrow(id,sign,value){document.getElementById(id).textContent=sign+value;}";
 
             // Compensated vs RAW arrows
-            html += "showWithArrow('temp', arrowSign(d.raw_temperature ,d.temperature ,tol.temp), d.temperature);";
-            // Влажность: VWC → ASM (без дублирования ASM)
-            html += "showWithArrow('hum',  arrowSign(d.raw_humidity    ,d.humidity    ,tol.hum ), d.humidity);";
+            // Температура и влажность БЕЗ стрелок (просто значения)
+            html += "showWithArrow('temp', '', d.temperature);";
+            html += "showWithArrow('hum',  '', d.humidity);";
             html += "showWithArrow('ec',   arrowSign(d.raw_ec          ,d.ec          ,tol.ec  ), d.ec);";
             html += "showWithArrow('ph',   arrowSign(d.raw_ph          ,d.ph          ,tol.ph  ), d.ph);";
             html += "showWithArrow('n',    arrowSign(d.raw_nitrogen    ,d.nitrogen    ,tol.n   ), d.nitrogen);";
@@ -911,8 +912,9 @@ void setupDataRoutes()
             html += "var ck=parseFloat(d.potassium||0);";
             
             // 🌈 РАСКРАСКА КОМПЕНСИРОВАННЫХ ЗНАЧЕНИЙ ПО ОТКЛОНЕНИЮ ОТ RAW
-            html += "applyColor('temp', colorCompensationDeviation(ct, parseFloat(d.raw_temperature||0)));";
-            html += "applyColor('hum',  colorCompensationDeviation(ch, parseFloat(d.raw_humidity||0)));";
+            // Температура и влажность НЕ окрашиваем (серый цвет)
+            html += "applyColor('temp', '');";  // Серый цвет (без окраски)
+            html += "applyColor('hum',  '');";  // Серый цвет (без окраски)
             html += "applyColor('ec',   colorCompensationDeviation(ce, parseFloat(d.raw_ec||0)));";
             html += "applyColor('ph',   colorCompensationDeviation(cph, parseFloat(d.raw_ph||0)));";
             html += "applyColor('n',    colorCompensationDeviation(cn, parseFloat(d.raw_nitrogen||0)));";
