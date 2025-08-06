@@ -106,7 +106,7 @@ void CropRecommendationEngine::initializeCropConfigs()
     );
 
     // КОНОПЛЯ МЕДИЦИНСКАЯ (Cannabis sativa) - [Источник: Journal of Cannabis Research, 2020]
-    cropConfigs["cannabis"] = CropConfig(24.0F, 35.0F, 1600.0F, 6.5F,  // pH 6.0-7.0, EC 1.2-2.0 mS/cm (ИСПРАВЛЕНО: влажность с 65% до 35%)
+    cropConfigs["cannabis"] = CropConfig(24.0F, 65.0F, 1600.0F, 6.5F,  // pH 6.0-7.0, EC 1.2-2.0 mS/cm (ИСПРАВЛЕНО: влажность с 35% до 65% согласно научным данным)
                                          160.0F, 40.0F, 200.0F         // N: 140-180, P: 30-50, K: 180-220 мг/кг
     );
 
