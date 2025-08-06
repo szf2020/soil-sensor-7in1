@@ -295,6 +295,14 @@ float SensorCompensationService::vwcToAsm(float vwc, SoilType soilType) const
     // Ограничиваем значения от 0 до 100%
     if (asmValue < 0.0F) asmValue = 0.0F;
     if (asmValue > 100.0F) asmValue = 100.0F;
+    
+    // Отладочная информация
+    logDebugSafe("VWC→ASM: vwc=%.3f, fc=%.3f, pwp=%.3f, asm=%.1f%%", vwc, fc, pwp, asmValue);
+    
+    // Проверяем реалистичность VWC
+    if (vwc > 0.50F) {
+        logWarn("VWC слишком высок: " + String(vwc * 100.0F, 1) + "% - возможно ошибка датчика");
+    }
 
     return asmValue;
 }

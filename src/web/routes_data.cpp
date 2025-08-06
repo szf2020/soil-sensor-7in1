@@ -271,13 +271,19 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     float asmHumidity = compensationService.vwcToAsm(sensorData.humidity / 100.0F, soilType);
     doc["humidity"] = format_moisture(asmHumidity);
     
-    // ✅ ОПТИМИЗАЦИЯ: Минимальные рекомендации только если нужно
+    // ✅ ВОЗВРАЩАЕМ УМНЫЕ РЕКОМЕНДАЦИИ
     if (lenCheck && strCheck) {
-        // Простые рекомендации без тяжелых расчетов
-        String cropRecommendations = "🌱 Рекомендации для " + String(config.cropId) + 
-                                   " (pH: " + String(format_ph(sensorData.ph).c_str()) + 
-                                   ", EC: " + String(format_ec(sensorData.ec).c_str()) + ")";
+        // Используем научно компенсированные значения для умных рекомендаций
+        NPKReferences scientificNPK;
+        scientificNPK.nitrogen = sensorData.nitrogen;
+        scientificNPK.phosphorus = sensorData.phosphorus;
+        scientificNPK.potassium = sensorData.potassium;
+        
+        String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
+            String(config.cropId), scientificNPK, soilType, sensorData.ph, String(seasonName));
         doc["crop_specific_recommendations"] = cropRecommendations;
+        
+        logDebugSafe("JSON API: crop='%s', rec_len=%d", config.cropId, cropRecommendations.length());
     } else {
         doc["crop_specific_recommendations"] = "";
     }
@@ -772,8 +778,8 @@ void setupDataRoutes()
 
             // Compensated vs RAW arrows
             html += "showWithArrow('temp', arrowSign(d.raw_temperature ,d.temperature ,tol.temp), d.temperature);";
-            // Влажность: VWC → ASM
-            html += "showWithArrow('hum',  arrowSign(d.raw_humidity    ,d.humidity    ,tol.hum ), d.humidity + ' ASM');";
+            // Влажность: VWC → ASM (без дублирования ASM)
+            html += "showWithArrow('hum',  arrowSign(d.raw_humidity    ,d.humidity    ,tol.hum ), d.humidity);";
             html += "showWithArrow('ec',   arrowSign(d.raw_ec          ,d.ec          ,tol.ec  ), d.ec);";
             html += "showWithArrow('ph',   arrowSign(d.raw_ph          ,d.ph          ,tol.ph  ), d.ph);";
             html += "showWithArrow('n',    arrowSign(d.raw_nitrogen    ,d.nitrogen    ,tol.n   ), d.nitrogen);";
