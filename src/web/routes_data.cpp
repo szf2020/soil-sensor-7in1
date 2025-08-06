@@ -161,6 +161,19 @@ void handleProfileSave()
 }
 }  // namespace
 
+// ✅ Функция для безопасной санитизации JSON строк
+String sanitizeForJson(const String& input) {
+    String sanitized = input;
+    sanitized.replace("\"", "\\\"");
+    sanitized.replace("\\", "\\\\");
+    sanitized.replace("\n", "\\n");
+    sanitized.replace("\r", "\\r");
+    sanitized.replace("\t", "\\t");
+    sanitized.replace("\b", "\\b");
+    sanitized.replace("\f", "\\f");
+    return sanitized;
+}
+
 void sendSensorJson()  // ✅ Убираем static - функция extern в header
 {
     // unified JSON response for sensor data
@@ -246,8 +259,8 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
         logDebugSafe("JSON API: cropId was empty, set to 'none'");
     }
     
-    // ✅ Добавляем cropId в JSON
-                doc["crop_id"] = String(config.cropId);
+    // ✅ Добавляем cropId в JSON (БЕЗОПАСНО)
+                doc["crop_id"] = sanitizeForJson(String(config.cropId));
             
             // ✅ ОТЛАДОЧНОЕ ЛОГИРОВАНИЕ для проблемы отображения культуры
             logDebugSafe("JSON API: cropId='%s', len=%d, envType=%d", 
@@ -280,7 +293,7 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
         scientificNPK.potassium = sensorData.potassium;
         
         String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
-            String(config.cropId), scientificNPK, soilType, sensorData.ph, String(seasonName));
+            sanitizeForJson(String(config.cropId)), scientificNPK, soilType, sensorData.ph, String(seasonName));
         doc["crop_specific_recommendations"] = cropRecommendations;
         
         logDebugSafe("JSON API: crop='%s', rec_len=%d", config.cropId, cropRecommendations.length());
@@ -289,7 +302,7 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     }
     
     // ✅ РЕКОМЕНДУЕМЫЕ ЗНАЧЕНИЯ ДЛЯ ВЫБРАННОЙ КУЛЬТУРЫ
-    CropConfig cropConfig = getCropEngine().getCropConfig(String(config.cropId));
+    CropConfig cropConfig = getCropEngine().getCropConfig(sanitizeForJson(String(config.cropId)));
     doc["rec_temperature"] = format_temperature(cropConfig.temperature);
     doc["rec_humidity"] = format_moisture(cropConfig.humidity);
     doc["rec_ec"] = format_ec(cropConfig.ec);

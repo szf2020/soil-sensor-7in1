@@ -87,6 +87,9 @@ class SensorCompensationService : public ISensorCompensationService
 
     // Расчет температуры в Кельвинах
     static float temperatureToKelvin(float celsius);
+    
+    // ✅ Приватный метод для получения PWP (убираем дублирование)
+    float getPWP(SoilType soilType) const;
 
     // УДАЛЕНО: Старые функции заменены на научные формулы модели Арчи
     // static float calculateECTemperatureFactor(float temperature); - УДАЛЕНО

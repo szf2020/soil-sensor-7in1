@@ -187,7 +187,7 @@ class DeepScientificAnalysis:
             new_value = correction["new_value"]
             
             # Находим строку в коде
-            code_line = f'    cropConfigs["{crop}"] = CropConfig(..., {new_value:.1f}F, ..., ...);  // Исправлено по научным данным'
+            code_line = f'    cropConfigs["{crop}"] = CropConfig(25.0F, {new_value:.1f}F, 2000.0F, 6.5F, 200.0F, 100.0F, 300.0F);  // Исправлено по научным данным'
             code_lines.append(code_line)
             
             print(f"  {code_line}")
