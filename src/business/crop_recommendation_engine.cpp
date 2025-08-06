@@ -684,7 +684,7 @@ CropConfig CropRecommendationEngine::getScientificallyCompensated(const SensorDa
     // Влажность: конвертируем VWC в ASM для отображения во второй колонке
     SensorCompensationService compensationService;
     SoilType soilType = static_cast<SoilType>(config.soilProfile);
-    result.humidity = compensationService.vwcToAsm(data.humidity, soilType);
+    result.humidity = compensationService.vwcToAsm(data.humidity / 100.0F, soilType);
     
     result.ec = data.ec;
     result.ph = data.ph;

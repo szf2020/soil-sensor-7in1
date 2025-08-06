@@ -294,6 +294,9 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     RecommendationResult systematicResult = getCropEngine().generateRecommendation(
         sensorData, cropType, growingType, season);
     
+    // ✅ ИСПРАВЛЕНИЕ: Обновляем humidity в JSON для отображения ASM во второй колонке
+    doc["humidity"] = format_moisture(systematicResult.scientificallyCompensated.humidity);
+    
     // ✅ ОПТИМИЗАЦИЯ: Используем уже определенный сезон для crop_specific_recommendations
                 if (lenCheck && strCheck) {
                 // ✅ ИСПРАВЛЕНИЕ: Используем научно компенсированные значения для специальных рекомендаций
