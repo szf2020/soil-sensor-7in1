@@ -243,7 +243,11 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     }
     
     // ✅ Добавляем cropId в JSON
-    doc["crop_id"] = String(config.cropId);
+                doc["crop_id"] = String(config.cropId);
+            
+            // ✅ ОТЛАДОЧНОЕ ЛОГИРОВАНИЕ для проблемы отображения культуры
+            logDebugSafe("JSON API: cropId='%s', len=%d, envType=%d", 
+                        config.cropId, strlen(config.cropId), config.environmentType);
     
     // Проверяем валидность crop_id
     bool lenCheck = strlen(config.cropId) > 0;
@@ -287,16 +291,22 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
         sensorData, cropType, growingType, season);
     
     // ✅ ОПТИМИЗАЦИЯ: Используем уже определенный сезон для crop_specific_recommendations
-    if (lenCheck && strCheck) {
-        String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
-            String(config.cropId), npk, soilType, sensorData.ph, String(seasonName));
-        doc["crop_specific_recommendations"] = cropRecommendations;
-        
-        // ✅ Минимальное логирование для отладки
-        logDebugSafe("JSON API: crop='%s', rec_len=%d", config.cropId, cropRecommendations.length());
-    } else {
-        doc["crop_specific_recommendations"] = "";
-    }
+                if (lenCheck && strCheck) {
+                // ✅ ИСПРАВЛЕНИЕ: Используем научно компенсированные значения для специальных рекомендаций
+                NPKReferences scientificNPK;
+                scientificNPK.nitrogen = systematicResult.scientificallyCompensated.nitrogen;
+                scientificNPK.phosphorus = systematicResult.scientificallyCompensated.phosphorus;
+                scientificNPK.potassium = systematicResult.scientificallyCompensated.potassium;
+                
+                String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
+                    String(config.cropId), scientificNPK, soilType, systematicResult.scientificallyCompensated.ph, String(seasonName));
+                doc["crop_specific_recommendations"] = cropRecommendations;
+                
+                // ✅ Минимальное логирование для отладки
+                logDebugSafe("JSON API: crop='%s', rec_len=%d", config.cropId, cropRecommendations.length());
+            } else {
+                doc["crop_specific_recommendations"] = "";
+            }
     
     // Добавляем новые поля в JSON
     // 1. Табличные значения (исходные для культуры)
@@ -553,6 +563,45 @@ void setupDataRoutes()
                 {
                     recHeader = "Смородина";
                 }
+                // НОВЫЕ КУЛЬТУРЫ (Фаза 1 - Приоритетные, научно обоснованные 2024)
+                else if (strcmp(cropId, "spinach") == 0)
+                {
+                    recHeader = "Шпинат";
+                }
+                else if (strcmp(cropId, "basil") == 0)
+                {
+                    recHeader = "Базилик";
+                }
+                else if (strcmp(cropId, "cannabis") == 0)
+                {
+                    recHeader = "Конопля";
+                }
+                // НОВЫЕ КУЛЬТУРЫ (Фаза 2 - Важные, стратегические)
+                else if (strcmp(cropId, "wheat") == 0)
+                {
+                    recHeader = "Пшеница";
+                }
+                else if (strcmp(cropId, "potato") == 0)
+                {
+                    recHeader = "Картофель";
+                }
+                // НОВЫЕ КУЛЬТУРЫ (Фаза 3 - Завершающие, полное покрытие)
+                else if (strcmp(cropId, "kale") == 0)
+                {
+                    recHeader = "Кале";
+                }
+                else if (strcmp(cropId, "blackberry") == 0)
+                {
+                    recHeader = "Ежевика";
+                }
+                else if (strcmp(cropId, "soybean") == 0)
+                {
+                    recHeader = "Соя";
+                }
+                else if (strcmp(cropId, "carrot") == 0)
+                {
+                    recHeader = "Морковь";
+                }
             }
 
             html += "<div class='section'><table class='data'><thead><tr><th></th><th>RAW</th><th>Компенс.</th><th>" +
@@ -674,7 +723,7 @@ void setupDataRoutes()
             html += "<li><strong>Стрелки ↑↓</strong> показывают направление изменений после компенсации</li>";
             html += "<li><strong>Сезонные корректировки</strong> учитывают потребности растений в разные периоды</li>";
             html += "<li><strong>Валидность данных</strong> проверяется по диапазонам и логическим связям</li>";
-            html += "<li><strong>Интервал обновления:</strong> каждые 3 секунды</li>";
+            html += "<li><strong>Интервал обновления:</strong> каждые 10 секунд</li>";
             html += "</ul>";
             html += "</div>";
 
@@ -937,7 +986,7 @@ void setupDataRoutes()
             
             // Добавляем автоматический запуск обновления
             html += "updateSensor();";
-            html += "setInterval(updateSensor, 3000);";
+            html += "setInterval(updateSensor, 10000);"; // Увеличиваем интервал для стабильности
 
 
             
@@ -1066,7 +1115,7 @@ void setupDataRoutes()
             html += "  }";
             html += "}";
 
-            html += "setInterval(updateSensor,3000);";
+            html += "setInterval(updateSensor,10000);"; // Увеличиваем интервал до 10 секунд для стабильности
             html += "updateSensor();";
             html += "loadCorrectionSettings();";
             html += "</script>";

@@ -78,6 +78,7 @@ struct RecommendationResult
     // Новые поля для системного алгоритма
     CropConfig tableValues;              // Исходные табличные значения
     CropConfig growingTypeAdjusted;      // После коррекции типа выращивания
+    CropConfig soilTypeAdjusted;         // После коррекции типа почвы (НОВОЕ!)
     CropConfig finalCalculated;          // Итоговые расчетные значения
     CropConfig scientificallyCompensated; // Научно компенсированные значения
     CorrectionPercentages correctionPercentages;
@@ -111,6 +112,7 @@ class CropRecommendationEngine : public ICropRecommendationEngine
     // Новые методы для системного алгоритма
     CropConfig getTableValues(const String& cropType) const;
     CropConfig applyGrowingTypeCorrection(const CropConfig& table, const String& growingType);
+    CropConfig applySoilTypeCorrection(const CropConfig& adjusted, const String& soilType);
     CropConfig applySeasonalCorrection(const CropConfig& adjusted, const String& season);
     CropConfig getScientificallyCompensated(const SensorData& data, const String& cropType);
     CorrectionPercentages calculateCorrectionPercentages(const CropConfig& table, const CropConfig& final);
