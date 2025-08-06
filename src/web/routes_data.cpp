@@ -293,7 +293,7 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
         scientificNPK.potassium = sensorData.potassium;
         
         String cropRecommendations = getCropEngine().generateCropSpecificRecommendations(
-            sanitizeForJson(String(config.cropId)), scientificNPK, soilType, sensorData.ph, String(seasonName));
+            String(config.cropId), scientificNPK, soilType, sensorData.ph, String(seasonName));
         doc["crop_specific_recommendations"] = cropRecommendations;
         
         logDebugSafe("JSON API: crop='%s', rec_len=%d", config.cropId, cropRecommendations.length());
@@ -302,7 +302,7 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     }
     
     // ✅ РЕКОМЕНДУЕМЫЕ ЗНАЧЕНИЯ ДЛЯ ВЫБРАННОЙ КУЛЬТУРЫ
-    CropConfig cropConfig = getCropEngine().getCropConfig(sanitizeForJson(String(config.cropId)));
+    CropConfig cropConfig = getCropEngine().getCropConfig(String(config.cropId));
     doc["rec_temperature"] = format_temperature(cropConfig.temperature);
     doc["rec_humidity"] = format_moisture(cropConfig.humidity);
     doc["rec_ec"] = format_ec(cropConfig.ec);

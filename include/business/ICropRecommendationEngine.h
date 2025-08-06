@@ -27,8 +27,8 @@ struct CropConfig
 
     CropConfig() : temperature(0), humidity(0), ec(0), ph(0), nitrogen(0), phosphorus(0), potassium(0) {}
 
-    CropConfig(float t, float h, float e, float p, float n, float ph, float k)
-        : temperature(t), humidity(h), ec(e), ph(p), nitrogen(n), phosphorus(ph), potassium(k)
+    CropConfig(float temp, float hum, float ec_val, float ph_val, float nit, float phos, float pot)
+        : temperature(temp), humidity(hum), ec(ec_val), ph(ph_val), nitrogen(nit), phosphorus(phos), potassium(pot)
     {
     }
 };

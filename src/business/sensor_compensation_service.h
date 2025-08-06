@@ -199,6 +199,8 @@ class SensorCompensationService : public ISensorCompensationService
      * @return float VWC в процентах от объема почвы
      */
     float asmToVwc(float asmValue, SoilType soilType) const;
+
+
 };
 
 #endif  // SENSOR_COMPENSATION_SERVICE_H
