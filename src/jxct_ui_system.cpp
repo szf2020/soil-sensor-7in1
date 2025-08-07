@@ -46,19 +46,26 @@ h2 {
 /* === НАВИГАЦИЯ === */
 .nav {
     margin-bottom: 30px;
-    padding: 15px 0;
+    padding: 10px 0;
     border-bottom: 1px solid #ddd;
+    white-space: nowrap;
+    overflow-x: auto;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
 }
 
 .nav a {
     display: inline-block;
-    margin-right: 10px;
     text-decoration: none;
     color: #4CAF50;
     font-weight: 600;
+    font-size: 14px;
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: 4px;
     transition: 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .nav a:hover {

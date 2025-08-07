@@ -98,11 +98,11 @@ String navHtml()  // NOLINT(misc-use-internal-linkage)
     html += "<a href='/'>" UI_ICON_CONFIG " Настройки</a>";
     if (currentWiFiMode == WiFiMode::STA)
     {
-        html += "<a href='/readings'>" UI_ICON_DATA " Показания</a>";
-        html += "<a href='/intervals'>" UI_ICON_INTERVALS " Интервалы</a>";  // v2.3.0
-
-        html += "<a href='/config_manager'>" UI_ICON_FOLDER " Конфигурация</a>";  // v2.3.0
-        html += "<a href='/updates'>🚀 Обновления</a>";
+        html += "<a href='/readings'>" UI_ICON_DATA " Данные</a>";
+        html += "<a href='/calibration'>" UI_ICON_CALIBRATION " Калибр.</a>";
+        html += "<a href='/intervals'>" UI_ICON_INTERVALS " Интерв.</a>";  // v2.3.0
+        html += "<a href='/config_manager'>" UI_ICON_FOLDER " Конфиг</a>";  // v2.3.0
+        html += "<a href='/updates'>🚀 ОТА</a>";
         html += "<a href='/service'>" UI_ICON_SERVICE " Сервис</a>";
     }
     html += "</div>";
