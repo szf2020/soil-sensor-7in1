@@ -246,11 +246,11 @@ cropConfigs["wheat"] = CropConfig(
 );
 
 // POTATO - University of Idaho, 2020
-// ASM: 70-80% → 75.0%
+// ASM: 35-45% → 35.0% (ИСПРАВЛЕНО: научно обосновано)
 cropConfigs["potato"] = CropConfig(
     // temperature, humidity(ASM), EC, pH
     // N, P, K (мг/кг)
-    // ИСПРАВЛЕНО: ASM 75.0% (было 38.0%)
+    // ИСПРАВЛЕНО: ASM 35.0% (было 75.0%) - научно обосновано
 );
 
 // KALE - University of Wisconsin, 2020

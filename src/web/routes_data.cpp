@@ -461,100 +461,53 @@ void setupDataRoutes()
             if (strlen(config.cropId) > 0)
             {
                 const char* cropId = config.cropId;
-                if (strcmp(cropId, "tomato") == 0)
-                {
-                    recHeader = "Томаты";
-                }
-                else if (strcmp(cropId, "cucumber") == 0)
-                {
-                    recHeader = "Огурцы";
-                }
-                else if (strcmp(cropId, "pepper") == 0)
-                {
-                    recHeader = "Перец";
-                }
-                else if (strcmp(cropId, "lettuce") == 0)
-                {
-                    recHeader = "Салат";
-                }
-                else if (strcmp(cropId, "blueberry") == 0)
-                {
-                    recHeader = "Голубика";
-                }
-                else if (strcmp(cropId, "lawn") == 0)
-                {
-                    recHeader = "Газон";
-                }
-                else if (strcmp(cropId, "grape") == 0)
-                {
-                    recHeader = "Виноград";
-                }
-                else if (strcmp(cropId, "conifer") == 0)
-                {
-                    recHeader = "Хвойные";
-                }
-                else if (strcmp(cropId, "strawberry") == 0)
-                {
-                    recHeader = "Клубника";
-                }
-                else if (strcmp(cropId, "apple") == 0)
-                {
-                    recHeader = "Яблоня";
-                }
-                else if (strcmp(cropId, "pear") == 0)
-                {
-                    recHeader = "Груша";
-                }
-                else if (strcmp(cropId, "cherry") == 0)
-                {
-                    recHeader = "Вишня";
-                }
-                else if (strcmp(cropId, "raspberry") == 0)
-                {
-                    recHeader = "Малина";
-                }
-                else if (strcmp(cropId, "currant") == 0)
-                {
-                    recHeader = "Смородина";
-                }
-                // НОВЫЕ КУЛЬТУРЫ (Фаза 1 - Приоритетные, научно обоснованные 2024)
-                else if (strcmp(cropId, "spinach") == 0)
-                {
-                    recHeader = "Шпинат";
-                }
-                else if (strcmp(cropId, "basil") == 0)
-                {
-                    recHeader = "Базилик";
-                }
-                else if (strcmp(cropId, "cannabis") == 0)
-                {
-                    recHeader = "Конопля";
-                }
-                // НОВЫЕ КУЛЬТУРЫ (Фаза 2 - Важные, стратегические)
-                else if (strcmp(cropId, "wheat") == 0)
-                {
-                    recHeader = "Пшеница";
-                }
-                else if (strcmp(cropId, "potato") == 0)
-                {
-                    recHeader = "Картофель";
-                }
-                // НОВЫЕ КУЛЬТУРЫ (Фаза 3 - Завершающие, полное покрытие)
-                else if (strcmp(cropId, "kale") == 0)
-                {
-                    recHeader = "Кале";
-                }
-                else if (strcmp(cropId, "blackberry") == 0)
-                {
-                    recHeader = "Ежевика";
-                }
-                else if (strcmp(cropId, "soybean") == 0)
-                {
-                    recHeader = "Соя";
-                }
-                else if (strcmp(cropId, "carrot") == 0)
-                {
-                    recHeader = "Морковь";
+                
+                // Lookup table для названий культур - более поддерживаемо
+                static const struct {
+                    const char* id;
+                    const char* name;
+                } cropNames[] = {
+                    // Основные культуры
+                    {"tomato", "Томаты"},
+                    {"cucumber", "Огурцы"},
+                    {"pepper", "Перец"},
+                    {"lettuce", "Салат"},
+                    {"blueberry", "Голубика"},
+                    {"lawn", "Газон"},
+                    {"grape", "Виноград"},
+                    {"conifer", "Хвойные"},
+                    {"strawberry", "Клубника"},
+                    {"apple", "Яблоня"},
+                    {"pear", "Груша"},
+                    {"cherry", "Вишня"},
+                    {"raspberry", "Малина"},
+                    {"currant", "Смородина"},
+                    
+                    // НОВЫЕ КУЛЬТУРЫ (Фаза 1 - Приоритетные, научно обоснованные 2024)
+                    {"spinach", "Шпинат"},
+                    {"basil", "Базилик"},
+                    {"cannabis", "Конопля"},
+                    
+                    // НОВЫЕ КУЛЬТУРЫ (Фаза 2 - Важные, стратегические)
+                    {"wheat", "Пшеница"},
+                    {"potato", "Картофель"},
+                    
+                    // НОВЫЕ КУЛЬТУРЫ (Фаза 3 - Завершающие, полное покрытие)
+                    {"kale", "Кале"},
+                    {"blackberry", "Ежевика"},
+                    {"soybean", "Соя"},
+                    {"carrot", "Морковь"},
+                    
+                    // Завершающий элемент для определения размера массива
+                    {nullptr, nullptr}
+                };
+                
+                // Поиск культуры в lookup table
+                for (int i = 0; cropNames[i].id != nullptr; i++) {
+                    if (strcmp(cropId, cropNames[i].id) == 0) {
+                        recHeader = cropNames[i].name;
+                        break;
+                    }
                 }
             }
 
@@ -677,8 +630,20 @@ void setupDataRoutes()
             html += "<li><strong>Стрелки ↑↓</strong> показывают направление изменений после компенсации</li>";
             html += "<li><strong>Сезонные корректировки</strong> учитывают потребности растений в разные периоды</li>";
             html += "<li><strong>Валидность данных</strong> проверяется по диапазонам и логическим связям</li>";
-            html += "<li><strong>Интервал обновления:</strong> каждые 10 секунд</li>";
+            html += "<li><strong>Интервал обновления:</strong> каждые 5 секунд</li>";
             html += "</ul>";
+            
+            // Добавляем пояснение о показаниях влажности
+            html += "<div style='margin-top:15px;padding:10px;background:#e8f4fd;border-left:4px solid #2196F3;border-radius:4px;'>";
+            html += "<h5 style='margin:0 0 8px 0;color:#1976D2;'>💧 Пояснение показаний влажности</h5>";
+            html += "<ul style='margin:0;padding-left:20px;font-size:13px;'>";
+            html += "<li><strong>VWC (Volumetric Water Content):</strong> объемная влажность почвы - сырые данные датчика в % от объема почвы</li>";
+            html += "<li><strong>ASM (Available Soil Moisture):</strong> доступная влага - процент от полевой влагоемкости, доступный растениям</li>";
+            html += "<li><strong>FC (Field Capacity):</strong> полевая влагоемкость - максимальное количество воды, которое почва удерживает после стекания избытка</li>";
+            html += "<li><strong>PWP (Permanent Wilting Point):</strong> точка увядания - минимальная влажность, при которой растения начинают увядать</li>";
+            html += "<li><strong>Формула ASM:</strong> ASM = (VWC - PWP) / (FC - PWP) × 100%</li>";
+            html += "</ul>";
+            html += "</div>";
             html += "</div>";
 
             html += "<style>";

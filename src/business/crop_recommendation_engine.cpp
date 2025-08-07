@@ -124,7 +124,7 @@ void CropRecommendationEngine::initializeCropConfigs()
     );
 
     // КАРТОФЕЛЬ (Solanum tuberosum) - University of Idaho, 2020
-    cropConfigs["potato"] = CropConfig(18.0F, 75.0F, 1500.0F, 6.0F,  // pH 5.5-6.5, EC 1.2-1.8 mS/cm (ИСПРАВЛЕНО: 75% ASM)
+    cropConfigs["potato"] = CropConfig(18.0F, 35.0F, 1500.0F, 6.0F,  // pH 5.5-6.5, EC 1.2-1.8 mS/cm (ИСПРАВЛЕНО: 35% ASM - научно обосновано)
                                      180.0F, 50.0F, 250.0F         // N: 160-200, P: 40-60, K: 220-280 мг/кг
     );
 
