@@ -1,6 +1,6 @@
 {
   "timestamp": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
-  "version": "3.7.0",
+  "version": "3.13.1",
   "platform": "Windows",
   "test_results": {
     "python_tests": {
