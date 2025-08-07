@@ -132,22 +132,9 @@
 - **Native C++ тесты:** 3 теста (системные функции)
 - **Clang-tidy анализ:** 125 предупреждений
 
-**Научная валидация:**
-- USDA Soil Survey Manual
-- European Journal of Soil Science
-- Soil Science Society of America Journal
-- Agricultural Water Management
 
----
 
-## 📚 **Ключевые научные источники**
 
-1. **Rhoades et al. (1989)** - EC компенсация
-2. **Ross et al. (2008)** - pH температурная поправка  
-3. **Delgado et al. (2020)** - NPK алгоритмы
-4. **USDA Soil Survey Manual (2019)** - параметры почв
-5. **FAO Crop Calendar** - рекомендации по культурам
-6. **European Journal of Soil Science** - расширенные типы почв
 
 ---
 
