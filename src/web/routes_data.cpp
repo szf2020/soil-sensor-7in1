@@ -1101,6 +1101,70 @@ void setupDataRoutes()
     webServer.on("/api/calibration/disable", HTTP_POST, handleDisableCalibration);
     webServer.on("/api/calibration/reset", HTTP_POST, handleResetCalibration);
 
+    // OPTIONS обработчики для CORS
+    webServer.on("/api/calibration/status", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/ph", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/ec", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/temperature", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/humidity", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/npk", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/enable", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/disable", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/reset", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+
 
 
 

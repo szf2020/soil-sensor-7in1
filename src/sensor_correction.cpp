@@ -422,8 +422,12 @@ CalibrationResult SensorCorrection::calculateHumidityCalibration(
 
 // Добавляем недостающие функции
 void SensorCorrection::setCorrectionFactors(const CorrectionFactors& newFactors) {
+    logDebugSafe("🔧 Обновляем коэффициенты коррекции...");
     factors = newFactors;
     logSystem("Коэффициенты коррекции обновлены");
+    logDebugSafe("🔧 EC калибровка: slope=%.4f, offset=%.4f, calibrated=%s", 
+                 factors.ecCalibrationSlope, factors.ecCalibrationOffset, 
+                 factors.ecCalibrated ? "true" : "false");
     saveFactors();
 }
 
@@ -438,8 +442,11 @@ void SensorCorrection::enableCorrection(bool enabled) {
 }
 
 void SensorCorrection::saveFactors() {
+    logDebugSafe("🔧 Начинаем сохранение коэффициентов коррекции...");
     Preferences preferences;
     if (preferences.begin("sensor_corr", false)) {
+        logDebugSafe("✅ Preferences открыты успешно");
+        
         // Существующие поля
         preferences.putFloat("hum_slope", factors.humiditySlope);
         preferences.putFloat("hum_offset", factors.humidityOffset);
@@ -489,7 +496,12 @@ void SensorCorrection::saveFactors() {
         preferences.putString("last_calibrated_by", String(factors.lastCalibratedBy));
         
         preferences.end();
-        logDebugSafe("Коэффициенты коррекции и калибровки сохранены в EEPROM");
+        logSuccess("✅ Коэффициенты коррекции и калибровки сохранены в EEPROM");
+        logDebugSafe("🔧 EC калибровка: slope=%.4f, offset=%.4f, calibrated=%s", 
+                     factors.ecCalibrationSlope, factors.ecCalibrationOffset, 
+                     factors.ecCalibrated ? "true" : "false");
+    } else {
+        logErrorSafe("❌ Ошибка открытия Preferences для сохранения");
     }
 }
 

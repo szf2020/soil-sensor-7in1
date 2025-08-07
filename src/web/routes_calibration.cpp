@@ -307,10 +307,7 @@ void handleCalibrationPage()
     html += "    });";
     html += "}";
     html += "";
-    html += "// Автоматически загружаем статус при загрузке страницы";
-    html += "window.onload = function() {";
-    html += "  loadCalibrationStatus();";
-    html += "};";
+    // Убираем автообновление статуса - оно ломает интерфейс
     
     html += "function calibratePH() {";
     html += "  const phExpected1 = parseFloat(document.getElementById('phExpected1').value);";
@@ -545,14 +542,19 @@ void handleCalibrationPage()
     html += "  }";
     html += "}";
     
-    html += "// Загружаем статус при загрузке страницы";
-    html += "document.addEventListener('DOMContentLoaded', function() {";
-    html += "  loadCalibrationStatus();";
-    html += "});";
+    // Убираем автообновление статуса - оно ломает интерфейс
     html += "</script>";
 
     html += generatePageFooter();
     webServer.send(HTTP_OK, HTTP_CONTENT_TYPE_HTML, html);
+}
+
+// Функция-помощник для добавления CORS заголовков
+void addCORSHeaders() {
+    webServer.enableCORS(true);
+    webServer.sendHeader("Access-Control-Allow-Origin", "*");
+    webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
 void handleCalibrationStatus() {
@@ -583,6 +585,10 @@ void handleCalibrationStatus() {
         serializeJson(doc, response);
         
         logDebugSafe("Отправляем статус калибровки: %s", response.c_str());
+        
+        // Добавляем CORS заголовки
+        addCORSHeaders();
+        
         webServer.send(200, "application/json", response);
     } catch (...) {
         logErrorSafe("Ошибка при получении статуса калибровки");
@@ -639,6 +645,10 @@ void handleCalibrationStatus() {
     
     String responseStr;
     serializeJson(response, responseStr);
+    
+    // Добавляем CORS заголовки
+    addCORSHeaders();
+    
     webServer.send(200, "application/json", responseStr);
 }
 
@@ -683,6 +693,10 @@ void handleECCalibration() {
     
     String responseStr;
     serializeJson(response, responseStr);
+    
+    // Добавляем CORS заголовки
+    addCORSHeaders();
+    
     webServer.send(200, "application/json", responseStr);
 }
 
@@ -722,6 +736,10 @@ void handleTemperatureCalibration() {
     
     String responseStr;
     serializeJson(response, responseStr);
+    
+    // Добавляем CORS заголовки
+    addCORSHeaders();
+    
     webServer.send(200, "application/json", responseStr);
 }
 
@@ -761,6 +779,10 @@ void handleHumidityCalibration() {
     
     String responseStr;
     serializeJson(response, responseStr);
+    
+    // Добавляем CORS заголовки
+    addCORSHeaders();
+    
     webServer.send(200, "application/json", responseStr);
 }
 
@@ -792,6 +814,10 @@ void handleNPKCalibration() {
     
     String responseStr;
     serializeJson(response, responseStr);
+    
+    // Добавляем CORS заголовки
+    addCORSHeaders();
+    
     webServer.send(200, "application/json", responseStr);
 }
 
@@ -805,6 +831,10 @@ void handleEnableCalibration() {
     
     String responseStr;
     serializeJson(response, responseStr);
+    
+    // Добавляем CORS заголовки
+    addCORSHeaders();
+    
     webServer.send(200, "application/json", responseStr);
 }
 
@@ -818,6 +848,10 @@ void handleDisableCalibration() {
     
     String responseStr;
     serializeJson(response, responseStr);
+    
+    // Добавляем CORS заголовки
+    addCORSHeaders();
+    
     webServer.send(200, "application/json", responseStr);
 }
 
@@ -854,5 +888,9 @@ void handleResetCalibration() {
     
     String responseStr;
     serializeJson(response, responseStr);
+    
+    // Добавляем CORS заголовки
+    addCORSHeaders();
+    
     webServer.send(200, "application/json", responseStr);
 }
