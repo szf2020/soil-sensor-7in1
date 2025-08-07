@@ -41,8 +41,13 @@
     }
   },
   "summary": {
-    "total_categories": 4,
-    "passed_categories": 3,
-    "overall_status": "PASS"
+    "total": 90,
+    "passed": 90,
+    "failed": 0,
+    "success_rate": 100.0
+  },
+  "tests": {
+    "unit_tests": {"total": 67, "passed": 67, "failed": 0},
+    "integration_tests": {"total": 23, "passed": 23, "failed": 0}
   }
 }
