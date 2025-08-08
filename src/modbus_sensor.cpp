@@ -716,6 +716,24 @@ void addToMovingAverage(ModbusSensorData& data, const ModbusSensorData& newReadi
     data.potassium = calculateMovingAverage(data.k_buffer, {window_size, data.buffer_filled});
 }
 
+// Функция для получения сырого значения температуры из датчика (для компенсации pH)
+uint16_t getSensorTemperature()
+{
+    // Читаем регистр температуры (0x0013) напрямую из датчика
+    uint16_t rawTemp = 0;
+    
+    if (modbus.readHoldingRegisters(REG_SOIL_TEMP, 1) == modbus.ku8MBSuccess) {
+        rawTemp = modbus.getResponseBuffer(0);
+        logDebugSafe("Получено сырое значение температуры: %u", rawTemp);
+    } else {
+        logWarnSafe("Не удалось прочитать температуру из датчика, используем кэшированное значение");
+        // Fallback: используем кэшированное значение
+        rawTemp = static_cast<uint16_t>(sensorData.raw_temperature * 10.0f);
+    }
+    
+    return rawTemp;
+}
+
 // Функция для получения текущих данных датчика
 ModbusSensorData getSensorData()
 {

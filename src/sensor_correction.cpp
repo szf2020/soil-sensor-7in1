@@ -215,15 +215,37 @@ void SensorCorrection::correctNPK(uint16_t rawN, uint16_t rawP, uint16_t rawK,
 // НОВЫЕ: Температурная компенсация pH
 float SensorCorrection::applyTemperatureCompensation(float value, float temperature) {
     // pH температурная компенсация по уравнению Нернста
+    // Правильная константа: 0.0257 pH/°C (вместо -0.003)
     float tempDiff = temperature - this->factors.temperatureReference;
-    float compensation = -0.003f * tempDiff; // -0.003 pH/°C
+    float compensation = -0.0257f * tempDiff; // -0.0257 pH/°C
     return value + compensation;
 }
 
 // НОВЫЕ: Получение текущей температуры для компенсации
 float SensorCorrection::getCurrentTemperature() {
-    // TODO: Получить текущую температуру из датчика
-    // Пока возвращаем референсную температуру
+    // Получаем текущую температуру из датчика (регистр 0x0013)
+    // Если датчик недоступен, возвращаем референсную температуру
+    extern uint16_t getSensorTemperature(); // Объявление внешней функции
+    
+    uint16_t rawTemp = getSensorTemperature();
+    if (rawTemp > 0) {
+        // Применяем заводскую калибровку: rawValue / 10.0 = °C
+        float currentTemp = rawTemp / 10.0f;
+        
+        // Применяем калибровочную коррекцию если включена
+        if (this->factors.calibrationEnabled && this->factors.temperatureCalibrated) {
+            currentTemp = (currentTemp * this->factors.temperatureCalibrationSlope) + this->factors.temperatureCalibrationOffset;
+        }
+        
+        // Применяем коррекцию: y = mx + b
+        if (this->factors.enabled) {
+            currentTemp = (currentTemp * this->factors.temperatureSlope) + this->factors.temperatureOffset;
+        }
+        
+        return currentTemp;
+    }
+    
+    // Fallback: возвращаем референсную температуру
     return this->factors.temperatureReference;
 }
 
@@ -246,14 +268,20 @@ CalibrationResult SensorCorrection::calculatePHCalibration(
         return result;
     }
     
-    // Вычисляем наклон и смещение методом наименьших квадратов
+    // Вычисляем наклон и смещение методом наименьших квадратов (каноническая форма)
     float x1 = measured_4_01, y1 = expected_4_01;
     float x2 = measured_6_86, y2 = expected_6_86;
     float x3 = measured_9_18, y3 = expected_9_18;
     
+    // Каноническая форма наименьших квадратов (избегаем переполнения)
+    const float Sx = x1 + x2 + x3;
+    const float Sy = y1 + y2 + y3;
+    const float Sxx = x1*x1 + x2*x2 + x3*x3;
+    const float Sxy = x1*y1 + x2*y2 + x3*y3;
+    
     // Вычисляем наклон (slope)
-    float numerator = (y1 + y2 + y3) * (x1 + x2 + x3) - 3 * (x1*y1 + x2*y2 + x3*y3);
-    float denominator = (x1 + x2 + x3) * (x1 + x2 + x3) - 3 * (x1*x1 + x2*x2 + x3*x3);
+    const float numerator = 3.0f * Sxy - Sx * Sy;
+    const float denominator = 3.0f * Sxx - Sx * Sx;
     
     if (fabsf(denominator) < 0.001f) {
         return result; // Деление на ноль
