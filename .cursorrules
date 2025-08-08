@@ -85,6 +85,27 @@ python scripts/sync_versions.py
 - Безопасный режим: только анализ, без изменений
 - Автоматический анализ PR
 
+### 6. CURSOR AGENT (CLI)
+- Установка (Windows через WSL):
+```bash
+wsl bash -lc "curl https://cursor.com/install -fsS | bash"
+```
+- Добавить PATH (однократно):
+```bash
+wsl bash -lc 'echo "export PATH=\"$HOME/.local/bin:\$PATH\"" >> ~/.bashrc'
+```
+- Запуск:
+```bash
+# из PowerShell
+wsl cursor-agent --version
+wsl cursor-agent
+
+# внутри WSL
+cursor-agent --version
+cursor-agent
+```
+- Примечание: в PowerShell `curl` = `Invoke-WebRequest` и не понимает флаги `-fsS`, поэтому используем WSL.
+
 ## 📊 СТРУКТУРА ПРОЕКТА
 
 ```

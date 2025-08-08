@@ -26,7 +26,8 @@ class JXCTWebUITests(unittest.TestCase):
 
     def setUp(self):
         """Настройка перед каждым тестом"""
-        self.base_url = "http://192.168.2.74"  # IP вашего ESP32 устройства
+        import os
+        self.base_url = f"http://{os.environ.get('JXCT_DEVICE_IP', '192.168.2.74')}"  # IP устройства (переопределяется через env)
         self.timeout = 10
         self.session = requests.Session()
         self.session.timeout = self.timeout
@@ -129,7 +130,8 @@ class JXCTAPITests(unittest.TestCase):
 
     def setUp(self):
         """Настройка перед каждым тестом"""
-        self.base_url = "http://192.168.2.74"
+        import os
+        self.base_url = f"http://{os.environ.get('JXCT_DEVICE_IP', '192.168.2.74')}"
         self.timeout = 10
         self.session = requests.Session()
         self.session.timeout = self.timeout
@@ -162,7 +164,13 @@ def run_e2e_tests():
     """Запуск E2E тестов"""
     print("🧪 Запуск E2E тестов веб-интерфейса JXCT...")
     print("📋 Тестируем основные страницы и API endpoints")
-    print("⚠️ Примечание: тесты требуют работающий ESP32 на 192.168.2.74")
+    try:
+        import os
+        device_ip = os.environ.get("JXCT_DEVICE_IP", None)
+        note = f"⚠️ Примечание: тесты требуют работающий ESP32 на {device_ip}" if device_ip else "⚠️ Примечание: укажите IP устройства через переменную окружения JXCT_DEVICE_IP"
+        print(note)
+    except Exception:
+        print("⚠️ Примечание: укажите IP устройства через переменную окружения JXCT_DEVICE_IP")
     print("-" * 60)
 
     # Создаем test suite
