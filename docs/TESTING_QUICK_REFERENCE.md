@@ -14,54 +14,54 @@
 
 ---
 
-## 🚀 БЫСТРЫЙ ЗАПУСК {#BYSTRYY-ZAPUSK}
+## 🚀 БЫСТРЫЙ ЗАПУСК (актуально) {#BYSTRYY-ZAPUSK}
 
-### Unit тесты {#unit-testy}
+### Unit тесты (native) {#unit-testy}
 ```bash
 pio test -e native
 ```
 
-### E2E тесты {#e2e-testy}
+### Python тесты и property-based {#python-tests}
 ```bash
-python scripts/run_e2e_tests.py
+python -m pytest test/ --maxfail=1 -q
 ```
 
-### Анализ технического долга {#Analiz-tehnicheskogo-dolga}
+### E2E тесты (с реальным устройством) {#e2e-testy}
 ```bash
-python scripts/analyze_technical_debt.py
+set JXCT_DEVICE_IP=http://192.168.2.66/
+python -m pytest test/test_api_schema.py test/e2e/test_web_ui.py -q
 ```
 
-### Комплексное тестирование {#Kompleksnoe-testirovanie}
+### Анализ статическим анализатором {#Analiz-tehnicheskogo-dolga}
 ```bash
-python scripts/run_comprehensive_tests.py
+python scripts/run_clang_tidy_analysis.py
+pion check -e static-analysis
+```
+
+### Комплексное тестирование (быстрый набор) {#Kompleksnoe-testirovanie}
+```bash
+python scripts/run_simple_tests.py
 ```
 
 ---
 
 ## 📊 ДЕТАЛЬНАЯ РАЗБИВКА {#DETALNAYa-RAZBIVKA}
 
-### Unit тесты (67 тестов) {#unit-testy-67-testov}
-- **Общие тесты:** 51/51 ✅
-- **CSRF безопасность:** 8/8 ✅
-- **Валидация:** 4/4 ✅
-- **Форматирование:** 4/4 ✅
+### Состояние набора тестов (актуально)
+- Все основные Python тесты — ✅
+- Native C++ sanity suite — ✅
+- ESP32 unit (Unity) — исключены из CI, запуск вручную при необходимости
 
-### E2E тесты (23 теста) {#e2e-testy-23-testa}
-- **Веб-интерфейс:** 12/12 ✅
-- **API endpoints:** 8/8 ✅
-- **OTA обновления:** 3/3 ✅
+### Важные заметки
+- Для E2E необходимо действующее устройство и IP (`JXCT_DEVICE_IP`)
+- `/status` — HTML, не JSON (это ожидаемо в тестах)
 
 ---
 
 ## 📈 МЕТРИКИ КАЧЕСТВА {#METRIKI-KAChESTVA}
 
 ### Покрытие кода {#Pokrytie-koda}
-```
-Общее покрытие: 70.8%
-├── src/ (основной код): 75.2%
-├── include/ (заголовки): 68.4%
-└── web/ (веб-интерфейс): 72.1%
-```
+Общее: ~70.8% (актуальные числа см. в отчете CI)
 
 ### Производительность {#Proizvoditelnost}
 - ⚡ Время отклика API: < 100ms
@@ -91,9 +91,7 @@ python scripts/run_comprehensive_tests.py
 ### Главные отчеты {#Glavnye-otchety}
 
 ### JSON отчеты {#json-otchety}
-- `test_reports/comprehensive-report.json` - Комплексный отчет
-- `test_reports/technical-debt-ci.json` - Технический долг
-- `test_reports/e2e-test-report.json` - E2E тесты
+- `test_reports/` — формируются скриптами CI (без ручного добавления markdown-отчетов)
 
 ---
 
