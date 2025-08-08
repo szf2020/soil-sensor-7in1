@@ -187,6 +187,14 @@ float SensorCorrection::correctPH(uint16_t rawValue) {
 // НОВЫЕ: Коррекция NPK (нулевая точка)
 void SensorCorrection::correctNPK(uint16_t rawN, uint16_t rawP, uint16_t rawK, 
                                  float& nitrogen, float& phosphorus, float& potassium) {
+    if (!this->factors.enabled) {
+        // Заводская калибровка без коррекций
+        nitrogen = static_cast<float>(rawN);
+        phosphorus = static_cast<float>(rawP);
+        potassium = static_cast<float>(rawK);
+        return;
+    }
+    
     if (!this->factors.calibrationEnabled || !this->factors.npkCalibrated) {
         // Заводская калибровка без смещения нуля
         nitrogen = static_cast<float>(rawN);
@@ -217,9 +225,9 @@ void SensorCorrection::correctNPK(uint16_t rawN, uint16_t rawP, uint16_t rawK,
 // НОВЫЕ: Температурная компенсация pH
 float SensorCorrection::applyTemperatureCompensation(float value, float temperature) {
     // pH температурная компенсация по уравнению Нернста
-    // Правильная константа: 0.0169 pH/°C (исправлено по замечанию CodeRabbit)
-    float tempDiff = temperature - this->factors.temperatureReference;
-    float compensation = -0.0169f * tempDiff; // -0.0169 pH/°C
+    // Константа: -0.003 pH/°C (соответствует существующему коду в sensor_compensation.cpp)
+    const float tempDiff = temperature - this->factors.temperatureReference;
+    const float compensation = -0.003f * tempDiff; // -0.003 pH/°C
     return value + compensation;
 }
 
