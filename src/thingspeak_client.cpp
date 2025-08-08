@@ -20,6 +20,7 @@ const char* THINGSPEAK_API_URL = "https://api.thingspeak.com/update";
 
 unsigned long lastTsPublish = 0;
 unsigned long lastFailTime = 0;  // ✅ ДОБАВЛЕНО: Время последней ошибки
+unsigned long nextThingSpeakTry = 0;  // ✅ ДОБАВЛЕНО: Время следующей попытки (исправляет переполнение)
 int consecutiveFailCount = 0;  // счётчик подряд неудач
 
 // ✅ ДОБАВЛЕНО: Функция валидации данных датчика
@@ -89,6 +90,7 @@ void resetThingSpeakBlock()
 {
     consecutiveFailCount = 0;
     lastFailTime = 0;
+    nextThingSpeakTry = 0;  // Сбрасываем время следующей попытки
     thingSpeakLastErrorBuffer[0] = '\0';
     logSuccess("ThingSpeak: Блокировка принудительно сброшена");
 }
@@ -179,6 +181,7 @@ bool canSendToThingSpeak()
         logSuccess("ThingSpeak: Блокировка автоматически сброшена (прошло 30 минут)");
         consecutiveFailCount = 0;
         lastFailTime = 0;
+        nextThingSpeakTry = 0;  // Сбрасываем время следующей попытки
         thingSpeakLastErrorBuffer[0] = '\0';
     }
     
@@ -187,6 +190,7 @@ bool canSendToThingSpeak()
         logSuccess("ThingSpeak: Блокировка сброшена (стабильное WiFi, прошло 5 мин)");
         consecutiveFailCount = 0;
         lastFailTime = 0;
+        nextThingSpeakTry = 0;  // Сбрасываем время следующей попытки
         thingSpeakLastErrorBuffer[0] = '\0';
     }
     
@@ -197,6 +201,11 @@ bool canSendToThingSpeak()
     
     // Проверяем обычный интервал отправки
     if (now - lastTsPublish < config.thingSpeakInterval) {
+        return false;
+    }
+    
+    // ✅ ДОБАВЛЕНО: Проверка времени следующей попытки (исправляет переполнение)
+    if (nextThingSpeakTry > 0 && now < nextThingSpeakTry) {
         return false;
     }
     
@@ -315,8 +324,10 @@ bool sendDataToThingSpeak()
     ThingSpeak.setField(6, (long)sensorData.phosphorus);
     ThingSpeak.setField(7, (long)sensorData.potassium);
 
-    // Уникальный идентификатор для избежания HTTP 304
-    ThingSpeak.setField(8, (float)millis());
+    // Уникальный идентификатор для избежания HTTP 304 (исправлено: используем строку вместо float)
+    char buf[12];
+    snprintf(buf, sizeof(buf), "%lu", millis());
+    ThingSpeak.setField(8, buf);
 
     // ✅ ДОБАВЛЕНО: Улучшенная обработка ошибок с детальной диагностикой
     const int res = ThingSpeak.writeFields(channelId, apiKeyBuf.data());
@@ -329,6 +340,7 @@ bool sendDataToThingSpeak()
          thingSpeakLastErrorBuffer[0] = '\0';  // Очистка ошибки
          consecutiveFailCount = 0;             // обнуляем при успехе
          lastFailTime = 0;                     // Сбрасываем время ошибки
+         nextThingSpeakTry = 0;                // Сбрасываем время следующей попытки
          return true;
      }
     else if (res == TS_ERR_TIMEOUT || res == TS_ERR_BAD_RESPONSE || res == TS_ERR_CONNECT_FAILED)
@@ -345,14 +357,14 @@ bool sendDataToThingSpeak()
             retryDelay = config.thingSpeakInterval;
         }
         
-        // Безопасное вычисление времени следующей попытки
+        // Безопасное вычисление времени следующей попытки (исправлено: используем отдельную переменную)
         unsigned long nextAttempt = millis() + retryDelay;
         if (nextAttempt < millis()) {
             // Защита от переполнения
             nextAttempt = millis() + 30000; // 30 секунд как fallback
         }
         
-        lastTsPublish = nextAttempt - config.thingSpeakInterval;
+        nextThingSpeakTry = nextAttempt;  // Используем отдельную переменную вместо манипуляции с lastTsPublish
         return false;
     }
     else if (res == 304 || res == -304)  // ✅ HTTP 304 - данные не изменились, но это НЕ ошибка
@@ -417,14 +429,14 @@ bool sendDataToThingSpeak()
                 
                 logDebugSafe("ThingSpeak: Повторная попытка через %lu секунд", retryDelay / 1000);
                 
-                // Безопасное вычисление времени следующей попытки
+                // Безопасное вычисление времени следующей попытки (исправлено: используем отдельную переменную)
                 unsigned long nextAttempt = millis() + retryDelay;
                 if (nextAttempt < millis()) {
                     // Защита от переполнения
                     nextAttempt = millis() + 30000; // 30 секунд как fallback
                 }
                 
-                lastTsPublish = nextAttempt - config.thingSpeakInterval;
+                nextThingSpeakTry = nextAttempt;  // Используем отдельную переменную вместо манипуляции с lastTsPublish
                 return false;
             }
         }
