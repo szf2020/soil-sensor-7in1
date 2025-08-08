@@ -286,10 +286,10 @@ bool sendDataToThingSpeak()
         return false;
     }
 
-    // ✅ ДОБАВЛЕНО: Проверка DNS перед отправкой
+    // ✅ Проверка DNS перед отправкой (разрешаем оба хоста)
     IPAddress thingSpeakIP;
-    if (!WiFi.hostByName("api.thingspeak.com", thingSpeakIP)) {
-        logWarn("ThingSpeak: DNS ошибка - не удается разрешить api.thingspeak.com");
+    if (!WiFi.hostByName("api.thingspeak.com", thingSpeakIP) && !WiFi.hostByName("thingspeak.com", thingSpeakIP)) {
+        logWarn("ThingSpeak: DNS ошибка - не удается разрешить api.thingspeak.com/thingspeak.com");
         strlcpy(thingSpeakLastErrorBuffer.data(), "DNS Error", thingSpeakLastErrorBuffer.size());
         return false;
     }
@@ -297,7 +297,7 @@ bool sendDataToThingSpeak()
     // ✅ ДОБАВЛЕНО: Увеличенный таймаут для ThingSpeak (на отдельном клиенте)
     thingSpeakClient.setTimeout(30000);  // 30 секунд вместо стандартных 5
 
-    // ✅ Диагностика данных перед отправкой
+    // ✅ Диагностика данных перед отправкой + User-Agent через фейковое поле 8
     logDebugSafe("ThingSpeak: Данные для отправки - T:%.2f, H:%.2f, EC:%.2f, pH:%.2f, N:%d, P:%d, K:%d", 
                  sensorData.temperature, sensorData.humidity, sensorData.ec, sensorData.ph,
                  (int)sensorData.nitrogen, (int)sensorData.phosphorus, (int)sensorData.potassium);
@@ -320,6 +320,7 @@ bool sendDataToThingSpeak()
     ThingSpeak.setField(8, buf);
 
     // ✅ ДОБАВЛЕНО: Улучшенная обработка ошибок с детальной диагностикой
+    // Важно: ThingSpeak.update ожидает до 8 полей; используем writeFields с Channel ID и API ключом
     const int res = ThingSpeak.writeFields(channelId, apiKeyBuf.data());
     
          if (res == 200)  // ✅ HTTP 200 - настоящий успех
