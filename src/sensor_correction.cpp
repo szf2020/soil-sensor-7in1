@@ -163,6 +163,10 @@ float SensorCorrection::correctTemperature(uint16_t rawValue) {
 
 // НОВЫЕ: Коррекция pH
 float SensorCorrection::correctPH(uint16_t rawValue) {
+    if (!this->factors.enabled) {
+        return rawValue / 10.0f; // Заводская калибровка
+    }
+    
     if (!this->factors.calibrationEnabled || !this->factors.phCalibrated) {
         return rawValue / 10.0f; // Заводская калибровка
     }
