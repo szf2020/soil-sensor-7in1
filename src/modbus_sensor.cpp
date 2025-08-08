@@ -725,13 +725,13 @@ uint16_t getSensorTemperature()
     if (modbus.readHoldingRegisters(REG_SOIL_TEMP, 1) == modbus.ku8MBSuccess) {
         rawTemp = modbus.getResponseBuffer(0);
         logDebugSafe("Получено сырое значение температуры: %u", rawTemp);
+        return rawTemp; // Возвращаем валидное значение (включая 0°C)
     } else {
-        logWarnSafe("Не удалось прочитать температуру из датчика, используем кэшированное значение");
-        // Fallback: используем кэшированное значение
-        rawTemp = static_cast<uint16_t>(sensorData.raw_temperature * 10.0f);
+        logWarnSafe("Не удалось прочитать температуру из датчика");
+        // Возвращаем специальное значение для ошибки (0xFFFF)
+        // Это позволит отличить ошибку чтения от валидной температуры 0°C
+        return 0xFFFF;
     }
-    
-    return rawTemp;
 }
 
 // Функция для получения текущих данных датчика

@@ -10,6 +10,7 @@
 #define SENSOR_CORRECTION_H
 
 #include <Arduino.h>
+#include <string>
 
 // Объявление внешней функции для получения температуры из датчика
 extern uint16_t getSensorTemperature();

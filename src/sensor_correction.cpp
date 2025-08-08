@@ -215,20 +215,22 @@ void SensorCorrection::correctNPK(uint16_t rawN, uint16_t rawP, uint16_t rawK,
 // НОВЫЕ: Температурная компенсация pH
 float SensorCorrection::applyTemperatureCompensation(float value, float temperature) {
     // pH температурная компенсация по уравнению Нернста
-    // Правильная константа: 0.0257 pH/°C (вместо -0.003)
+    // Правильная константа: 0.0169 pH/°C (исправлено по замечанию CodeRabbit)
     float tempDiff = temperature - this->factors.temperatureReference;
-    float compensation = -0.0257f * tempDiff; // -0.0257 pH/°C
+    float compensation = -0.0169f * tempDiff; // -0.0169 pH/°C
     return value + compensation;
 }
 
 // НОВЫЕ: Получение текущей температуры для компенсации
 float SensorCorrection::getCurrentTemperature() {
     // Получаем текущую температуру из датчика (регистр 0x0013)
-    // Если датчик недоступен, возвращаем референсную температуру
     extern uint16_t getSensorTemperature(); // Объявление внешней функции
     
     uint16_t rawTemp = getSensorTemperature();
-    if (rawTemp > 0) {
+    
+    // Проверяем, что датчик отвечает (0xFFFF означает ошибку чтения)
+    // 0°C - это валидное значение температуры, поэтому проверяем только ошибку
+    if (rawTemp != 0xFFFF) {
         // Применяем заводскую калибровку: rawValue / 10.0 = °C
         float currentTemp = rawTemp / 10.0f;
         
@@ -245,7 +247,8 @@ float SensorCorrection::getCurrentTemperature() {
         return currentTemp;
     }
     
-    // Fallback: возвращаем референсную температуру
+    // Fallback: возвращаем референсную температуру только при ошибке чтения
+    logWarnSafe("Не удалось прочитать температуру из датчика, используем референсную: %.1f°C", this->factors.temperatureReference);
     return this->factors.temperatureReference;
 }
 
