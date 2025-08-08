@@ -1468,7 +1468,7 @@ void setupDataRoutes()
                      logWebRequest("GET", "/api/correction/settings", webServer.client().remoteIP().toString());
                      
                      try {
-                         CorrectionFactors factors = SensorCorrection::getCorrectionFactors();
+                         CorrectionFactors factors = gSensorCorrection.getCorrectionFactors();
                          
                          DynamicJsonDocument doc(512);
                          doc["success"] = true;
@@ -1512,7 +1512,7 @@ void setupDataRoutes()
                          }
                          
                          bool enabled = doc["enabled"] | false;
-                         SensorCorrection::enableCorrection(enabled);
+                         gSensorCorrection.enableCorrection(enabled);
                          success = true;
                          
                          logSuccess("Коррекция " + String(enabled ? "включена" : "отключена"));
@@ -1553,7 +1553,7 @@ void setupDataRoutes()
                              return;
                          }
                          
-                         CorrectionFactors factors = SensorCorrection::getCorrectionFactors();
+                         CorrectionFactors factors = gSensorCorrection.getCorrectionFactors();
                          
                          // Обновляем только переданные коэффициенты
                          if (doc.containsKey("humidity_slope")) {
@@ -1575,7 +1575,7 @@ void setupDataRoutes()
                              factors.temperatureOffset = doc["temperature_offset"] | 0.0f;
                          }
                          
-                         SensorCorrection::setCorrectionFactors(factors);
+                         gSensorCorrection.setCorrectionFactors(factors);
                          success = true;
                          
                          logSuccess("Коэффициенты коррекции обновлены: hum_slope=" + String(factors.humiditySlope, 2) + 
@@ -1617,7 +1617,7 @@ void setupDataRoutes()
                              .enabled = true
                          };
                          
-                         SensorCorrection::setCorrectionFactors(defaultFactors);
+                         gSensorCorrection.setCorrectionFactors(defaultFactors);
                          
                          logSuccess("Коэффициенты коррекции сброшены к заводским настройкам");
                          

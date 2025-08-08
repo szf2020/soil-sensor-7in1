@@ -8,8 +8,13 @@
 #include <Preferences.h>
 #include <cmath>
 
-// Статические переменные
-CorrectionFactors SensorCorrection::factors = {
+// Глобальный экземпляр
+SensorCorrection gSensorCorrection;
+
+// Конструктор по умолчанию инициализирует factors
+SensorCorrection::SensorCorrection() : initialized(false) {
+    // Инициализация factors с заводскими значениями
+    factors = {
     // Существующие поля коррекции
     .humiditySlope = 1.25f,      // Коэффициент для грунта (40% реальных vs 32% показаний)
     .humidityOffset = -5.0f,     // Смещение для грунта
@@ -56,38 +61,34 @@ CorrectionFactors SensorCorrection::factors = {
     
     // История калибровок
     .lastCalibrationTime = 0,     // Время последней калибровки
-    .lastCalibratedBy = {0}       // Кто калибровал
-};
-
-bool SensorCorrection::initialized = false;
-
-// Глобальный экземпляр
-SensorCorrection gSensorCorrection;
+    .lastCalibratedBy = ""       // Кто калибровал
+    };
+}
 
 void SensorCorrection::init() {
-    if (initialized) return;
+    if (this->initialized) return;
     
     logSystem("Инициализация системы коррекции показаний...");
     
     // Загружаем коэффициенты из EEPROM
-    loadFactors();
+    this->loadFactors();
     
     logSuccess("Система коррекции показаний инициализирована");
     logDebugSafe("Коэффициенты влажности: slope=%.2f, offset=%.1f", 
-                 factors.humiditySlope, factors.humidityOffset);
+                 this->factors.humiditySlope, this->factors.humidityOffset);
     logDebugSafe("Коэффициенты EC: slope=%.2f, offset=%.1f", 
-                 factors.ecSlope, factors.ecOffset);
-    logDebugSafe("Калибровка: %s", factors.calibrationEnabled ? "включена" : "отключена");
+                 this->factors.ecSlope, this->factors.ecOffset);
+    logDebugSafe("Калибровка: %s", this->factors.calibrationEnabled ? "включена" : "отключена");
     
-    initialized = true;
+    this->initialized = true;
 }
 
 bool SensorCorrection::isInitialized() {
-    return initialized;
+    return this->initialized;
 }
 
 float SensorCorrection::correctHumidity(uint16_t rawValue) {
-    if (!factors.enabled) {
+    if (!this->factors.enabled) {
         return rawValue / 10.0f; // Заводская калибровка
     }
     
@@ -95,12 +96,12 @@ float SensorCorrection::correctHumidity(uint16_t rawValue) {
     float factoryCal = rawValue / 10.0f;
     
     // Применяем калибровочную коррекцию если включена
-    if (factors.calibrationEnabled && factors.humidityCalibrated) {
-        factoryCal = (factoryCal * factors.humidityCalibrationSlope) + factors.humidityCalibrationOffset;
+    if (this->factors.calibrationEnabled && this->factors.humidityCalibrated) {
+        factoryCal = (factoryCal * this->factors.humidityCalibrationSlope) + this->factors.humidityCalibrationOffset;
     }
     
     // Применяем коррекцию: y = mx + b
-    float corrected = (factoryCal * factors.humiditySlope) + factors.humidityOffset;
+    float corrected = (factoryCal * this->factors.humiditySlope) + this->factors.humidityOffset;
     
     // Ограничиваем значения 0-100%
     if (corrected < 0.0f) corrected = 0.0f;
@@ -113,7 +114,7 @@ float SensorCorrection::correctHumidity(uint16_t rawValue) {
 }
 
 float SensorCorrection::correctEC(uint16_t rawValue) {
-    if (!factors.enabled) {
+    if (!this->factors.enabled) {
         return static_cast<float>(rawValue); // Заводская калибровка
     }
     
@@ -121,12 +122,12 @@ float SensorCorrection::correctEC(uint16_t rawValue) {
     float factoryCal = static_cast<float>(rawValue);
     
     // Применяем калибровочную коррекцию если включена
-    if (factors.calibrationEnabled && factors.ecCalibrated) {
-        factoryCal = (factoryCal * factors.ecCalibrationSlope) + factors.ecCalibrationOffset;
+    if (this->factors.calibrationEnabled && this->factors.ecCalibrated) {
+        factoryCal = (factoryCal * this->factors.ecCalibrationSlope) + this->factors.ecCalibrationOffset;
     }
     
     // Применяем коррекцию: y = mx + b
-    float corrected = (factoryCal * factors.ecSlope) + factors.ecOffset;
+    float corrected = (factoryCal * this->factors.ecSlope) + this->factors.ecOffset;
     
     // Ограничиваем значения > 0
     if (corrected < 0.0f) corrected = 0.0f;
@@ -138,7 +139,7 @@ float SensorCorrection::correctEC(uint16_t rawValue) {
 }
 
 float SensorCorrection::correctTemperature(uint16_t rawValue) {
-    if (!factors.enabled) {
+    if (!this->factors.enabled) {
         return rawValue / 10.0f; // Заводская калибровка
     }
     
@@ -146,12 +147,12 @@ float SensorCorrection::correctTemperature(uint16_t rawValue) {
     float factoryCal = rawValue / 10.0f;
     
     // Применяем калибровочную коррекцию если включена
-    if (factors.calibrationEnabled && factors.temperatureCalibrated) {
-        factoryCal = (factoryCal * factors.temperatureCalibrationSlope) + factors.temperatureCalibrationOffset;
+    if (this->factors.calibrationEnabled && this->factors.temperatureCalibrated) {
+        factoryCal = (factoryCal * this->factors.temperatureCalibrationSlope) + this->factors.temperatureCalibrationOffset;
     }
     
     // Применяем коррекцию: y = mx + b
-    float corrected = (factoryCal * factors.temperatureSlope) + factors.temperatureOffset;
+    float corrected = (factoryCal * this->factors.temperatureSlope) + this->factors.temperatureOffset;
     
     logDebugSafe("Коррекция температуры: %u → %.1f → %.1f°C", 
                  rawValue, factoryCal, corrected);
@@ -161,7 +162,7 @@ float SensorCorrection::correctTemperature(uint16_t rawValue) {
 
 // НОВЫЕ: Коррекция pH
 float SensorCorrection::correctPH(uint16_t rawValue) {
-    if (!factors.calibrationEnabled || !factors.phCalibrated) {
+    if (!this->factors.calibrationEnabled || !this->factors.phCalibrated) {
         return rawValue / 10.0f; // Заводская калибровка
     }
     
@@ -169,10 +170,10 @@ float SensorCorrection::correctPH(uint16_t rawValue) {
     float factoryCal = rawValue / 10.0f;
     
     // Применяем калибровочную коррекцию: y = mx + b
-    float calibrated = (factoryCal * factors.phSlope) + factors.phOffset;
+    float calibrated = (factoryCal * this->factors.phSlope) + this->factors.phOffset;
     
     // Применяем температурную компенсацию если включена
-    if (factors.temperatureCompensationEnabled) {
+    if (this->factors.temperatureCompensationEnabled) {
         float currentTemp = getCurrentTemperature();
         calibrated = applyTemperatureCompensation(calibrated, currentTemp);
     }
@@ -186,7 +187,7 @@ float SensorCorrection::correctPH(uint16_t rawValue) {
 // НОВЫЕ: Коррекция NPK (нулевая точка)
 void SensorCorrection::correctNPK(uint16_t rawN, uint16_t rawP, uint16_t rawK, 
                                  float& nitrogen, float& phosphorus, float& potassium) {
-    if (!factors.calibrationEnabled || !factors.npkCalibrated) {
+    if (!this->factors.calibrationEnabled || !this->factors.npkCalibrated) {
         // Заводская калибровка без смещения нуля
         nitrogen = static_cast<float>(rawN);
         phosphorus = static_cast<float>(rawP);
@@ -200,9 +201,9 @@ void SensorCorrection::correctNPK(uint16_t rawN, uint16_t rawP, uint16_t rawK,
     potassium = static_cast<float>(rawK);
     
     // Применяем смещение нуля (калибровка по дистиллированной воде)
-    nitrogen -= factors.npkNitrogenOffset;
-    phosphorus -= factors.npkPhosphorusOffset;
-    potassium -= factors.npkPotassiumOffset;
+    nitrogen -= this->factors.npkNitrogenOffset;
+    phosphorus -= this->factors.npkPhosphorusOffset;
+    potassium -= this->factors.npkPotassiumOffset;
     
     // Ограничиваем значения > 0
     if (nitrogen < 0.0f) nitrogen = 0.0f;
@@ -216,7 +217,7 @@ void SensorCorrection::correctNPK(uint16_t rawN, uint16_t rawP, uint16_t rawK,
 // НОВЫЕ: Температурная компенсация pH
 float SensorCorrection::applyTemperatureCompensation(float value, float temperature) {
     // pH температурная компенсация по уравнению Нернста
-    float tempDiff = temperature - factors.temperatureReference;
+    float tempDiff = temperature - this->factors.temperatureReference;
     float compensation = -0.003f * tempDiff; // -0.003 pH/°C
     return value + compensation;
 }
@@ -225,12 +226,12 @@ float SensorCorrection::applyTemperatureCompensation(float value, float temperat
 float SensorCorrection::getCurrentTemperature() {
     // TODO: Получить текущую температуру из датчика
     // Пока возвращаем референсную температуру
-    return factors.temperatureReference;
+    return this->factors.temperatureReference;
 }
 
 // НОВЫЕ: Включение/отключение калибровки
 void SensorCorrection::enableCalibration(bool enabled) {
-    factors.calibrationEnabled = enabled;
+    this->factors.calibrationEnabled = enabled;
     logSystem("Калибровка показаний " + String(enabled ? "включена" : "отключена"));
     saveFactors();
 }
@@ -384,8 +385,8 @@ void SensorCorrection::setCorrectionFactors(const CorrectionFactors& newFactors)
     factors = newFactors;
     logSystem("Коэффициенты коррекции обновлены");
     logDebugSafe("🔧 EC калибровка: slope=%.4f, offset=%.4f, calibrated=%s", 
-                 factors.ecCalibrationSlope, factors.ecCalibrationOffset, 
-                 factors.ecCalibrated ? "true" : "false");
+                 this->factors.ecCalibrationSlope, this->factors.ecCalibrationOffset, 
+                 this->factors.ecCalibrated ? "true" : "false");
     saveFactors();
 }
 
@@ -394,7 +395,7 @@ CorrectionFactors SensorCorrection::getCorrectionFactors() {
 }
 
 void SensorCorrection::enableCorrection(bool enabled) {
-    factors.enabled = enabled;
+    this->factors.enabled = enabled;
     logSystem("Коррекция показаний " + String(enabled ? "включена" : "отключена"));
     saveFactors();
 }
@@ -406,58 +407,58 @@ void SensorCorrection::saveFactors() {
         logDebugSafe("✅ Preferences открыты успешно");
         
         // Существующие поля
-        preferences.putFloat("hum_slope", factors.humiditySlope);
-        preferences.putFloat("hum_offset", factors.humidityOffset);
-        preferences.putFloat("ec_slope", factors.ecSlope);
-        preferences.putFloat("ec_offset", factors.ecOffset);
-        preferences.putFloat("temp_slope", factors.temperatureSlope);
-        preferences.putFloat("temp_offset", factors.temperatureOffset);
-        preferences.putBool("enabled", factors.enabled);
+        preferences.putFloat("hum_slope", this->factors.humiditySlope);
+        preferences.putFloat("hum_offset", this->factors.humidityOffset);
+        preferences.putFloat("ec_slope", this->factors.ecSlope);
+        preferences.putFloat("ec_offset", this->factors.ecOffset);
+        preferences.putFloat("temp_slope", this->factors.temperatureSlope);
+        preferences.putFloat("temp_offset", this->factors.temperatureOffset);
+        preferences.putBool("enabled", this->factors.enabled);
         
         // НОВЫЕ поля калибровки
-        preferences.putBool("calibration_enabled", factors.calibrationEnabled);
+        preferences.putBool("calibration_enabled", this->factors.calibrationEnabled);
         
         // pH калибровка
-        preferences.putFloat("ph_slope", factors.phSlope);
-        preferences.putFloat("ph_offset", factors.phOffset);
-        preferences.putFloat("ph_quality", factors.phCalibrationQuality);
-        preferences.putBool("ph_calibrated", factors.phCalibrated);
+        preferences.putFloat("ph_slope", this->factors.phSlope);
+        preferences.putFloat("ph_offset", this->factors.phOffset);
+        preferences.putFloat("ph_quality", this->factors.phCalibrationQuality);
+        preferences.putBool("ph_calibrated", this->factors.phCalibrated);
         
         // EC калибровка
-        preferences.putFloat("ec_cal_slope", factors.ecCalibrationSlope);
-        preferences.putFloat("ec_cal_offset", factors.ecCalibrationOffset);
-        preferences.putFloat("ec_cal_quality", factors.ecCalibrationQuality);
-        preferences.putBool("ec_calibrated", factors.ecCalibrated);
+        preferences.putFloat("ec_cal_slope", this->factors.ecCalibrationSlope);
+        preferences.putFloat("ec_cal_offset", this->factors.ecCalibrationOffset);
+        preferences.putFloat("ec_cal_quality", this->factors.ecCalibrationQuality);
+        preferences.putBool("ec_calibrated", this->factors.ecCalibrated);
         
         // Температурная калибровка
-        preferences.putFloat("temp_cal_slope", factors.temperatureCalibrationSlope);
-        preferences.putFloat("temp_cal_offset", factors.temperatureCalibrationOffset);
-        preferences.putBool("temp_calibrated", factors.temperatureCalibrated);
+        preferences.putFloat("temp_cal_slope", this->factors.temperatureCalibrationSlope);
+        preferences.putFloat("temp_cal_offset", this->factors.temperatureCalibrationOffset);
+        preferences.putBool("temp_calibrated", this->factors.temperatureCalibrated);
         
         // Влажностная калибровка
-        preferences.putFloat("hum_cal_slope", factors.humidityCalibrationSlope);
-        preferences.putFloat("hum_cal_offset", factors.humidityCalibrationOffset);
-        preferences.putBool("hum_calibrated", factors.humidityCalibrated);
+        preferences.putFloat("hum_cal_slope", this->factors.humidityCalibrationSlope);
+        preferences.putFloat("hum_cal_offset", this->factors.humidityCalibrationOffset);
+        preferences.putBool("hum_calibrated", this->factors.humidityCalibrated);
         
         // NPK калибровка
-        preferences.putFloat("npk_n_offset", factors.npkNitrogenOffset);
-        preferences.putFloat("npk_p_offset", factors.npkPhosphorusOffset);
-        preferences.putFloat("npk_k_offset", factors.npkPotassiumOffset);
-        preferences.putBool("npk_calibrated", factors.npkCalibrated);
+        preferences.putFloat("npk_n_offset", this->factors.npkNitrogenOffset);
+        preferences.putFloat("npk_p_offset", this->factors.npkPhosphorusOffset);
+        preferences.putFloat("npk_k_offset", this->factors.npkPotassiumOffset);
+        preferences.putBool("npk_calibrated", this->factors.npkCalibrated);
         
         // Температурная компенсация
-        preferences.putBool("temp_comp_enabled", factors.temperatureCompensationEnabled);
-        preferences.putFloat("temp_reference", factors.temperatureReference);
+        preferences.putBool("temp_comp_enabled", this->factors.temperatureCompensationEnabled);
+        preferences.putFloat("temp_reference", this->factors.temperatureReference);
         
         // История калибровок
-        preferences.putULong("last_calibration_time", factors.lastCalibrationTime);
-        preferences.putString("last_calibrated_by", String(factors.lastCalibratedBy));
+        preferences.putULong("last_calibration_time", this->factors.lastCalibrationTime);
+        preferences.putString("last_calibrated_by", String(this->factors.lastCalibratedBy.c_str()));
         
         preferences.end();
         logSuccess("✅ Коэффициенты коррекции и калибровки сохранены в EEPROM");
         logDebugSafe("🔧 EC калибровка: slope=%.4f, offset=%.4f, calibrated=%s", 
-                     factors.ecCalibrationSlope, factors.ecCalibrationOffset, 
-                     factors.ecCalibrated ? "true" : "false");
+                     this->factors.ecCalibrationSlope, this->factors.ecCalibrationOffset, 
+                     this->factors.ecCalibrated ? "true" : "false");
     } else {
         logErrorSafe("❌ Ошибка открытия Preferences для сохранения");
     }
@@ -467,54 +468,53 @@ void SensorCorrection::loadFactors() {
     Preferences preferences;
     if (preferences.begin("sensor_corr", true)) {
         // Существующие поля
-        factors.humiditySlope = preferences.getFloat("hum_slope", 1.25f);
-        factors.humidityOffset = preferences.getFloat("hum_offset", -5.0f);
-        factors.ecSlope = preferences.getFloat("ec_slope", 1.35f);
-        factors.ecOffset = preferences.getFloat("ec_offset", 0.0f);
-        factors.temperatureSlope = preferences.getFloat("temp_slope", 1.0f);
-        factors.temperatureOffset = preferences.getFloat("temp_offset", 0.0f);
-        factors.enabled = preferences.getBool("enabled", true);
+        this->factors.humiditySlope = preferences.getFloat("hum_slope", 1.25f);
+        this->factors.humidityOffset = preferences.getFloat("hum_offset", -5.0f);
+        this->factors.ecSlope = preferences.getFloat("ec_slope", 1.35f);
+        this->factors.ecOffset = preferences.getFloat("ec_offset", 0.0f);
+        this->factors.temperatureSlope = preferences.getFloat("temp_slope", 1.0f);
+        this->factors.temperatureOffset = preferences.getFloat("temp_offset", 0.0f);
+        this->factors.enabled = preferences.getBool("enabled", true);
         
         // НОВЫЕ поля калибровки
-        factors.calibrationEnabled = preferences.getBool("calibration_enabled", false);
+        this->factors.calibrationEnabled = preferences.getBool("calibration_enabled", false);
         
         // pH калибровка
-        factors.phSlope = preferences.getFloat("ph_slope", 1.0f);
-        factors.phOffset = preferences.getFloat("ph_offset", 0.0f);
-        factors.phCalibrationQuality = preferences.getFloat("ph_quality", 0.0f);
-        factors.phCalibrated = preferences.getBool("ph_calibrated", false);
+        this->factors.phSlope = preferences.getFloat("ph_slope", 1.0f);
+        this->factors.phOffset = preferences.getFloat("ph_offset", 0.0f);
+        this->factors.phCalibrationQuality = preferences.getFloat("ph_quality", 0.0f);
+        this->factors.phCalibrated = preferences.getBool("ph_calibrated", false);
         
         // EC калибровка
-        factors.ecCalibrationSlope = preferences.getFloat("ec_cal_slope", 1.0f);
-        factors.ecCalibrationOffset = preferences.getFloat("ec_cal_offset", 0.0f);
-        factors.ecCalibrationQuality = preferences.getFloat("ec_cal_quality", 0.0f);
-        factors.ecCalibrated = preferences.getBool("ec_calibrated", false);
+        this->factors.ecCalibrationSlope = preferences.getFloat("ec_cal_slope", 1.0f);
+        this->factors.ecCalibrationOffset = preferences.getFloat("ec_cal_offset", 0.0f);
+        this->factors.ecCalibrationQuality = preferences.getFloat("ec_cal_quality", 0.0f);
+        this->factors.ecCalibrated = preferences.getBool("ec_calibrated", false);
         
         // Температурная калибровка
-        factors.temperatureCalibrationSlope = preferences.getFloat("temp_cal_slope", 1.0f);
-        factors.temperatureCalibrationOffset = preferences.getFloat("temp_cal_offset", 0.0f);
-        factors.temperatureCalibrated = preferences.getBool("temp_calibrated", false);
+        this->factors.temperatureCalibrationSlope = preferences.getFloat("temp_cal_slope", 1.0f);
+        this->factors.temperatureCalibrationOffset = preferences.getFloat("temp_cal_offset", 0.0f);
+        this->factors.temperatureCalibrated = preferences.getBool("temp_calibrated", false);
         
         // Влажностная калибровка
-        factors.humidityCalibrationSlope = preferences.getFloat("hum_cal_slope", 1.0f);
-        factors.humidityCalibrationOffset = preferences.getFloat("hum_cal_offset", 0.0f);
-        factors.humidityCalibrated = preferences.getBool("hum_calibrated", false);
+        this->factors.humidityCalibrationSlope = preferences.getFloat("hum_cal_slope", 1.0f);
+        this->factors.humidityCalibrationOffset = preferences.getFloat("hum_cal_offset", 0.0f);
+        this->factors.humidityCalibrated = preferences.getBool("hum_calibrated", false);
         
         // NPK калибровка
-        factors.npkNitrogenOffset = preferences.getFloat("npk_n_offset", 0.0f);
-        factors.npkPhosphorusOffset = preferences.getFloat("npk_p_offset", 0.0f);
-        factors.npkPotassiumOffset = preferences.getFloat("npk_k_offset", 0.0f);
-        factors.npkCalibrated = preferences.getBool("npk_calibrated", false);
+        this->factors.npkNitrogenOffset = preferences.getFloat("npk_n_offset", 0.0f);
+        this->factors.npkPhosphorusOffset = preferences.getFloat("npk_p_offset", 0.0f);
+        this->factors.npkPotassiumOffset = preferences.getFloat("npk_k_offset", 0.0f);
+        this->factors.npkCalibrated = preferences.getBool("npk_calibrated", false);
         
         // Температурная компенсация
-        factors.temperatureCompensationEnabled = preferences.getBool("temp_comp_enabled", true);
-        factors.temperatureReference = preferences.getFloat("temp_reference", 25.0f);
+        this->factors.temperatureCompensationEnabled = preferences.getBool("temp_comp_enabled", true);
+        this->factors.temperatureReference = preferences.getFloat("temp_reference", 25.0f);
         
         // История калибровок
-        factors.lastCalibrationTime = preferences.getULong("last_calibration_time", 0);
+        this->factors.lastCalibrationTime = preferences.getULong("last_calibration_time", 0);
         String lastCalibratedBy = preferences.getString("last_calibrated_by", "");
-        strncpy(factors.lastCalibratedBy, lastCalibratedBy.c_str(), 31);
-        factors.lastCalibratedBy[31] = '\0'; // Гарантируем null-termination
+        this->factors.lastCalibratedBy = lastCalibratedBy.c_str();
         
         preferences.end();
         logDebugSafe("Коэффициенты коррекции и калибровки загружены из EEPROM");

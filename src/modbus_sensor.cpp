@@ -192,11 +192,11 @@ bool readSingleRegister(uint16_t reg_addr, const char* reg_name, float multiplie
             // ✅ Применяем коррекцию показаний
             float corrected_value = factory_value;
             if (reg_addr == REG_SOIL_MOISTURE) {
-                corrected_value = SensorCorrection::correctHumidity(raw_value);
+                corrected_value = gSensorCorrection.correctHumidity(raw_value);
             } else if (reg_addr == REG_CONDUCTIVITY) {
-                corrected_value = SensorCorrection::correctEC(raw_value);
+                corrected_value = gSensorCorrection.correctEC(raw_value);
             } else if (reg_addr == REG_SOIL_TEMP) {
-                corrected_value = SensorCorrection::correctTemperature(raw_value);
+                corrected_value = gSensorCorrection.correctTemperature(raw_value);
             }
             
             *float_target = corrected_value;
@@ -370,7 +370,7 @@ void setupModbus()
     logSuccess("Modbus инициализирован");
     
                 // ✅ Инициализация системы коррекции показаний
-    SensorCorrection::init();
+    gSensorCorrection.init();
     
     logPrintHeader("MODBUS ГОТОВ ДЛЯ ПОЛНОГО ТЕСТИРОВАНИЯ", LogColor::GREEN);
 }

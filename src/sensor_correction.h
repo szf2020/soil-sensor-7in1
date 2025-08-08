@@ -59,7 +59,7 @@ struct CorrectionFactors {
     
     // История калибровок
     unsigned long lastCalibrationTime;   // Время последней калибровки
-    char lastCalibratedBy[32];           // Кто калибровал
+    std::string lastCalibratedBy;        // Кто калибровал (рекомендуется не более 50 символов для UI)
 };
 
 // Структура для результатов калибровки
@@ -74,75 +74,78 @@ struct CalibrationResult {
 // Функции коррекции показаний
 class SensorCorrection {
 public:
+    // Конструктор
+    SensorCorrection();
+    
     // Инициализация с заводскими коэффициентами
-    static void init();
+    void init();
     
     // Проверка инициализации
-    static bool isInitialized();
+    bool isInitialized();
     
     // Коррекция влажности (регистр 0x0012)
-    static float correctHumidity(uint16_t rawValue);
+    float correctHumidity(uint16_t rawValue);
     
     // Коррекция EC (регистр 0x0015)
-    static float correctEC(uint16_t rawValue);
+    float correctEC(uint16_t rawValue);
     
     // Коррекция температуры (регистр 0x0013)
-    static float correctTemperature(uint16_t rawValue);
+    float correctTemperature(uint16_t rawValue);
     
     // НОВЫЕ: Коррекция pH (регистр 0x0014)
-    static float correctPH(uint16_t rawValue);
+    float correctPH(uint16_t rawValue);
     
     // НОВЫЕ: Коррекция NPK (нулевая точка)
-    static void correctNPK(uint16_t rawN, uint16_t rawP, uint16_t rawK, 
+    void correctNPK(uint16_t rawN, uint16_t rawP, uint16_t rawK, 
                           float& nitrogen, float& phosphorus, float& potassium);
     
     // НОВЫЕ: Температурная компенсация pH
-    static float applyTemperatureCompensation(float value, float temperature);
+    float applyTemperatureCompensation(float value, float temperature);
     
     // Установка коэффициентов коррекции
-    static void setCorrectionFactors(const CorrectionFactors& factors);
+    void setCorrectionFactors(const CorrectionFactors& factors);
     
     // Получение текущих коэффициентов
-    static CorrectionFactors getCorrectionFactors();
+    CorrectionFactors getCorrectionFactors();
     
     // Включение/отключение коррекции
-    static void enableCorrection(bool enabled);
+    void enableCorrection(bool enabled);
     
     // НОВЫЕ: Включение/отключение калибровки
-    static void enableCalibration(bool enabled);
+    void enableCalibration(bool enabled);
     
     // Сохранение коэффициентов в EEPROM
-    static void saveFactors();
+    void saveFactors();
     
     // Загрузка коэффициентов из EEPROM
-    static void loadFactors();
+    void loadFactors();
     
     // НОВЫЕ: Функции калибровки
-    static CalibrationResult calculatePHCalibration(
+    CalibrationResult calculatePHCalibration(
         float expected_4_01, float expected_6_86, float expected_9_18,
         float measured_4_01, float measured_6_86, float measured_9_18
     );
     
     // ДВУХТОЧЕЧНАЯ EC-калибровка (линейная)
-    static CalibrationResult calculateECCalibration(
+    CalibrationResult calculateECCalibration(
         float expected_1, float expected_2,
         float measured_1, float measured_2
     );
     
-    static CalibrationResult calculateTemperatureCalibration(
+    CalibrationResult calculateTemperatureCalibration(
         float referenceTemperature, float measuredTemperature
     );
     
-    static CalibrationResult calculateHumidityCalibration(
+    CalibrationResult calculateHumidityCalibration(
         float referenceHumidity, float measuredHumidity
     );
 
 private:
-    static CorrectionFactors factors;
-    static bool initialized;
+    CorrectionFactors factors;
+    bool initialized;
     
     // НОВЫЕ: Получение текущей температуры для компенсации
-    static float getCurrentTemperature();
+    float getCurrentTemperature();
 };
 
 // Глобальный экземпляр для удобства
