@@ -37,8 +37,8 @@ bool validateSensorData(const SensorData& data)
         return false;
     }
 
-    // Проверяем диапазоны значений
-    if (data.temperature < 0 || data.temperature > 100 ||
+    // Проверяем диапазоны значений (разрешаем отрицательные температуры)
+    if (data.temperature < -40 || data.temperature > 85 ||
         data.humidity < 0 || data.humidity > 100 ||
         data.ec < 0 || data.ec > 10000 ||
         data.ph < 0 || data.ph > 14 ||
@@ -198,24 +198,18 @@ bool canSendToThingSpeak()
     if (consecutiveFailCount >= 5 && (now - lastFailTime) < 1800000UL) {
         return false;
     }
-    
-    // Проверяем обычный интервал отправки
-    if (now - lastTsPublish < config.thingSpeakInterval) {
+
+    // ✅ ДОБАВЛЕНО: Проверка времени следующей попытки (wrap-safe)
+    if (nextThingSpeakTry && (long)(now - nextThingSpeakTry) < 0) {
         return false;
     }
-    
-    // ✅ ДОБАВЛЕНО: Проверка времени следующей попытки (исправляет переполнение)
-    if (nextThingSpeakTry > 0 && now < nextThingSpeakTry) {
-        return false;
+
+    // ✅ Единая проверка интервала с минимумом 20с (wrap-safe)
+    unsigned long effectiveInterval = config.thingSpeakInterval;
+    if (effectiveInterval < 20000UL) {
+        effectiveInterval = 20000UL;
     }
-    
-    // ✅ ДОБАВЛЕНО: Минимальный интервал только если он больше основного
-    unsigned long minInterval = 20000; // 20 секунд минимум
-    if (config.thingSpeakInterval > minInterval) {
-        minInterval = config.thingSpeakInterval;
-    }
-    
-    if (now - lastTsPublish < minInterval) {
+    if ((unsigned long)(now - lastTsPublish) < effectiveInterval) {
         return false;
     }
 
@@ -253,11 +247,7 @@ bool sendDataToThingSpeak()
     }
 
     const unsigned long now = millis();
-    if (now - lastTsPublish < config.thingSpeakInterval)
-    {  // too frequent
-        logDebugSafe("ThingSpeak: Слишком часто (интервал %lu мс)", (unsigned long)config.thingSpeakInterval);
-        return false;
-    }
+    // Частотные ограничения проверяются в canSendToThingSpeak()
 
     std::array<char, 25> apiKeyBuf;
     std::array<char, 16> channelBuf;
@@ -368,13 +358,14 @@ bool sendDataToThingSpeak()
         return false;
     }
     else if (res == 304 || res == -304)  // ✅ HTTP 304 - данные не изменились, но это НЕ ошибка
-     {
-         logSuccess("ThingSpeak: данные отправлены (HTTP 304 - не изменились)");
-         lastTsPublish = millis();
-         snprintf(thingSpeakLastPublishBuffer.data(), thingSpeakLastPublishBuffer.size(), "%lu", lastTsPublish);
-         // НЕ сбрасываем счетчик ошибок и НЕ очищаем ошибку - это не настоящий успех
-         return true;
-     }
+    {
+        logSuccess("ThingSpeak: данные отправлены (HTTP 304 - не изменились)");
+        lastTsPublish = millis();
+        snprintf(thingSpeakLastPublishBuffer.data(), thingSpeakLastPublishBuffer.size(), "%lu", lastTsPublish);
+        nextThingSpeakTry = 0;  // сбрасываем отложенную попытку
+        // НЕ сбрасываем счетчик ошибок и НЕ очищаем ошибку - это не настоящий успех
+        return true;
+    }
     else
     {
         // ✅ ДОБАВЛЕНО: Детальная диагностика ошибок
