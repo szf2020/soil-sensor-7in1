@@ -123,9 +123,10 @@ public:
         float measured_4_01, float measured_6_86, float measured_9_18
     );
     
+    // ДВУХТОЧЕЧНАЯ EC-калибровка (линейная)
     static CalibrationResult calculateECCalibration(
-        float expected_1, float expected_2, float expected_3,
-        float measured_1, float measured_2, float measured_3
+        float expected_1, float expected_2,
+        float measured_1, float measured_2
     );
     
     static CalibrationResult calculateTemperatureCalibration(

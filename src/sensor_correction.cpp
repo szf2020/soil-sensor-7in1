@@ -293,75 +293,33 @@ CalibrationResult SensorCorrection::calculatePHCalibration(
 }
 
 CalibrationResult SensorCorrection::calculateECCalibration(
-    float expected_1, float expected_2, float expected_3,
-    float measured_1, float measured_2, float measured_3
+    float expected_1, float expected_2,
+    float measured_1, float measured_2
 ) {
     CalibrationResult result = {false, 0.0f, 0.0f, 0.0f, ""};
     
-    // Проверяем валидность данных (для 2-точечной калибровки третья точка может быть 0)
+    // Проверяем валидность данных
     if (measured_1 <= 0 || measured_2 <= 0) {
         return result;
     }
     
-    // Если третья точка равна 0, используем только 2 точки
-    bool use_two_points = (measured_3 <= 0);
-    
-    // Вычисляем наклон и смещение методом наименьших квадратов
-    if (use_two_points) {
-        // 2-точечная калибровка (линейная)
-        float x1 = measured_1, y1 = expected_1;
-        float x2 = measured_2, y2 = expected_2;
-        
-        // Вычисляем наклон (slope) для 2 точек
-        if (abs(x2 - x1) < 0.001f) {
-            return result; // Деление на ноль
-        }
-        
-        result.slope = (y2 - y1) / (x2 - x1);
-        result.offset = y1 - result.slope * x1;
-        
-        // Для 2 точек R² = 1.0 (идеальная прямая)
-        result.r_squared = 1.0f;
-    } else {
-        // 3-точечная калибровка
-        float x1 = measured_1, y1 = expected_1;
-        float x2 = measured_2, y2 = expected_2;
-        float x3 = measured_3, y3 = expected_3;
-        
-        // Вычисляем наклон (slope)
-        float numerator = (y1 + y2 + y3) * (x1 + x2 + x3) - 3 * (x1*y1 + x2*y2 + x3*y3);
-        float denominator = (x1 + x2 + x3) * (x1 + x2 + x3) - 3 * (x1*x1 + x2*x2 + x3*x3);
-        
-        if (abs(denominator) < 0.001f) {
-            return result; // Деление на ноль
-        }
-        
-        result.slope = numerator / denominator;
-        
-        // Вычисляем смещение (offset)
-        result.offset = (y1 + y2 + y3 - result.slope * (x1 + x2 + x3)) / 3.0f;
-        
-        // Вычисляем R² (коэффициент корреляции)
-        float y_mean = (y1 + y2 + y3) / 3.0f;
-        float ss_tot = pow(y1 - y_mean, 2) + pow(y2 - y_mean, 2) + pow(y3 - y_mean, 2);
-        
-        float y1_pred = result.slope * x1 + result.offset;
-        float y2_pred = result.slope * x2 + result.offset;
-        float y3_pred = result.slope * x3 + result.offset;
-        
-        float ss_res = pow(y1 - y1_pred, 2) + pow(y2 - y2_pred, 2) + pow(y3 - y3_pred, 2);
-        
-        if (ss_tot > 0.001f) {
-            result.r_squared = 1.0f - (ss_res / ss_tot);
-        } else {
-            result.r_squared = 0.0f;
-        }
+    // 2-точечная калибровка (линейная)
+    const float x1 = measured_1, y1 = expected_1;
+    const float x2 = measured_2, y2 = expected_2;
+
+    // Вычисляем наклон (slope) для 2 точек
+    if (abs(x2 - x1) < 0.001f) {
+        return result; // Деление на ноль
     }
+
+    result.slope = (y2 - y1) / (x2 - x1);
+    result.offset = y1 - result.slope * x1;
+
+    // Для 2 точек R² = 1.0 (идеальная прямая)
+    result.r_squared = 1.0f;
     
     // Проверяем качество калибровки
-    if (result.r_squared >= 0.95f) {
-        result.success = true;
-    }
+    result.success = (result.r_squared >= 0.95f);
     
     // Определяем качество
     if (result.r_squared >= 0.995f) result.quality = "Отличное";

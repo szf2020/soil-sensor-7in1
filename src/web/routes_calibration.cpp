@@ -684,8 +684,8 @@ void handleECCalibration() {
     float measured_2 = doc["measured_2"];
     
     CalibrationResult result = gSensorCorrection.calculateECCalibration(
-        expected_1, expected_2, 0.0f,  // 3-я точка = 0 для 2-точечной калибровки
-        measured_1, measured_2, 0.0f
+        expected_1, expected_2,
+        measured_1, measured_2
     );
     
     DynamicJsonDocument response(512);
