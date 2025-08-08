@@ -79,7 +79,8 @@ void trim(char* str)
 
 // ✅ Заменяем String на статические буферы
 std::array<char, 32> thingSpeakLastPublishBuffer = {"0"};
-std::array<char, 64> thingSpeakLastErrorBuffer = {""};
+// Увеличиваем буфер ошибки, чтобы не обрезать текст причины (ранее 64)
+std::array<char, 128> thingSpeakLastErrorBuffer = {""};
 
 // Используем отдельный WiFiClient для ThingSpeak, чтобы не конфликтовать с MQTT
 static WiFiClient thingSpeakClient;
@@ -370,7 +371,7 @@ bool sendDataToThingSpeak()
     else
     {
         // ✅ ДОБАВЛЕНО: Детальная диагностика ошибок
-        char errorMsg[64];
+        char errorMsg[96];
                  switch (res) {
              case 200:
                  strlcpy(errorMsg, "HTTP 200 (успех)", sizeof(errorMsg));
@@ -441,9 +442,9 @@ bool sendDataToThingSpeak()
              
              // ✅ ИСПРАВЛЕНО: Сохраняем И блокировку, И реальную ошибку
              char combinedError[128];
-             snprintf(combinedError, sizeof(combinedError), "Блокировка 30 мин (%d ошибок) | Последняя: %s", 
+              snprintf(combinedError, sizeof(combinedError), "Блокировка 30 мин (%d ошибок) | Последняя: %s", 
                      consecutiveFailCount, errorMsg);
-             strlcpy(thingSpeakLastErrorBuffer.data(), combinedError, thingSpeakLastErrorBuffer.size());
+              strlcpy(thingSpeakLastErrorBuffer.data(), combinedError, thingSpeakLastErrorBuffer.size());
          }
         
         return false;
