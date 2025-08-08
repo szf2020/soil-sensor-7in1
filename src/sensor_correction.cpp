@@ -62,7 +62,8 @@ SensorCorrection::SensorCorrection() : initialized(false) {
     
     // История калибровок
     factors.lastCalibrationTime = 0;     // Время последней калибровки
-    strcpy(factors.lastCalibratedBy, ""); // Кто калибровал
+    strncpy(factors.lastCalibratedBy, "", CalibratedByMaxLen - 1); // Кто калибровал
+    factors.lastCalibratedBy[CalibratedByMaxLen - 1] = '\0'; // Гарантируем завершающий нуль
 }
 
 void SensorCorrection::init() {
@@ -83,7 +84,7 @@ void SensorCorrection::init() {
     this->initialized = true;
 }
 
-bool SensorCorrection::isInitialized() {
+bool SensorCorrection::isInitialized() const {
     return this->initialized;
 }
 
@@ -223,7 +224,7 @@ void SensorCorrection::correctNPK(uint16_t rawN, uint16_t rawP, uint16_t rawK,
 }
 
 // НОВЫЕ: Температурная компенсация pH
-float SensorCorrection::applyTemperatureCompensation(float value, float temperature) {
+float SensorCorrection::applyTemperatureCompensation(float value, float temperature) const {
     // pH температурная компенсация по уравнению Нернста
     // Константа: -0.003 pH/°C (соответствует существующему коду в sensor_compensation.cpp)
     const float tempDiff = temperature - this->factors.temperatureReference;
@@ -232,7 +233,7 @@ float SensorCorrection::applyTemperatureCompensation(float value, float temperat
 }
 
 // НОВЫЕ: Получение текущей температуры для компенсации
-float SensorCorrection::getCurrentTemperature() {
+float SensorCorrection::getCurrentTemperature() const {
     // Получаем текущую температуру из датчика (регистр 0x0013)
     uint16_t rawTemp = getSensorTemperature();
     
@@ -305,13 +306,17 @@ CalibrationResult SensorCorrection::calculatePHCalibration(
     
     // Вычисляем R² (коэффициент корреляции)
     float y_mean = (y1 + y2 + y3) / 3.0f;
-    float ss_tot = pow(y1 - y_mean, 2) + pow(y2 - y_mean, 2) + pow(y3 - y_mean, 2);
+    
+    // Оптимизированные вычисления без pow() для лучшей производительности
+    const float dy1 = y1 - y_mean, dy2 = y2 - y_mean, dy3 = y3 - y_mean;
+    float ss_tot = dy1*dy1 + dy2*dy2 + dy3*dy3;
     
     float y1_pred = result.slope * x1 + result.offset;
     float y2_pred = result.slope * x2 + result.offset;
     float y3_pred = result.slope * x3 + result.offset;
     
-    float ss_res = pow(y1 - y1_pred, 2) + pow(y2 - y2_pred, 2) + pow(y3 - y3_pred, 2);
+    const float ry1 = y1 - y1_pred, ry2 = y2 - y2_pred, ry3 = y3 - y3_pred;
+    float ss_res = ry1*ry1 + ry2*ry2 + ry3*ry3;
     
     if (ss_tot > 0.001f) {
         result.r_squared = 1.0f - (ss_res / ss_tot);
@@ -427,7 +432,7 @@ void SensorCorrection::setCorrectionFactors(const CorrectionFactors& newFactors)
     saveFactors();
 }
 
-CorrectionFactors SensorCorrection::getCorrectionFactors() {
+const CorrectionFactors& SensorCorrection::getCorrectionFactors() const {
     return factors;
 }
 
@@ -551,8 +556,8 @@ void SensorCorrection::loadFactors() {
         // История калибровок
         this->factors.lastCalibrationTime = preferences.getULong("last_calibration_time", 0);
         String lastCalibratedBy = preferences.getString("last_calibrated_by", "");
-        strncpy(this->factors.lastCalibratedBy, lastCalibratedBy.c_str(), sizeof(this->factors.lastCalibratedBy) - 1);
-        this->factors.lastCalibratedBy[sizeof(this->factors.lastCalibratedBy) - 1] = '\0'; // Гарантируем завершающий нуль
+        strncpy(this->factors.lastCalibratedBy, lastCalibratedBy.c_str(), CalibratedByMaxLen - 1);
+        this->factors.lastCalibratedBy[CalibratedByMaxLen - 1] = '\0'; // Гарантируем завершающий нуль
         
         preferences.end();
         logDebugSafe("Коэффициенты коррекции и калибровки загружены из EEPROM");

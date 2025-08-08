@@ -12,6 +12,9 @@
 #include <Arduino.h>
 #include <string>
 
+// Константа для размера буфера lastCalibratedBy
+static constexpr size_t CalibratedByMaxLen = 50;
+
 // Структура для хранения коэффициентов коррекции
 struct CorrectionFactors {
     // Существующие поля коррекции
@@ -59,97 +62,75 @@ struct CorrectionFactors {
     float temperatureReference;          // Референсная температура (25°C)
     
     // История калибровок
-    unsigned long lastCalibrationTime; // Время последней калибровки
-    char lastCalibratedBy[50];         // Кто калибровал (фиксированный размер для экономии памяти)
+    unsigned long lastCalibrationTime;   // Время последней калибровки
+    char lastCalibratedBy[CalibratedByMaxLen]; // Кто калибровал (фиксированный размер для экономии памяти)
 };
 
-// Структура для результатов калибровки
+// Структура для результата калибровки
 struct CalibrationResult {
-    bool success;
-    float slope;
-    float offset;
-    float r_squared;
-    String quality;
+    bool success;           // Успешна ли калибровка
+    float slope;           // Наклон (коэффициент)
+    float offset;          // Смещение
+    float r_squared;       // Коэффициент корреляции (R²)
+    const char* quality;   // Качество калибровки
 };
 
-// Функции коррекции показаний
+// Класс для коррекции показаний датчика
 class SensorCorrection {
+private:
+    CorrectionFactors factors;  // Коэффициенты коррекции
+    bool initialized;           // Флаг инициализации
+
 public:
     // Конструктор
     SensorCorrection();
     
-    // Инициализация с заводскими коэффициентами
+    // Инициализация
     void init();
+    bool isInitialized() const;
     
-    // Проверка инициализации
-    bool isInitialized();
-    
-    // Коррекция влажности (регистр 0x0012)
+    // Коррекция показаний
     float correctHumidity(uint16_t rawValue);
-    
-    // Коррекция EC (регистр 0x0015)
     float correctEC(uint16_t rawValue);
-    
-    // Коррекция температуры (регистр 0x0013)
     float correctTemperature(uint16_t rawValue);
-    
-    // НОВЫЕ: Коррекция pH (регистр 0x0014)
     float correctPH(uint16_t rawValue);
-    
-    // НОВЫЕ: Коррекция NPK (нулевая точка)
     void correctNPK(uint16_t rawN, uint16_t rawP, uint16_t rawK, 
-                          float& nitrogen, float& phosphorus, float& potassium);
+                   float& nitrogen, float& phosphorus, float& potassium);
     
-    // НОВЫЕ: Температурная компенсация pH
-    float applyTemperatureCompensation(float value, float temperature);
+    // Температурная компенсация
+    float applyTemperatureCompensation(float value, float temperature) const;
+    float getCurrentTemperature() const;
     
-    // Установка коэффициентов коррекции
-    void setCorrectionFactors(const CorrectionFactors& factors);
-    
-    // Получение текущих коэффициентов
-    CorrectionFactors getCorrectionFactors();
-    
-    // Включение/отключение коррекции
+    // Управление калибровкой
+    void enableCalibration(bool enabled);
     void enableCorrection(bool enabled);
     
-    // НОВЫЕ: Включение/отключение калибровки
-    void enableCalibration(bool enabled);
-    
-    // Сохранение коэффициентов в EEPROM
-    void saveFactors();
-    
-    // Загрузка коэффициентов из EEPROM
-    void loadFactors();
-    
-    // НОВЫЕ: Функции калибровки
+    // Функции калибровки
     CalibrationResult calculatePHCalibration(
         float expected_4_01, float expected_6_86, float expected_9_18,
         float measured_4_01, float measured_6_86, float measured_9_18
     );
-    
-    // ДВУХТОЧЕЧНАЯ EC-калибровка (линейная)
     CalibrationResult calculateECCalibration(
         float expected_1, float expected_2,
         float measured_1, float measured_2
     );
-    
     CalibrationResult calculateTemperatureCalibration(
         float referenceTemperature, float measuredTemperature
     );
-    
     CalibrationResult calculateHumidityCalibration(
         float referenceHumidity, float measuredHumidity
     );
-
-private:
-    CorrectionFactors factors;
-    bool initialized;
     
-    // НОВЫЕ: Получение текущей температуры для компенсации
-    float getCurrentTemperature();
+    // Управление коэффициентами
+    void setCorrectionFactors(const CorrectionFactors& newFactors);
+    const CorrectionFactors& getCorrectionFactors() const;
+    
+    // Сохранение/загрузка
+    void saveFactors();
+    void loadFactors();
 };
 
-// Глобальный экземпляр для удобства
+// Глобальный экземпляр
 extern SensorCorrection gSensorCorrection;
 
 #endif // SENSOR_CORRECTION_H 
