@@ -256,7 +256,7 @@ CalibrationResult SensorCorrection::calculatePHCalibration(
     float numerator = (y1 + y2 + y3) * (x1 + x2 + x3) - 3 * (x1*y1 + x2*y2 + x3*y3);
     float denominator = (x1 + x2 + x3) * (x1 + x2 + x3) - 3 * (x1*x1 + x2*x2 + x3*x3);
     
-    if (abs(denominator) < 0.001f) {
+    if (fabsf(denominator) < 0.001f) {
         return result; // Деление на ноль
     }
     
@@ -308,7 +308,7 @@ CalibrationResult SensorCorrection::calculateECCalibration(
     const float x2 = measured_2, y2 = expected_2;
 
     // Вычисляем наклон (slope) для 2 точек
-    if (abs(x2 - x1) < 0.001f) {
+    if (fabsf(x2 - x1) < 0.001f) {
         return result; // Деление на ноль
     }
 
@@ -340,15 +340,15 @@ CalibrationResult SensorCorrection::calculateTemperatureCalibration(
     result.offset = referenceTemperature - measuredTemperature;
     
     // Вычисляем качество на основе ошибки
-    float error = abs(result.offset) / referenceTemperature;
+    float error = fabsf(result.offset) / referenceTemperature;
     result.r_squared = 1.0f - error;
     
-    result.success = (abs(result.offset) < 2.0f); // Ошибка менее 2°C
+    result.success = (fabsf(result.offset) < 2.0f); // Ошибка менее 2°C
     
     // Определяем качество
-    if (abs(result.offset) < 0.5f) result.quality = "Отличное";
-    else if (abs(result.offset) < 1.0f) result.quality = "Хорошее";
-    else if (abs(result.offset) < 2.0f) result.quality = "Удовлетворительное";
+    if (fabsf(result.offset) < 0.5f) result.quality = "Отличное";
+    else if (fabsf(result.offset) < 1.0f) result.quality = "Хорошее";
+    else if (fabsf(result.offset) < 2.0f) result.quality = "Удовлетворительное";
     else result.quality = "Плохое";
     
     return result;
@@ -364,15 +364,15 @@ CalibrationResult SensorCorrection::calculateHumidityCalibration(
     result.offset = referenceHumidity - measuredHumidity;
     
     // Вычисляем качество на основе ошибки
-    float error = abs(result.offset) / referenceHumidity;
+    float error = fabsf(result.offset) / referenceHumidity;
     result.r_squared = 1.0f - error;
     
-    result.success = (abs(result.offset) < 5.0f); // Ошибка менее 5%
+    result.success = (fabsf(result.offset) < 5.0f); // Ошибка менее 5%
     
     // Определяем качество
-    if (abs(result.offset) < 1.0f) result.quality = "Отличное";
-    else if (abs(result.offset) < 2.0f) result.quality = "Хорошее";
-    else if (abs(result.offset) < 5.0f) result.quality = "Удовлетворительное";
+    if (fabsf(result.offset) < 1.0f) result.quality = "Отличное";
+    else if (fabsf(result.offset) < 2.0f) result.quality = "Хорошее";
+    else if (fabsf(result.offset) < 5.0f) result.quality = "Удовлетворительное";
     else result.quality = "Плохое";
     
     return result;
