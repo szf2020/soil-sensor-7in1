@@ -79,6 +79,9 @@ void trim(char* str)
 // ✅ Заменяем String на статические буферы
 std::array<char, 32> thingSpeakLastPublishBuffer = {"0"};
 std::array<char, 64> thingSpeakLastErrorBuffer = {""};
+
+// Используем отдельный WiFiClient для ThingSpeak, чтобы не конфликтовать с MQTT
+static WiFiClient thingSpeakClient;
 }  // namespace
 
 // ✅ ДОБАВЛЕНО: Функция принудительного сброса блокировки ThingSpeak
@@ -205,14 +208,10 @@ bool canSendToThingSpeak()
     return true;
 }
 
-void setupThingSpeak(WiFiClient& client)  // NOLINT(misc-use-internal-linkage)
+void setupThingSpeak(WiFiClient& /*client*/)  // NOLINT(misc-use-internal-linkage)
 {
-    ThingSpeak.begin(client);
-    
-    // ✅ ДОБАВЛЕНО: User-Agent для лучшей совместимости
-    // ПРИМЕЧАНИЕ: ThingSpeak библиотека не поддерживает прямую установку HTTP заголовков
-    // Поэтому используем field0 как User-Agent (нестандартное решение, но работает)
-    ThingSpeak.setField(0, "JXCT-Soil-Sensor-v3.13.0");  // User-Agent в field0
+    // Инициализируем библиотеку на отдельном клиенте, чтобы исключить конкуренцию с MQTT
+    ThingSpeak.begin(thingSpeakClient);
 }
 
 bool sendDataToThingSpeak()
@@ -291,25 +290,28 @@ bool sendDataToThingSpeak()
         return false;
     }
 
-    // ✅ ДОБАВЛЕНО: Увеличенный таймаут для ThingSpeak
-    espClient.setTimeout(30000);  // 30 секунд вместо стандартных 5
+    // ✅ ДОБАВЛЕНО: Увеличенный таймаут для ThingSpeak (на отдельном клиенте)
+    thingSpeakClient.setTimeout(30000);  // 30 секунд вместо стандартных 5
 
-         // ✅ ДОБАВЛЕНО: Диагностика данных перед отправкой
-     logDebugSafe("ThingSpeak: Данные для отправки - T:%.2f, H:%.2f, EC:%.2f, pH:%.2f, N:%d, P:%d, K:%d", 
-                  sensorData.temperature, sensorData.humidity, sensorData.ec, sensorData.ph,
-                  (int)sensorData.nitrogen, (int)sensorData.phosphorus, (int)sensorData.potassium);
-     
-     // Формируем данные для отправки
-     ThingSpeak.setField(1, sensorData.temperature);
-     ThingSpeak.setField(2, sensorData.humidity);
-     ThingSpeak.setField(3, sensorData.ec);
-     ThingSpeak.setField(4, sensorData.ph);
-     ThingSpeak.setField(5, sensorData.nitrogen);
-     ThingSpeak.setField(6, sensorData.phosphorus);
-     ThingSpeak.setField(7, sensorData.potassium);
-     
-     // ✅ ДОБАВЛЕНО: Уникальный идентификатор для избежания HTTP 304
-     ThingSpeak.setField(8, (float)millis());  // Время отправки как уникальный ID
+    // ✅ Диагностика данных перед отправкой
+    logDebugSafe("ThingSpeak: Данные для отправки - T:%.2f, H:%.2f, EC:%.2f, pH:%.2f, N:%d, P:%d, K:%d", 
+                 sensorData.temperature, sensorData.humidity, sensorData.ec, sensorData.ph,
+                 (int)sensorData.nitrogen, (int)sensorData.phosphorus, (int)sensorData.potassium);
+
+    // Обнуляем поля перед заполнением, чтобы избежать унаследованных значений
+    for (unsigned f = 1; f <= 8; ++f) { ThingSpeak.setField(f, ""); }
+
+    // Формируем данные для отправки
+    ThingSpeak.setField(1, sensorData.temperature);
+    ThingSpeak.setField(2, sensorData.humidity);
+    ThingSpeak.setField(3, sensorData.ec);
+    ThingSpeak.setField(4, sensorData.ph);
+    ThingSpeak.setField(5, (long)sensorData.nitrogen);
+    ThingSpeak.setField(6, (long)sensorData.phosphorus);
+    ThingSpeak.setField(7, (long)sensorData.potassium);
+
+    // Уникальный идентификатор для избежания HTTP 304
+    ThingSpeak.setField(8, (float)millis());
 
     // ✅ ДОБАВЛЕНО: Улучшенная обработка ошибок с детальной диагностикой
     const int res = ThingSpeak.writeFields(channelId, apiKeyBuf.data());
@@ -324,7 +326,16 @@ bool sendDataToThingSpeak()
          lastFailTime = 0;                     // Сбрасываем время ошибки
          return true;
      }
-     else if (res == 304 || res == -304)  // ✅ HTTP 304 - данные не изменились, но это НЕ ошибка
+    else if (res == TS_ERR_TIMEOUT || res == TS_ERR_BAD_RESPONSE || res == TS_ERR_CONNECT_FAILED)
+    {
+        // Сетевые таймауты/ошибки парсинга/соединения — поддержим короткий повтор без блокировки
+        consecutiveFailCount++;
+        lastFailTime = millis();
+        logWarnSafe("ThingSpeak: временная сетевая ошибка (%d), будет повтор", res);
+        lastTsPublish = millis() - config.thingSpeakInterval + 10000;  // повтор через 10с
+        return false;
+    }
+    else if (res == 304 || res == -304)  // ✅ HTTP 304 - данные не изменились, но это НЕ ошибка
      {
          logSuccess("ThingSpeak: данные отправлены (HTTP 304 - не изменились)");
          lastTsPublish = millis();
