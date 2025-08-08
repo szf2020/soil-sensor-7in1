@@ -362,7 +362,8 @@ CalibrationResult SensorCorrection::calculateECCalibration(
     result.slope = (y2 - y1) / (x2 - x1);
     result.offset = y1 - result.slope * x1;
 
-    // Для 2 точек R² = 1.0 (идеальная прямая)
+    // Для 2-точечной калибровки R² = 1.0 (идеальная прямая через 2 точки)
+    // Это корректно, так как через 2 точки можно провести только одну прямую
     result.r_squared = 1.0f;
     
     // Проверяем качество калибровки
@@ -386,9 +387,10 @@ CalibrationResult SensorCorrection::calculateTemperatureCalibration(
     result.slope = 1.0f; // Обычно 1.0 для температуры
     result.offset = referenceTemperature - measuredTemperature;
     
-    // Вычисляем качество на основе ошибки
+    // Вычисляем качество на основе ошибки (surrogate quality metric)
+    // Для 1-точечной калибровки используем 1 - normalized error как показатель качества
     float error = fabsf(result.offset) / referenceTemperature;
-    result.r_squared = 1.0f - error;
+    result.r_squared = 1.0f - error; // Surrogate quality metric, не настоящий R²
     
     result.success = (fabsf(result.offset) < 2.0f); // Ошибка менее 2°C
     
@@ -410,9 +412,10 @@ CalibrationResult SensorCorrection::calculateHumidityCalibration(
     result.slope = 1.0f; // Обычно 1.0 для влажности
     result.offset = referenceHumidity - measuredHumidity;
     
-    // Вычисляем качество на основе ошибки
+    // Вычисляем качество на основе ошибки (surrogate quality metric)
+    // Для 1-точечной калибровки используем 1 - normalized error как показатель качества
     float error = fabsf(result.offset) / referenceHumidity;
-    result.r_squared = 1.0f - error;
+    result.r_squared = 1.0f - error; // Surrogate quality metric, не настоящий R²
     
     result.success = (fabsf(result.offset) < 5.0f); // Ошибка менее 5%
     
