@@ -14,7 +14,7 @@
 SensorCorrection gSensorCorrection;
 
 // Конструктор по умолчанию инициализирует factors
-SensorCorrection::SensorCorrection() : initialized(false) {
+SensorCorrection::SensorCorrection() : initialized(false), cachedTemperature(25.0f), lastTempRead(0) {
     // Инициализация factors с заводскими значениями (C++17 совместимо)
     // Существующие поля коррекции
     factors.humiditySlope = 1.25f;      // Коэффициент для грунта (40% реальных vs 32% показаний)
@@ -238,6 +238,12 @@ float SensorCorrection::applyTemperatureCompensation(float value, float temperat
 
 // НОВЫЕ: Получение текущей температуры для компенсации
 float SensorCorrection::getCurrentTemperature() const {
+    // Проверяем кэш температуры (оптимизация производительности)
+    unsigned long currentTime = millis();
+    if (currentTime - lastTempRead < TEMP_CACHE_DURATION) {
+        return cachedTemperature; // Возвращаем кэшированное значение
+    }
+    
     // Получаем текущую температуру из датчика (регистр 0x0013)
     uint16_t rawTemp = getSensorTemperature();
     
@@ -256,6 +262,10 @@ float SensorCorrection::getCurrentTemperature() const {
         if (this->factors.enabled) {
             currentTemp = (currentTemp * this->factors.temperatureSlope) + this->factors.temperatureOffset;
         }
+        
+        // Обновляем кэш
+        cachedTemperature = currentTemp;
+        lastTempRead = currentTime;
         
         return currentTemp;
     }
@@ -389,7 +399,12 @@ CalibrationResult SensorCorrection::calculateTemperatureCalibration(
     
     // Вычисляем качество на основе ошибки (surrogate quality metric)
     // Для 1-точечной калибровки используем 1 - normalized error как показатель качества
-    float error = fabsf(result.offset) / referenceTemperature;
+    float error = 0.0f;
+    if (fabsf(referenceTemperature) > 0.1f) { // Защита от деления на ноль
+        error = fabsf(result.offset) / referenceTemperature;
+    } else {
+        error = fabsf(result.offset); // Если reference близок к нулю, используем абсолютную ошибку
+    }
     result.r_squared = 1.0f - error; // Surrogate quality metric, не настоящий R²
     
     result.success = (fabsf(result.offset) < 2.0f); // Ошибка менее 2°C
@@ -414,7 +429,12 @@ CalibrationResult SensorCorrection::calculateHumidityCalibration(
     
     // Вычисляем качество на основе ошибки (surrogate quality metric)
     // Для 1-точечной калибровки используем 1 - normalized error как показатель качества
-    float error = fabsf(result.offset) / referenceHumidity;
+    float error = 0.0f;
+    if (fabsf(referenceHumidity) > 0.1f) { // Защита от деления на ноль
+        error = fabsf(result.offset) / referenceHumidity;
+    } else {
+        error = fabsf(result.offset); // Если reference близок к нулю, используем абсолютную ошибку
+    }
     result.r_squared = 1.0f - error; // Surrogate quality metric, не настоящий R²
     
     result.success = (fabsf(result.offset) < 5.0f); // Ошибка менее 5%

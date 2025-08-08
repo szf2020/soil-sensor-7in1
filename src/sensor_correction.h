@@ -80,6 +80,11 @@ class SensorCorrection {
 private:
     CorrectionFactors factors;  // Коэффициенты коррекции
     bool initialized;           // Флаг инициализации
+    
+    // Кэширование температуры для оптимизации производительности
+    mutable float cachedTemperature;     // Кэшированное значение температуры
+    mutable unsigned long lastTempRead;  // Время последнего чтения температуры
+    static constexpr unsigned long TEMP_CACHE_DURATION = 1000; // 1 секунда кэша
 
 public:
     // Конструктор
