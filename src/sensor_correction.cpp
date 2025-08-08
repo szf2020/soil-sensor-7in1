@@ -13,56 +13,54 @@ SensorCorrection gSensorCorrection;
 
 // Конструктор по умолчанию инициализирует factors
 SensorCorrection::SensorCorrection() : initialized(false) {
-    // Инициализация factors с заводскими значениями
-    factors = {
+    // Инициализация factors с заводскими значениями (C++17 совместимо)
     // Существующие поля коррекции
-    .humiditySlope = 1.25f,      // Коэффициент для грунта (40% реальных vs 32% показаний)
-    .humidityOffset = -5.0f,     // Смещение для грунта
-    .ecSlope = 1.35f,           // Коэффициент для EC в грунте
-    .ecOffset = 0.0f,           // Смещение для EC
-    .temperatureSlope = 1.0f,   // Коэффициент для температуры (обычно 1.0)
-    .temperatureOffset = 0.0f,  // Смещение для температуры
-    .enabled = true,            // Коррекция включена по умолчанию
+    factors.humiditySlope = 1.25f;      // Коэффициент для грунта (40% реальных vs 32% показаний)
+    factors.humidityOffset = -5.0f;     // Смещение для грунта
+    factors.ecSlope = 1.35f;           // Коэффициент для EC в грунте
+    factors.ecOffset = 0.0f;           // Смещение для EC
+    factors.temperatureSlope = 1.0f;   // Коэффициент для температуры (обычно 1.0)
+    factors.temperatureOffset = 0.0f;  // Смещение для температуры
+    factors.enabled = true;            // Коррекция включена по умолчанию
     
     // НОВЫЕ поля для калибровки
-    .calibrationEnabled = false,     // Калибровка отключена по умолчанию
+    factors.calibrationEnabled = false;     // Калибровка отключена по умолчанию
     
     // pH калибровка
-    .phSlope = 1.0f,              // Коэффициент pH калибровки
-    .phOffset = 0.0f,             // Смещение pH калибровки
-    .phCalibrationQuality = 0.0f, // Качество калибровки pH (R²)
-    .phCalibrated = false,        // Флаг калибровки pH
+    factors.phSlope = 1.0f;              // Коэффициент pH калибровки
+    factors.phOffset = 0.0f;             // Смещение pH калибровки
+    factors.phCalibrationQuality = 0.0f; // Качество калибровки pH (R²)
+    factors.phCalibrated = false;        // Флаг калибровки pH
     
     // EC калибровка
-    .ecCalibrationSlope = 1.0f,   // Коэффициент EC калибровки
-    .ecCalibrationOffset = 0.0f,  // Смещение EC калибровки
-    .ecCalibrationQuality = 0.0f, // Качество калибровки EC (R²)
-    .ecCalibrated = false,        // Флаг калибровки EC
+    factors.ecCalibrationSlope = 1.0f;   // Коэффициент EC калибровки
+    factors.ecCalibrationOffset = 0.0f;  // Смещение EC калибровки
+    factors.ecCalibrationQuality = 0.0f; // Качество калибровки EC (R²)
+    factors.ecCalibrated = false;        // Флаг калибровки EC
     
     // Температурная калибровка
-    .temperatureCalibrationSlope = 1.0f,   // Коэффициент температурной калибровки
-    .temperatureCalibrationOffset = 0.0f,  // Смещение температурной калибровки
-    .temperatureCalibrated = false,        // Флаг калибровки температуры
+    factors.temperatureCalibrationSlope = 1.0f;   // Коэффициент температурной калибровки
+    factors.temperatureCalibrationOffset = 0.0f;  // Смещение температурной калибровки
+    factors.temperatureCalibrated = false;        // Флаг калибровки температуры
     
     // Влажность калибровка
-    .humidityCalibrationSlope = 1.0f,      // Коэффициент влажностной калибровки
-    .humidityCalibrationOffset = 0.0f,     // Смещение влажностной калибровки
-    .humidityCalibrated = false,           // Флаг калибровки влажности
+    factors.humidityCalibrationSlope = 1.0f;      // Коэффициент влажностной калибровки
+    factors.humidityCalibrationOffset = 0.0f;     // Смещение влажностной калибровки
+    factors.humidityCalibrated = false;           // Флаг калибровки влажности
     
     // NPK калибровка (нулевая точка)
-    .npkNitrogenOffset = 0.0f,    // Смещение нуля для азота
-    .npkPhosphorusOffset = 0.0f,  // Смещение нуля для фосфора
-    .npkPotassiumOffset = 0.0f,   // Смещение нуля для калия
-    .npkCalibrated = false,       // Флаг калибровки NPK
+    factors.npkNitrogenOffset = 0.0f;    // Смещение нуля для азота
+    factors.npkPhosphorusOffset = 0.0f;  // Смещение нуля для фосфора
+    factors.npkPotassiumOffset = 0.0f;   // Смещение нуля для калия
+    factors.npkCalibrated = false;       // Флаг калибровки NPK
     
     // Температурная компенсация
-    .temperatureCompensationEnabled = true, // Включена по умолчанию
-    .temperatureReference = 25.0f,          // Референсная температура (25°C)
+    factors.temperatureCompensationEnabled = true; // Включена по умолчанию
+    factors.temperatureReference = 25.0f;          // Референсная температура (25°C)
     
     // История калибровок
-    .lastCalibrationTime = 0,     // Время последней калибровки
-    .lastCalibratedBy = ""       // Кто калибровал
-    };
+    factors.lastCalibrationTime = 0;     // Время последней калибровки
+    factors.lastCalibratedBy = "";       // Кто калибровал
 }
 
 void SensorCorrection::init() {
