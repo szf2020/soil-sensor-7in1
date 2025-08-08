@@ -65,7 +65,6 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
     config.flags.calibrationEnabled = preferences.getBool("calEnabled", false);
 
     config.mqttQos = preferences.getUChar("mqttQos", 0);
-    config.thingspeakInterval = preferences.getUShort("tsInterval", 60);
     preferences.getString("manufacturer", config.manufacturer, sizeof(config.manufacturer));
     preferences.getString("model", config.model, sizeof(config.model));
     preferences.getString("swVersion", config.swVersion, sizeof(config.swVersion));
@@ -261,7 +260,6 @@ void saveConfig()  // NOLINT(misc-use-internal-linkage)
     preferences.putBool("calEnabled", config.flags.calibrationEnabled);
 
     preferences.putUChar("mqttQos", config.mqttQos);
-    preferences.putUShort("tsInterval", config.thingspeakInterval);
     preferences.putString("manufacturer", config.manufacturer);
     preferences.putString("model", config.model);
     preferences.putString("swVersion", config.swVersion);
