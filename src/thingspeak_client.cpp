@@ -1,6 +1,7 @@
 #include "thingspeak_client.h"
 #include <NTPClient.h>
 #include <ThingSpeak.h>
+#include <HTTPClient.h>
 #include <WiFiClient.h>
 #include <array>
 #include <cctype>
@@ -404,6 +405,43 @@ bool sendDataToThingSpeak()
         }
         
         logWarnSafe("ThingSpeak: ошибка отправки: %s", errorMsg);
+        
+        // 🔁 Fallback: прямой HTTP POST без channelId при HTTP 400 (проверяем связку api_key+fields)
+        if (res == 400) {
+            HTTPClient http;
+            String url = String("http://api.thingspeak.com/update");
+            if (http.begin(url)) {
+                http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+                String body;
+                body.reserve(200);
+                body += "api_key="; body += apiKeyBuf.data();
+                body += "&field1="; body += String(sensorData.temperature, 2);
+                body += "&field2="; body += String(sensorData.humidity, 2);
+                body += "&field3="; body += String(sensorData.ec, 2);
+                body += "&field4="; body += String(sensorData.ph, 2);
+                body += "&field5="; body += String((int)sensorData.nitrogen);
+                body += "&field6="; body += String((int)sensorData.phosphorus);
+                body += "&field7="; body += String((int)sensorData.potassium);
+                body += "&field8="; body += String(millis());
+
+                int httpCode = http.POST(body);
+                String resp = http.getString();
+                http.end();
+
+                if (httpCode == 200 && resp.length() > 0 && resp != "0") {
+                    logSuccessSafe("ThingSpeak fallback: данные отправлены (entry_id=%s)", resp.c_str());
+                    lastTsPublish = millis();
+                    snprintf(thingSpeakLastPublishBuffer.data(), thingSpeakLastPublishBuffer.size(), "%lu", lastTsPublish);
+                    thingSpeakLastErrorBuffer[0] = '\0';
+                    consecutiveFailCount = 0;
+                    lastFailTime = 0;
+                    nextThingSpeakTry = 0;
+                    return true;
+                } else {
+                    logWarnSafe("ThingSpeak fallback: HTTP %d, resp='%s'", httpCode, resp.c_str());
+                }
+            }
+        }
         strlcpy(thingSpeakLastErrorBuffer.data(), errorMsg, thingSpeakLastErrorBuffer.size());
         
         consecutiveFailCount++;
