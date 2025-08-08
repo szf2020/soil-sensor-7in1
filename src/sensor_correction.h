@@ -12,19 +12,16 @@
 #include <Arduino.h>
 #include <string>
 
-// Объявление внешней функции для получения температуры из датчика
-extern uint16_t getSensorTemperature();
-
 // Структура для хранения коэффициентов коррекции
 struct CorrectionFactors {
-    // Существующие поля коррекции (НЕ ТРОГАЕМ)
-    float humiditySlope;     // Коэффициент наклона для влажности
-    float humidityOffset;    // Смещение для влажности (%)
-    float ecSlope;          // Коэффициент наклона для EC
-    float ecOffset;         // Смещение для EC (μS/cm)
-    float temperatureSlope; // Коэффициент наклона для температуры
-    float temperatureOffset; // Смещение для температуры (°C)
-    bool enabled;           // Включена ли коррекция
+    // Существующие поля коррекции
+    float humiditySlope;      // Коэффициент для влажности
+    float humidityOffset;     // Смещение для влажности
+    float ecSlope;           // Коэффициент для EC
+    float ecOffset;          // Смещение для EC
+    float temperatureSlope;   // Коэффициент для температуры
+    float temperatureOffset;  // Смещение для температуры
+    bool enabled;            // Включена ли коррекция
     
     // НОВЫЕ поля для калибровки
     bool calibrationEnabled;     // Включена ли калибровка
@@ -36,7 +33,7 @@ struct CorrectionFactors {
     bool phCalibrated;          // Флаг калибровки pH
     
     // EC калибровка
-    float ecCalibrationSlope;   // Коэффициент EC калибровки (отдельный от коррекции)
+    float ecCalibrationSlope;   // Коэффициент EC калибровки
     float ecCalibrationOffset;  // Смещение EC калибровки
     float ecCalibrationQuality; // Качество калибровки EC (R²)
     bool ecCalibrated;          // Флаг калибровки EC
@@ -62,8 +59,8 @@ struct CorrectionFactors {
     float temperatureReference;          // Референсная температура (25°C)
     
     // История калибровок
-    unsigned long lastCalibrationTime;   // Время последней калибровки
-    std::string lastCalibratedBy;        // Кто калибровал (рекомендуется не более 50 символов для UI)
+    unsigned long lastCalibrationTime; // Время последней калибровки
+    char lastCalibratedBy[50];         // Кто калибровал (фиксированный размер для экономии памяти)
 };
 
 // Структура для результатов калибровки

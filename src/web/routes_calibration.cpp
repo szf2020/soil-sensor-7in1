@@ -653,7 +653,7 @@ void handleCalibrationStatus() {
         factors.phCalibrationQuality = result.r_squared;
         factors.phCalibrated = true;
         factors.lastCalibrationTime = millis();
-        factors.lastCalibratedBy = "Web Interface";
+        strcpy(factors.lastCalibratedBy, "Web Interface");
         gSensorCorrection.setCorrectionFactors(factors);
         
         logSuccess("pH калибровка успешна: R² = " + String(result.r_squared, 3));
@@ -701,7 +701,7 @@ void handleECCalibration() {
         factors.ecCalibrationQuality = result.r_squared;
         factors.ecCalibrated = true;
         factors.lastCalibrationTime = millis();
-        factors.lastCalibratedBy = "Web Interface";
+        strcpy(factors.lastCalibratedBy, "Web Interface");
         gSensorCorrection.setCorrectionFactors(factors);
         
         logSuccess("EC калибровка успешна: R² = " + String(result.r_squared, 3));
@@ -744,7 +744,7 @@ void handleTemperatureCalibration() {
         factors.temperatureCalibrationOffset = result.offset;
         factors.temperatureCalibrated = true;
         factors.lastCalibrationTime = millis();
-        factors.lastCalibratedBy = "Web Interface";
+        strcpy(factors.lastCalibratedBy, "Web Interface");
         gSensorCorrection.setCorrectionFactors(factors);
         
         logSuccess("Температурная калибровка успешна");
@@ -787,7 +787,7 @@ void handleHumidityCalibration() {
         factors.humidityCalibrationOffset = result.offset;
         factors.humidityCalibrated = true;
         factors.lastCalibrationTime = millis();
-        factors.lastCalibratedBy = "Web Interface";
+        strcpy(factors.lastCalibratedBy, "Web Interface");
         gSensorCorrection.setCorrectionFactors(factors);
         
         logSuccess("Влажностная калибровка успешна");
@@ -826,7 +826,7 @@ void handleNPKCalibration() {
     factors.npkPotassiumOffset = potassium;
     factors.npkCalibrated = true;
     factors.lastCalibrationTime = millis();
-    factors.lastCalibratedBy = "Web Interface";
+    strcpy(factors.lastCalibratedBy, "Web Interface");
     gSensorCorrection.setCorrectionFactors(factors);
     
     logSuccess("NPK калибровка успешна: N=" + String(nitrogen, 1) + ", P=" + String(phosphorus, 1) + ", K=" + String(potassium, 1));

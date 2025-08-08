@@ -4,9 +4,11 @@
  */
 
 #include "sensor_correction.h"
+#include "modbus_sensor.h"
 #include "logger.h"
 #include <Preferences.h>
 #include <cmath>
+#include <cstring>
 
 // Глобальный экземпляр
 SensorCorrection gSensorCorrection;
@@ -60,7 +62,7 @@ SensorCorrection::SensorCorrection() : initialized(false) {
     
     // История калибровок
     factors.lastCalibrationTime = 0;     // Время последней калибровки
-    factors.lastCalibratedBy = "";       // Кто калибровал
+    strcpy(factors.lastCalibratedBy, ""); // Кто калибровал
 }
 
 void SensorCorrection::init() {
@@ -224,8 +226,6 @@ float SensorCorrection::applyTemperatureCompensation(float value, float temperat
 // НОВЫЕ: Получение текущей температуры для компенсации
 float SensorCorrection::getCurrentTemperature() {
     // Получаем текущую температуру из датчика (регистр 0x0013)
-    extern uint16_t getSensorTemperature(); // Объявление внешней функции
-    
     uint16_t rawTemp = getSensorTemperature();
     
     // Проверяем, что датчик отвечает (0xFFFF означает ошибку чтения)
@@ -481,7 +481,7 @@ void SensorCorrection::saveFactors() {
         
         // История калибровок
         preferences.putULong("last_calibration_time", this->factors.lastCalibrationTime);
-        preferences.putString("last_calibrated_by", String(this->factors.lastCalibratedBy.c_str()));
+        preferences.putString("last_calibrated_by", String(this->factors.lastCalibratedBy));
         
         preferences.end();
         logSuccess("✅ Коэффициенты коррекции и калибровки сохранены в EEPROM");
@@ -543,7 +543,8 @@ void SensorCorrection::loadFactors() {
         // История калибровок
         this->factors.lastCalibrationTime = preferences.getULong("last_calibration_time", 0);
         String lastCalibratedBy = preferences.getString("last_calibrated_by", "");
-        this->factors.lastCalibratedBy = lastCalibratedBy.c_str();
+        strncpy(this->factors.lastCalibratedBy, lastCalibratedBy.c_str(), sizeof(this->factors.lastCalibratedBy) - 1);
+        this->factors.lastCalibratedBy[sizeof(this->factors.lastCalibratedBy) - 1] = '\0'; // Гарантируем завершающий нуль
         
         preferences.end();
         logDebugSafe("Коэффициенты коррекции и калибровки загружены из EEPROM");
