@@ -112,9 +112,12 @@ pio test -e esp32dev -f test_csrf_security
 pip install -r requirements.txt
 
 # Устройство задаётся через переменную окружения (рекомендуется)
-set JXCT_DEVICE_IP=192.168.2.66  # Windows PowerShell
-# $env:JXCT_DEVICE_IP="192.168.2.66"           # PowerShell альтернативно
-# export JXCT_DEVICE_IP=192.168.2.66            # bash/zsh
+# Windows CMD:
+set JXCT_DEVICE_IP=192.168.2.66
+# Windows PowerShell:
+$env:JXCT_DEVICE_IP="192.168.2.66"
+# bash/zsh:
+export JXCT_DEVICE_IP=192.168.2.66
 
 # Запуск API/E2E
 python -m pytest -q test/test_api_schema.py
