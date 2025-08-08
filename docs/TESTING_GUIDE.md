@@ -7,6 +7,10 @@
   ```bash
   python scripts/run_clang_tidy_analysis.py
   ```
+- Cppcheck (PlatformIO) — статический анализ проекта:
+  ```bash
+  pio check -e static-analysis
+  ```
 - Подробные метрики публикуются в отчётах CI. Конкретные числа предупреждений могут меняться, актуальные значения см. в последних отчётах анализа.
 
 ### 🔧 **ИСПРАВЛЕННЫЕ КАТЕГОРИИ ПРЕДУПРЕЖДЕНИЙ:**
@@ -267,7 +271,7 @@ python scripts/run_comprehensive_tests.py
 ```cpp
 // test_framework_config.hpp
 struct ReportConfig {
-    // JSON-only политика для каталога test_reports/
+    // JSON-only политика для каталога test_reports/ (HTML/XML публикуются только как CI artifacts)
     bool generateXML = false;
     bool generateHTML = false;
     bool generateJSON = true;
