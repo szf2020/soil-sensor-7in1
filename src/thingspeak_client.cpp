@@ -200,8 +200,13 @@ bool canSendToThingSpeak()
         return false;
     }
     
-    // ✅ ДОБАВЛЕНО: Дополнительная проверка минимального интервала (20 сек)
-    if (now - lastTsPublish < 20000) {
+    // ✅ ДОБАВЛЕНО: Минимальный интервал только если он больше основного
+    unsigned long minInterval = 20000; // 20 секунд минимум
+    if (config.thingSpeakInterval > minInterval) {
+        minInterval = config.thingSpeakInterval;
+    }
+    
+    if (now - lastTsPublish < minInterval) {
         return false;
     }
 
@@ -332,7 +337,22 @@ bool sendDataToThingSpeak()
         consecutiveFailCount++;
         lastFailTime = millis();
         logWarnSafe("ThingSpeak: временная сетевая ошибка (%d), будет повтор", res);
-        lastTsPublish = millis() - config.thingSpeakInterval + 10000;  // повтор через 10с
+        
+        // Исправляем логику ретраев: избегаем переполнения и конфликтов
+        unsigned long retryDelay = 10000; // 10 секунд
+        if (config.thingSpeakInterval > retryDelay) {
+            // Если основной интервал больше ретрая, используем его
+            retryDelay = config.thingSpeakInterval;
+        }
+        
+        // Безопасное вычисление времени следующей попытки
+        unsigned long nextAttempt = millis() + retryDelay;
+        if (nextAttempt < millis()) {
+            // Защита от переполнения
+            nextAttempt = millis() + 30000; // 30 секунд как fallback
+        }
+        
+        lastTsPublish = nextAttempt - config.thingSpeakInterval;
         return false;
     }
     else if (res == 304 || res == -304)  // ✅ HTTP 304 - данные не изменились, но это НЕ ошибка
@@ -389,8 +409,22 @@ bool sendDataToThingSpeak()
             // Сетевые ошибки - повторяем с экспоненциальной задержкой
             if (consecutiveFailCount < 5) {
                 unsigned long retryDelay = 10000 * (1 << (consecutiveFailCount - 1));  // 10, 20, 40, 80 сек
+                
+                // Ограничиваем максимальную задержку
+                if (retryDelay > 300000) { // 5 минут максимум
+                    retryDelay = 300000;
+                }
+                
                 logDebugSafe("ThingSpeak: Повторная попытка через %lu секунд", retryDelay / 1000);
-                lastTsPublish = millis() - config.thingSpeakInterval + retryDelay;
+                
+                // Безопасное вычисление времени следующей попытки
+                unsigned long nextAttempt = millis() + retryDelay;
+                if (nextAttempt < millis()) {
+                    // Защита от переполнения
+                    nextAttempt = millis() + 30000; // 30 секунд как fallback
+                }
+                
+                lastTsPublish = nextAttempt - config.thingSpeakInterval;
                 return false;
             }
         }
