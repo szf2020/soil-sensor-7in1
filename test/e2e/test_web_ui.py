@@ -26,7 +26,8 @@ class JXCTWebUITests(unittest.TestCase):
 
     def setUp(self):
         """Настройка перед каждым тестом"""
-        self.base_url = "http://192.168.2.74"  # IP вашего ESP32 устройства
+        import os
+        self.base_url = f"http://{os.environ.get('JXCT_DEVICE_IP', '192.168.2.74')}"  # IP устройства (переопределяется через env)
         self.timeout = 10
         self.session = requests.Session()
         self.session.timeout = self.timeout
@@ -129,7 +130,8 @@ class JXCTAPITests(unittest.TestCase):
 
     def setUp(self):
         """Настройка перед каждым тестом"""
-        self.base_url = "http://192.168.2.74"
+        import os
+        self.base_url = f"http://{os.environ.get('JXCT_DEVICE_IP', '192.168.2.74')}"
         self.timeout = 10
         self.session = requests.Session()
         self.session.timeout = self.timeout

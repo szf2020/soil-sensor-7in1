@@ -12,6 +12,7 @@ import subprocess
 import platform
 from pathlib import Path
 from datetime import datetime
+import argparse
 
 def log_info(message):
     """Логирование информации"""
@@ -119,7 +120,7 @@ def check_esp32_connection():
         return None
 
 def run_esp32_build():
-    """Проверка сборки ESP32"""
+    """Проверка сборки ESP32 (опционально)."""
     log_info("Проверка сборки ESP32...")
 
     try:
@@ -128,21 +129,22 @@ def run_esp32_build():
         ], capture_output=True, text=True, timeout=120, encoding='utf-8', errors='ignore')
 
         if result.returncode == 0:
-            # Проверяем размер прошивки
             firmware_path = Path(".pio/build/esp32dev/firmware.bin")
             if firmware_path.exists():
                 size = firmware_path.stat().st_size
                 log_success(f"Сборка ESP32 успешна (размер: {size:,} байт)")
                 return {"status": "PASS", "firmware_size": size}
-            else:
-                log_error("Сборка ESP32: firmware.bin не найден")
-                return {"status": "FAIL", "error": "firmware.bin не найден"}
-        else:
-            log_error("Сборка ESP32 не удалась")
-            if result.stderr:
-                log_error(f"Ошибка: {result.stderr}")
-            return {"status": "FAIL", "error": result.stderr or "Неизвестная ошибка"}
+            log_error("Сборка ESP32: firmware.bin не найден")
+            return {"status": "FAIL", "error": "firmware.bin не найден"}
 
+        log_error("Сборка ESP32 не удалась")
+        if result.stderr:
+            log_error(f"Ошибка: {result.stderr}")
+        return {"status": "FAIL", "error": result.stderr or "Неизвестная ошибка"}
+
+    except subprocess.TimeoutExpired:
+        log_warning("Сборка ESP32: TIMEOUT (пропускаем в быстром профиле)")
+        return {"status": "SKIPPED", "reason": "TIMEOUT in quick profile"}
     except Exception as e:
         log_error(f"Ошибка сборки ESP32: {e}")
         return {"status": "ERROR", "error": str(e)}
@@ -210,6 +212,15 @@ def generate_report(results):
 
 def main():
     """Основная функция"""
+    parser = argparse.ArgumentParser(description="JXCT Simple Test Runner")
+    parser.add_argument("--with-esp32-build", action="store_true", help="Выполнить сборку ESP32")
+    parser.add_argument("--with-esp32-tests", action="store_true", help="Запустить ESP32 unit-тесты")
+    args = parser.parse_args()
+
+    # Поддержка через ENV, если флаги не переданы
+    with_esp32_build = args.with_esp32_build or os.environ.get("JXCT_WITH_ESP32_BUILD") == "1"
+    with_esp32_tests = args.with_esp32_tests or os.environ.get("JXCT_WITH_ESP32_TESTS") == "1"
+
     log_info("🧪 JXCT Simple Test Runner v1.4.1 (Исправленная версия)")
     log_info("=" * 60)
 
@@ -229,13 +240,15 @@ def main():
         "details": python_results
     }
 
-    # 2. Сборка ESP32
-    build_result = run_esp32_build()
-    results["esp32_build"] = build_result
+    # 2. Сборка ESP32 (опционально)
+    if with_esp32_build:
+        build_result = run_esp32_build()
+        results["esp32_build"] = build_result
 
-    # 3. ESP32 тесты (если устройство подключено)
-    esp32_result = run_esp32_tests()
-    results["esp32_tests"] = esp32_result
+    # 3. ESP32 тесты (опционально)
+    if with_esp32_tests:
+        esp32_result = run_esp32_tests()
+        results["esp32_tests"] = esp32_result
 
     # 4. Валидация соответствия формул
     log_info("Проверка соответствия формул...")

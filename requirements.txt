@@ -6,3 +6,5 @@ mkdocs-awesome-pages-plugin>=2.9.0
 # E2E Testing Dependencies
 requests>=2.31.0
 urllib3>=2.0.0
+hypothesis>=6.88.0
+jsonschema>=4.22.0
