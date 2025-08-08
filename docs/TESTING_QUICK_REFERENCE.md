@@ -28,14 +28,16 @@ python -m pytest test/ --maxfail=1 -q
 
 ### E2E тесты (с реальным устройством) {#e2e-testy}
 ```bash
-set JXCT_DEVICE_IP=http://192.168.2.66/
+set JXCT_DEVICE_IP=192.168.2.66  # Windows cmd
+# PowerShell: $env:JXCT_DEVICE_IP="192.168.2.66"
+# bash/zsh:  export JXCT_DEVICE_IP=192.168.2.66
 python -m pytest test/test_api_schema.py test/e2e/test_web_ui.py -q
 ```
 
 ### Анализ статическим анализатором {#Analiz-tehnicheskogo-dolga}
 ```bash
 python scripts/run_clang_tidy_analysis.py
-pion check -e static-analysis
+pio check -e static-analysis
 ```
 
 ### Комплексное тестирование (быстрый набор) {#Kompleksnoe-testirovanie}

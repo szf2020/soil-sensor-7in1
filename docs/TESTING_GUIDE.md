@@ -264,8 +264,9 @@ python scripts/run_comprehensive_tests.py
 ```cpp
 // test_framework_config.hpp
 struct ReportConfig {
-    bool generateXML = true;
-    bool generateHTML = true;
+    // JSON-only политика для каталога test_reports/
+    bool generateXML = false;
+    bool generateHTML = false;
     bool generateJSON = true;
     bool includeTechnicalDebt = true;
     std::string outputDir = "test_reports";
