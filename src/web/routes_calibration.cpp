@@ -83,12 +83,31 @@ void handleCalibrationPage()
     html += "</div>";
     html += "</div>";
 
-    // Статус калибровок
+    // Статус калибровок (серверный рендер без авто-JS)
     html += "<div class='section' style='background:#f8f9fa;padding:15px;border-radius:8px;margin:15px 0;'>";
     html += "<h3>📊 Статус калибровок</h3>";
+
+    // Гарантируем инициализацию и получаем текущие коэффициенты
+    if (!gSensorCorrection.isInitialized()) {
+        gSensorCorrection.init();
+    }
+    CorrectionFactors s = gSensorCorrection.getCorrectionFactors();
+
     html += "<div id='calibrationStatus' style='font-size:14px;'>";
-    html += "<p>Загрузка статуса калибровок...</p>";
-    html += "</div>";
+    html += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:20px;'>";
+    html += "<div><h4>Статус калибровки:</h4><p>";
+    html += (s.calibrationEnabled ? "✅ Включена" : "❌ Отключена");
+    html += "</p></div>";
+    html += "<div><h4>Откалиброванные датчики:</h4>";
+    html += "<ul style='margin:0;padding-left:20px;'>";
+    if (s.phCalibrated)          html += "<li>✅ pH</li>";
+    if (s.ecCalibrated)          html += "<li>✅ EC</li>";
+    if (s.temperatureCalibrated) html += "<li>✅ Температура</li>";
+    if (s.humidityCalibrated)    html += "<li>✅ Влажность</li>";
+    if (s.npkCalibrated)         html += "<li>✅ NPK</li>";
+    html += "</ul></div>";
+    html += "</div>"; // grid
+    html += "</div>"; // calibrationStatus
     html += "</div>";
 
     // pH Калибровка
