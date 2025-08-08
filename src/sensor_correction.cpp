@@ -186,6 +186,10 @@ float SensorCorrection::correctPH(uint16_t rawValue) {
     logDebugSafe("Коррекция pH: %u → %.2f → %.2f pH", 
                  rawValue, factoryCal, calibrated);
     
+    // Clamp to physically plausible pH range
+    if (calibrated < 0.0f) calibrated = 0.0f;
+    else if (calibrated > 14.0f) calibrated = 14.0f;
+    
     return calibrated;
 }
 
