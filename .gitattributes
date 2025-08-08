@@ -1,3 +1,5 @@
+test_reports/*.json merge=ours
+
 # Определяем основной язык программирования
 *.cpp linguist-language=C++
 *.h linguist-language=C++
