@@ -26,6 +26,7 @@
 #include "../sensor_correction.h"
 #include "../business/crop_recommendation_engine.h"
 #include "../business/sensor_compensation_service.h"
+#include "routes_calibration.h"
 
 // Глобальный экземпляр сервиса калибровки
 extern SensorCalibrationService gCalibrationService;
@@ -560,66 +561,7 @@ void setupDataRoutes()
             
             html += "</div>";
 
-                        // ======= СИСТЕМА КОРРЕКЦИИ ПОКАЗАНИЙ =======
-            html += "<div class='section'><h2>🔧 Система коррекции показаний</h2>";
-            html += "<p style='font-size:14px;color:#666;'>Корректировка показаний датчика для улучшения точности измерений</p>";
 
-            // Включение/отключение
-            html += "<div style='background:#f8f9fa;padding:15px;border-radius:8px;margin:15px 0;'>";
-            html += "<h4>🔄 Включение/отключение</h4>";
-            html += "<div class='form-group'>";
-            html += "<label for='correction_enabled'>Коррекция показаний:</label>";
-            html += "<select id='correction_enabled' style='width:100%;'>";
-            html += "<option value='true'>Включена</option>";
-            html += "<option value='false'>Отключена</option>";
-            html += "</select>";
-            html += "</div>";
-            html += "<button onclick='updateCorrectionEnabled()' class='btn btn-success' style='width:100%;'>Обновить</button>";
-            html += "<div id='correction-enabled-status' style='margin-top:10px;font-size:14px;min-height:20px;'></div>";
-            html += "</div>";
-
-            // Коэффициенты коррекции
-            html += "<div style='background:#f8f9fa;padding:15px;border-radius:8px;margin:15px 0;'>";
-            html += "<h4>📊 Коэффициенты коррекции</h4>";
-            html += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:15px 0;'>";
-            
-            // Влажность
-            html += "<div style='border:1px solid #ffc107;padding:15px;border-radius:8px;'>";
-            html += "<h5>💧 Влажность</h5>";
-            html += "<div class='form-group'>";
-            html += "<label for='humidity_slope'>Коэффициент:</label>";
-            html += "<input type='number' id='humidity_slope' step='0.01' min='0.1' max='3.0' placeholder='1.25' style='width:100%;'>";
-            html += "</div>";
-            html += "<div class='form-group'>";
-            html += "<label for='humidity_offset'>Смещение (%):</label>";
-            html += "<input type='number' id='humidity_offset' step='0.1' min='-20' max='20' placeholder='-5.0' style='width:100%;'>";
-            html += "</div>";
-            html += "</div>";
-            
-            // EC
-            html += "<div style='border:1px solid #17a2b8;padding:15px;border-radius:8px;'>";
-            html += "<h5>⚡ EC</h5>";
-            html += "<div class='form-group'>";
-            html += "<label for='ec_slope'>Коэффициент:</label>";
-            html += "<input type='number' id='ec_slope' step='0.01' min='0.1' max='3.0' placeholder='1.35' style='width:100%;'>";
-            html += "</div>";
-            html += "<div class='form-group'>";
-            html += "<label for='ec_offset'>Смещение:</label>";
-            html += "<input type='number' id='ec_offset' step='0.1' min='-1000' max='1000' placeholder='0.0' style='width:100%;'>";
-            html += "</div>";
-            html += "</div>";
-            
-            html += "</div>";
-            html += "<button onclick='updateCorrectionFactors()' class='btn btn-warning' style='width:100%;'>Обновить коэффициенты</button>";
-            html += "<div id='correction-factors-status' style='margin-top:10px;font-size:14px;min-height:20px;'></div>";
-            html += "</div>";
-
-            // Действия с коррекцией
-            html += "<div style='margin-top:15px;'>";
-            html += "<button onclick='loadCorrectionSettings()' class='btn btn-info'>Загрузить настройки</button>";
-            html += "<button onclick='resetCorrectionToDefaults()' class='btn btn-danger'>Сбросить к заводским</button>";
-            html += "</div>";
-            html += "</div>";
 
 
 
@@ -1055,6 +997,9 @@ void setupDataRoutes()
     // Primary API v1 endpoint
     webServer.on(API_SENSOR, HTTP_GET, sendSensorJson);
 
+    // Страница калибровки датчика
+    webServer.on("/calibration", HTTP_GET, handleCalibrationPage);
+
     // Загрузка калибровочного CSV через вкладку
     webServer.on("/readings/upload", HTTP_POST, []() {}, handleReadingsUpload);
 
@@ -1144,217 +1089,85 @@ void setupDataRoutes()
     // Deprecated alias удалён в v2.7.0
 
     // API маршруты калибровки
-    webServer.on("/api/calibration/status", HTTP_GET,
-                 []()
-                 {
-                     logWebRequest("GET", "/api/calibration/status", webServer.client().remoteIP().toString());
-                     
-                     String statusJson = gCalibrationService.getCalibrationStatus();
-                     webServer.send(200, "application/json", statusJson);
-                 });
+    webServer.on("/api/calibration/status", HTTP_GET, handleCalibrationStatus);
 
-    // API endpoints для температуры и влажности
-    webServer.on("/api/calibration/temperature/add", HTTP_POST,
-                 []()
-                 {
-                     logWebRequest("POST", "/api/calibration/temperature/add", webServer.client().remoteIP().toString());
-                     
-                     DynamicJsonDocument doc(512);
-                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
-                     if (error) {
-                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
-                         return;
-                     }
-                     
-                     float expected = doc["expected"];
-                     float measured = doc["measured"];
-                     
-                     // Валидация данных
-                     if (isnan(expected) || isnan(measured)) {
-                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid temperature values\"}");
-                         return;
-                     }
-                     
-                     // Validate JXCT sensor temperature range (-45 to +115°C)
-                     if (expected < -45 || expected > 115 || measured < -45 || measured > 115) {
-                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Temperature values out of JXCT sensor range (-45 to +115°C)\"}");
-                         return;
-                     }
-                     
-                     bool success = gCalibrationService.addTemperatureCalibrationPoint(expected, measured);
-                     
-                     DynamicJsonDocument response(256);
-                     response["success"] = success;
-                     if (success) {
-                         response["message"] = "Temperature calibration point added successfully";
-                         response["offset"] = expected - measured;
-                     } else {
-                         response["error"] = "Failed to add temperature calibration point";
-                     }
-                     
-                     String response_str;
-                     serializeJson(response, response_str);
-                     webServer.send(200, "application/json", response_str);
-                 });
+    // Новые API маршруты калибровки
+    webServer.on("/api/calibration/ph", HTTP_POST, handlePHCalibration);
+    webServer.on("/api/calibration/ec", HTTP_POST, handleECCalibration);
+    webServer.on("/api/calibration/temperature", HTTP_POST, handleTemperatureCalibration);
+    webServer.on("/api/calibration/humidity", HTTP_POST, handleHumidityCalibration);
+    webServer.on("/api/calibration/npk", HTTP_POST, handleNPKCalibration);
+    webServer.on("/api/calibration/enable", HTTP_POST, handleEnableCalibration);
+    webServer.on("/api/calibration/disable", HTTP_POST, handleDisableCalibration);
+    webServer.on("/api/calibration/reset", HTTP_POST, handleResetCalibration);
 
-    webServer.on("/api/calibration/humidity/add", HTTP_POST,
-                 []()
-                 {
-                     logWebRequest("POST", "/api/calibration/humidity/add", webServer.client().remoteIP().toString());
-                     
-                     DynamicJsonDocument doc(512);
-                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
-                     if (error) {
-                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
-                         return;
-                     }
-                     
-                     float expected = doc["expected"];
-                     float measured = doc["measured"];
-                     
-                     // Валидация данных
-                     if (isnan(expected) || isnan(measured)) {
-                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid humidity values\"}");
-                         return;
-                     }
-                     
-                     // Validate JXCT sensor humidity range (0-100%RH)
-                     if (expected < 0 || expected > 100 || measured < 0 || measured > 100) {
-                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Humidity values out of JXCT sensor range (0-100%RH)\"}");
-                         return;
-                     }
-                     
-                     bool success = gCalibrationService.addHumidityCalibrationPoint(expected, measured);
-                     
-                     DynamicJsonDocument response(256);
-                     response["success"] = success;
-                     if (success) {
-                         response["message"] = "Humidity calibration point added successfully";
-                         response["offset"] = expected - measured;
-                     } else {
-                         response["error"] = "Failed to add humidity calibration point";
-                     }
-                     
-                     String response_str;
-                     serializeJson(response, response_str);
-                     webServer.send(200, "application/json", response_str);
-                 });
+    // OPTIONS обработчики для CORS
+    webServer.on("/api/calibration/status", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/ph", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/ec", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/temperature", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/humidity", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/npk", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/enable", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/disable", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
+    
+    webServer.on("/api/calibration/reset", HTTP_OPTIONS, []() {
+        webServer.sendHeader("Access-Control-Allow-Origin", "*");
+        webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+        webServer.send(200);
+    });
 
-    webServer.on("/api/calibration/ph/add", HTTP_POST,
-                 []()
-                 {
-                     DynamicJsonDocument doc(512);
-                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
 
-                     if (error)
-                     {
-                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
-                         return;
-                     }
 
-                     float expected = doc["expected"];
-                     float measured = doc["measured"];
 
-                     // ИСПРАВЛЕНО: Реальная реализация pH калибровки
-                     bool success = false;
-                     try {
-                         // Валидация входных данных согласно JXCT спецификации
-                         if (isnan(expected) || isnan(measured)) {
-                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid pH values\"}");
-                             return;
-                         }
-                         
-                         // Validate JXCT sensor pH range (3-9 pH)
-                         if (expected < 3 || expected > 9 || measured < 3 || measured > 9) {
-                             logWarnSafe("pH вне диапазона JXCT: expected=%.1f, measured=%.1f", expected, measured);
-                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"pH values out of JXCT sensor range (3-9 pH)\"}");
-                             return;
-                         }
-                         
-                         // Добавляем pH калибровочную точку
-                         success = gCalibrationService.addPHCalibrationPoint(expected, measured);
-                         
-                         if (success) {
-                             logSuccessSafe("pH калибровочная точка добавлена: expected=%.1f, measured=%.1f", expected, measured);
-                         } else {
-                             logError("Ошибка добавления pH калибровочной точки");
-                         }
-                     } catch (...) {
-                         logError("Исключение при добавлении pH калибровки");
-                         success = false;
-                     }
-
-                     DynamicJsonDocument response(256);
-                     response["success"] = success;
-                     if (!success)
-                     {
-                         response["error"] = "Failed to add pH calibration point";
-                     } else {
-                         response["message"] = "pH calibration point added successfully";
-                     }
-
-                     String response_str;
-                     serializeJson(response, response_str);
-                     webServer.send(200, "application/json", response_str);
-                 });
-
-    webServer.on("/api/calibration/ec/add", HTTP_POST,
-                 []()
-                 {
-                     DynamicJsonDocument doc(512);
-                     DeserializationError error = deserializeJson(doc, webServer.arg("plain"));
-
-                     if (error)
-                     {
-                         webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
-                         return;
-                     }
-
-                     float expected = doc["expected"];
-                     float measured = doc["measured"];
-
-                     // ИСПРАВЛЕНО: Реальная реализация EC калибровки
-                     bool success = false;
-                     try {
-                         // Валидация входных данных согласно JXCT спецификации
-                         if (isnan(expected) || isnan(measured)) {
-                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid EC values\"}");
-                             return;
-                         }
-                         
-                         // Validate JXCT sensor EC range (0-10000 µS/cm)
-                         if (expected < 0 || expected > 10000 || measured < 0 || measured > 10000) {
-                             logWarnSafe("EC вне диапазона JXCT: expected=%.0f, measured=%.0f", expected, measured);
-                             webServer.send(400, "application/json", "{\"success\":false,\"error\":\"EC values out of JXCT sensor range (0-10000 µS/cm)\"}");
-                             return;
-                         }
-                         
-                         // Добавляем EC калибровочную точку
-                         success = gCalibrationService.addECCalibrationPoint(expected, measured);
-                         
-                         if (success) {
-                             logSuccessSafe("EC калибровочная точка добавлена: expected=%.0f, measured=%.0f", expected, measured);
-                         } else {
-                             logError("Ошибка добавления EC калибровочной точки");
-                         }
-                     } catch (...) {
-                         logError("Исключение при добавлении EC калибровки");
-                         success = false;
-                     }
-
-                     DynamicJsonDocument response(256);
-                     response["success"] = success;
-                     if (!success)
-                     {
-                         response["error"] = "Failed to add EC calibration point";
-                     } else {
-                         response["message"] = "EC calibration point added successfully";
-                     }
-
-                     String response_str;
-                     serializeJson(response, response_str);
-                     webServer.send(200, "application/json", response_str);
-                 });
 
     webServer.on("/api/calibration/npk/set", HTTP_POST,
                  []()
@@ -1655,7 +1468,7 @@ void setupDataRoutes()
                      logWebRequest("GET", "/api/correction/settings", webServer.client().remoteIP().toString());
                      
                      try {
-                         CorrectionFactors factors = SensorCorrection::getCorrectionFactors();
+                         CorrectionFactors factors = gSensorCorrection.getCorrectionFactors();
                          
                          DynamicJsonDocument doc(512);
                          doc["success"] = true;
@@ -1699,7 +1512,7 @@ void setupDataRoutes()
                          }
                          
                          bool enabled = doc["enabled"] | false;
-                         SensorCorrection::enableCorrection(enabled);
+                         gSensorCorrection.enableCorrection(enabled);
                          success = true;
                          
                          logSuccess("Коррекция " + String(enabled ? "включена" : "отключена"));
@@ -1740,7 +1553,7 @@ void setupDataRoutes()
                              return;
                          }
                          
-                         CorrectionFactors factors = SensorCorrection::getCorrectionFactors();
+                         CorrectionFactors factors = gSensorCorrection.getCorrectionFactors();
                          
                          // Обновляем только переданные коэффициенты
                          if (doc.containsKey("humidity_slope")) {
@@ -1762,7 +1575,7 @@ void setupDataRoutes()
                              factors.temperatureOffset = doc["temperature_offset"] | 0.0f;
                          }
                          
-                         SensorCorrection::setCorrectionFactors(factors);
+                         gSensorCorrection.setCorrectionFactors(factors);
                          success = true;
                          
                          logSuccess("Коэффициенты коррекции обновлены: hum_slope=" + String(factors.humiditySlope, 2) + 
@@ -1804,7 +1617,7 @@ void setupDataRoutes()
                              .enabled = true
                          };
                          
-                         SensorCorrection::setCorrectionFactors(defaultFactors);
+                         gSensorCorrection.setCorrectionFactors(defaultFactors);
                          
                          logSuccess("Коэффициенты коррекции сброшены к заводским настройкам");
                          

@@ -11,10 +11,12 @@
 #include "business/sensor_compensation_service.h"
 #include "sensor_types.h"
 #include "advanced_filters.h"
+#include "sensor_correction.h" // НОВЫЙ: для калибровки
 
 // Глобальные экземпляры бизнес-сервисов
 extern SensorCalibrationService gCalibrationService;
 extern SensorCompensationService gCompensationService;
+extern SensorCorrection gSensorCorrection; // НОВЫЙ: для калибровки
 
 namespace SensorProcessing {
 
@@ -81,12 +83,28 @@ SoilProfile getSoilProfile(int profileIndex) {
  * @param config Конфигурация системы
  */
 void processSensorData(SensorData& sensorData, const Config& config) {
-    // 1. Применяем калибровку ТОЛЬКО если включена
+    // 1. Применяем калибровочную коррекцию (РАСШИРЯЕМ существующую)
     if (config.flags.calibrationEnabled) {
-        logDebugSafe("📊 Применяем калибровку датчика");
+        logDebugSafe("📊 Применяем калибровочную коррекцию датчика");
         
-        const SoilProfile profile = getSoilProfile(config.soilProfile);
-        gCalibrationService.applyCalibration(sensorData, profile);
+        // Получаем сырые данные датчика (предполагаем, что они доступны)
+        uint16_t rawHumidity = static_cast<uint16_t>(sensorData.humidity * 10.0f); // Обратно в сырые
+        uint16_t rawEC = static_cast<uint16_t>(sensorData.ec);
+        uint16_t rawTemperature = static_cast<uint16_t>(sensorData.temperature * 10.0f);
+        uint16_t rawPH = static_cast<uint16_t>(sensorData.ph * 10.0f);
+        uint16_t rawN = static_cast<uint16_t>(sensorData.nitrogen);
+        uint16_t rawP = static_cast<uint16_t>(sensorData.phosphorus);
+        uint16_t rawK = static_cast<uint16_t>(sensorData.potassium);
+        
+        // Применяем калибровочную коррекцию к сырым данным
+        sensorData.humidity = gSensorCorrection.correctHumidity(rawHumidity);
+        sensorData.ec = gSensorCorrection.correctEC(rawEC);
+        sensorData.temperature = gSensorCorrection.correctTemperature(rawTemperature);
+        sensorData.ph = gSensorCorrection.correctPH(rawPH);
+        
+        // NPK калибровка (нулевая точка)
+        gSensorCorrection.correctNPK(rawN, rawP, rawK, 
+                                    sensorData.nitrogen, sensorData.phosphorus, sensorData.potassium);
     } else {
         logDebugSafe("📊 Калибровка отключена");
     }

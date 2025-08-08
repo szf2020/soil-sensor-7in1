@@ -139,6 +139,9 @@ String& getSensorLastError();
 // Получение текущих данных датчика
 ModbusSensorData getSensorData();
 
+// Функция для получения сырого значения температуры из датчика (для компенсации pH)
+uint16_t getSensorTemperature();
+
 // Инициализация Modbus
 void setupModbus();
 

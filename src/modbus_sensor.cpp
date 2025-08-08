@@ -192,11 +192,11 @@ bool readSingleRegister(uint16_t reg_addr, const char* reg_name, float multiplie
             // ✅ Применяем коррекцию показаний
             float corrected_value = factory_value;
             if (reg_addr == REG_SOIL_MOISTURE) {
-                corrected_value = SensorCorrection::correctHumidity(raw_value);
+                corrected_value = gSensorCorrection.correctHumidity(raw_value);
             } else if (reg_addr == REG_CONDUCTIVITY) {
-                corrected_value = SensorCorrection::correctEC(raw_value);
+                corrected_value = gSensorCorrection.correctEC(raw_value);
             } else if (reg_addr == REG_SOIL_TEMP) {
-                corrected_value = SensorCorrection::correctTemperature(raw_value);
+                corrected_value = gSensorCorrection.correctTemperature(raw_value);
             }
             
             *float_target = corrected_value;
@@ -370,7 +370,7 @@ void setupModbus()
     logSuccess("Modbus инициализирован");
     
                 // ✅ Инициализация системы коррекции показаний
-    SensorCorrection::init();
+    gSensorCorrection.init();
     
     logPrintHeader("MODBUS ГОТОВ ДЛЯ ПОЛНОГО ТЕСТИРОВАНИЯ", LogColor::GREEN);
 }
@@ -714,6 +714,24 @@ void addToMovingAverage(ModbusSensorData& data, const ModbusSensorData& newReadi
     data.nitrogen = calculateMovingAverage(data.n_buffer, {window_size, data.buffer_filled});
     data.phosphorus = calculateMovingAverage(data.p_buffer, {window_size, data.buffer_filled});
     data.potassium = calculateMovingAverage(data.k_buffer, {window_size, data.buffer_filled});
+}
+
+// Функция для получения сырого значения температуры из датчика (для компенсации pH)
+uint16_t getSensorTemperature()
+{
+    // Читаем регистр температуры (0x0013) напрямую из датчика
+    uint16_t rawTemp = 0;
+    
+    if (modbus.readHoldingRegisters(REG_SOIL_TEMP, 1) == modbus.ku8MBSuccess) {
+        rawTemp = modbus.getResponseBuffer(0);
+        logDebugSafe("Получено сырое значение температуры: %u", rawTemp);
+        return rawTemp; // Возвращаем валидное значение (включая 0°C)
+    } else {
+        logWarnSafe("Не удалось прочитать температуру из датчика");
+        // Возвращаем специальное значение для ошибки (0xFFFF)
+        // Это позволит отличить ошибку чтения от валидной температуры 0°C
+        return 0xFFFF;
+    }
 }
 
 // Функция для получения текущих данных датчика

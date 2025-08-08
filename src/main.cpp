@@ -18,6 +18,7 @@
 #include "business/sensor_calibration_service.h"
 #include "business/sensor_compensation_service.h"
 #include "business/nutrient_interaction_service.h"
+#include "sensor_correction.h"  // ✅ Система коррекции показаний
 #include "debug.h"  // ✅ Добавляем систему условной компиляции
 #include "fake_sensor.h"
 #include "jxct_config_vars.h"
@@ -257,6 +258,11 @@ void setup()  // NOLINT(misc-use-internal-linkage)
 
     // ✅ КРИТИЧНО: Инициализация бизнес-сервисов
     logSystem("Инициализация бизнес-сервисов...");
+    
+    // ✅ Инициализация системы коррекции показаний
+    gSensorCorrection.init();
+    logSuccess("Система коррекции показаний инициализирована");
+    
     // gCropEngine, gCalibrationService, gCompensationService инициализируются автоматически
     // gNutrientInteractionService инициализируется автоматически через конструктор
     logSuccess("Бизнес-сервисы инициализированы");
