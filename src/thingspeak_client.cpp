@@ -12,6 +12,8 @@
 #include "logger.h"
 #include "modbus_sensor.h"
 #include "wifi_manager.h"
+#include "business/sensor_compensation_service.h"
+#include "sensor_processing.h"
 extern NTPClient* timeClient;
 
 namespace
@@ -307,9 +309,15 @@ bool sendDataToThingSpeak()
     // Обнуляем поля перед заполнением, чтобы избежать унаследованных значений
     for (unsigned f = 1; f <= 8; ++f) { ThingSpeak.setField(f, ""); }
 
-    // Формируем данные для отправки
+    // Формируем данные для отправки (влажность как ASM, остальные компенсированные)
     ThingSpeak.setField(1, sensorData.temperature);
-    ThingSpeak.setField(2, sensorData.humidity);
+    {
+        SensorCompensationService compensationService;
+        const SoilType soil = SensorProcessing::getSoilType(config.soilProfile);
+        const float vwcFraction = sensorData.humidity / 100.0F;
+        const float asmPercent = compensationService.vwcToAsm(vwcFraction, soil);
+        ThingSpeak.setField(2, asmPercent);
+    }
     ThingSpeak.setField(3, sensorData.ec);
     ThingSpeak.setField(4, sensorData.ph);
     ThingSpeak.setField(5, (long)sensorData.nitrogen);
@@ -416,7 +424,13 @@ bool sendDataToThingSpeak()
                 body.reserve(200);
                 body += "api_key="; body += apiKeyBuf.data();
                 body += "&field1="; body += String(sensorData.temperature, 2);
-                body += "&field2="; body += String(sensorData.humidity, 2);
+                {
+                    SensorCompensationService compensationService;
+                    const SoilType soil = SensorProcessing::getSoilType(config.soilProfile);
+                    const float vwcFraction = sensorData.humidity / 100.0F;
+                    const float asmPercent = compensationService.vwcToAsm(vwcFraction, soil);
+                    body += "&field2="; body += String(asmPercent, 2);
+                }
                 body += "&field3="; body += String(sensorData.ec, 2);
                 body += "&field4="; body += String(sensorData.ph, 2);
                 body += "&field5="; body += String((int)sensorData.nitrogen);

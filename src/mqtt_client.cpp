@@ -17,6 +17,8 @@
 #include "jxct_format_utils.h"
 #include "logger.h"
 #include "modbus_sensor.h"
+#include "business/sensor_compensation_service.h"
+#include "sensor_processing.h"
 #include "ota_manager.h"
 #include "wifi_manager.h"
 extern NTPClient* timeClient;
@@ -357,6 +359,10 @@ bool connectMQTTInternal()
         {
             publishHomeAssistantConfigInternal();
         }
+
+        // Принудительная первичная публикация состояния сразу после подключения к MQTT
+        // Даже если данные ещё не валидны — чтобы HA сразу получил state
+        publishSensorDataInternal();
     }
 
     return result;
@@ -513,14 +519,17 @@ void publishSensorDataInternal()
     DEBUG_PRINTF("[MQTT DEBUG] mqttEnabled=%d, connected=%d, valid=%d\n", config.flags.mqttEnabled,
                  mqttClient.connected(), sensorData.valid);
 
-    if (!config.flags.mqttEnabled || !mqttClient.connected() || !sensorData.valid)
+    // Разрешаем первую публикацию даже при невалидных данных (после перезапуска)
+    const bool allowFirstBootPublish = (sensorData.last_mqtt_publish == 0);
+    if (!config.flags.mqttEnabled || !mqttClient.connected() || (!sensorData.valid && !allowFirstBootPublish))
     {
         DEBUG_PRINTLN("[MQTT DEBUG] Условия не выполнены, публикация отменена");
         return;
     }
 
     // ДЕЛЬТА-ФИЛЬТР v2.2.1: Проверяем необходимость публикации
-    if (!shouldPublishMqtt())
+    // Разрешаем первую публикацию без проверки дельт, чтобы HA сразу увидел значения
+    if (!allowFirstBootPublish && !shouldPublishMqtt())
     {
         DEBUG_PRINTLN("[MQTT DEBUG] Дельты не изменились, публикация отменена");
         return;
@@ -546,7 +555,14 @@ void publishSensorDataInternal()
 
         // ✅ ОПТИМИЗАЦИЯ 3.1: Сокращенные ключи для экономии трафика
         doc["t"] = round(sensorData.temperature * 10) / 10.0;                        // temperature → t (-10 байт)
-        doc["h"] = round(sensorData.humidity * 10) / 10.0;                           // humidity → h (-7 байт)
+        // Влажность публикуем как ASM (%), конвертируя VWC→ASM с учётом типа почвы
+        {
+            SensorCompensationService compensationService;
+            const SoilType soil = SensorProcessing::getSoilType(config.soilProfile);
+            const float vwcFraction = sensorData.humidity / 100.0F; // sensorData.humidity хранит VWC в %
+            const float asmPercent = compensationService.vwcToAsm(vwcFraction, soil);
+            doc["h"] = round(asmPercent * 10) / 10.0;                                  // humidity (ASM) → h
+        }
         doc["e"] = (int)round(sensorData.ec);                                        // ec → e (стабильно)
         doc["p"] = round(sensorData.ph * 10) / 10.0;                                 // ph → p (стабильно)
         doc["n"] = (int)round(sensorData.nitrogen);                                  // nitrogen → n (-7 байт)
@@ -579,6 +595,7 @@ void publishSensorDataInternal()
         mqttLastErrorBuffer.fill('\0');
 
         // ДЕЛЬТА-ФИЛЬТР v2.2.1: Сохраняем текущие значения как предыдущие
+        // Даже если это была публикация при невалидных данных первого запуска — фиксируем базовую точку
         sensorData.prev_temperature = sensorData.temperature;
         sensorData.prev_humidity = sensorData.humidity;
         sensorData.prev_ec = sensorData.ec;
@@ -667,7 +684,6 @@ void publishHomeAssistantConfigInternal()
 
         StaticJsonDocument<512> phConfig;
         phConfig["name"] = "JXCT pH";
-        phConfig["device_class"] = "ph";
         phConfig["state_topic"] = String(config.mqttTopicPrefix) + "/state";
         phConfig["unit_of_measurement"] = "pH";
         phConfig["value_template"] = "{{ value_json.p }}";  // ✅ ph → p
