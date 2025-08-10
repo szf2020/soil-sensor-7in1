@@ -10,7 +10,7 @@
 constexpr unsigned long SENSOR_READ_INTERVAL =
     2000;  // 2 сек (было 1 сек) - оптимальный баланс точности и производительности
 constexpr unsigned long MQTT_PUBLISH_INTERVAL = 1800000;  // 30 мин (1800000 мс) - правильная единица измерения
-constexpr unsigned long THINGSPEAK_INTERVAL = 600000;     // 10 мин (было 15 мин) - более частые обновления
+constexpr unsigned long THINGSPEAK_INTERVAL = 60000;      // 1 мин: безопасно для отладки (ThingSpeak ≥15с)
 constexpr unsigned long WEB_UPDATE_INTERVAL = 5000; // 5 сек - оптимизированная производительность
 
 // Константы для системы - v2.5.0 подготовка к OTA
@@ -90,6 +90,7 @@ struct __attribute__((packed)) Config
     // v2.3.0: Настраиваемые пороги дельта-фильтра (20 байт)
     float deltaTemperature;  // Порог температуры (0.1-5.0°C)
     float deltaHumidity;     // Порог влажности (0.5-10.0%)
+    float deltaHumidityAsm;  // Порог влажности ASM (0.5-10.0%)
     float deltaPh;           // Порог pH (0.01-1.0)
     float deltaEc;           // Порог EC (10-500 µS/cm)
     float deltaNpk;          // Порог NPK (1-50 mg/kg)

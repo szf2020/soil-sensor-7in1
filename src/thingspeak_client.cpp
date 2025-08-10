@@ -1,6 +1,7 @@
 #include "thingspeak_client.h"
 #include <NTPClient.h>
 #include <ThingSpeak.h>
+#include <HTTPClient.h>
 #include <WiFiClient.h>
 #include <array>
 #include <cctype>
@@ -11,6 +12,8 @@
 #include "logger.h"
 #include "modbus_sensor.h"
 #include "wifi_manager.h"
+#include "business/sensor_compensation_service.h"
+#include "sensor_processing.h"
 extern NTPClient* timeClient;
 
 namespace
@@ -79,7 +82,8 @@ void trim(char* str)
 
 // ✅ Заменяем String на статические буферы
 std::array<char, 32> thingSpeakLastPublishBuffer = {"0"};
-std::array<char, 64> thingSpeakLastErrorBuffer = {""};
+// Увеличиваем буфер ошибки, чтобы не обрезать текст причины (ранее 64)
+std::array<char, 128> thingSpeakLastErrorBuffer = {""};
 
 // Используем отдельный WiFiClient для ThingSpeak, чтобы не конфликтовать с MQTT
 static WiFiClient thingSpeakClient;
@@ -286,10 +290,10 @@ bool sendDataToThingSpeak()
         return false;
     }
 
-    // ✅ ДОБАВЛЕНО: Проверка DNS перед отправкой
+    // ✅ Проверка DNS перед отправкой (разрешаем оба хоста)
     IPAddress thingSpeakIP;
-    if (!WiFi.hostByName("api.thingspeak.com", thingSpeakIP)) {
-        logWarn("ThingSpeak: DNS ошибка - не удается разрешить api.thingspeak.com");
+    if (!WiFi.hostByName("api.thingspeak.com", thingSpeakIP) && !WiFi.hostByName("thingspeak.com", thingSpeakIP)) {
+        logWarn("ThingSpeak: DNS ошибка - не удается разрешить api.thingspeak.com/thingspeak.com");
         strlcpy(thingSpeakLastErrorBuffer.data(), "DNS Error", thingSpeakLastErrorBuffer.size());
         return false;
     }
@@ -297,7 +301,7 @@ bool sendDataToThingSpeak()
     // ✅ ДОБАВЛЕНО: Увеличенный таймаут для ThingSpeak (на отдельном клиенте)
     thingSpeakClient.setTimeout(30000);  // 30 секунд вместо стандартных 5
 
-    // ✅ Диагностика данных перед отправкой
+    // ✅ Диагностика данных перед отправкой + User-Agent через фейковое поле 8
     logDebugSafe("ThingSpeak: Данные для отправки - T:%.2f, H:%.2f, EC:%.2f, pH:%.2f, N:%d, P:%d, K:%d", 
                  sensorData.temperature, sensorData.humidity, sensorData.ec, sensorData.ph,
                  (int)sensorData.nitrogen, (int)sensorData.phosphorus, (int)sensorData.potassium);
@@ -305,9 +309,15 @@ bool sendDataToThingSpeak()
     // Обнуляем поля перед заполнением, чтобы избежать унаследованных значений
     for (unsigned f = 1; f <= 8; ++f) { ThingSpeak.setField(f, ""); }
 
-    // Формируем данные для отправки
+    // Формируем данные для отправки (влажность как ASM, остальные компенсированные)
     ThingSpeak.setField(1, sensorData.temperature);
-    ThingSpeak.setField(2, sensorData.humidity);
+    {
+        SensorCompensationService compensationService;
+        const SoilType soil = SensorProcessing::getSoilType(config.soilProfile);
+        const float vwcFraction = sensorData.humidity / 100.0F;
+        const float asmPercent = compensationService.vwcToAsm(vwcFraction, soil);
+        ThingSpeak.setField(2, asmPercent); // ASM
+    }
     ThingSpeak.setField(3, sensorData.ec);
     ThingSpeak.setField(4, sensorData.ph);
     ThingSpeak.setField(5, (long)sensorData.nitrogen);
@@ -320,6 +330,7 @@ bool sendDataToThingSpeak()
     ThingSpeak.setField(8, buf);
 
     // ✅ ДОБАВЛЕНО: Улучшенная обработка ошибок с детальной диагностикой
+    // Важно: ThingSpeak.update ожидает до 8 полей; используем writeFields с Channel ID и API ключом
     const int res = ThingSpeak.writeFields(channelId, apiKeyBuf.data());
     
          if (res == 200)  // ✅ HTTP 200 - настоящий успех
@@ -369,7 +380,7 @@ bool sendDataToThingSpeak()
     else
     {
         // ✅ ДОБАВЛЕНО: Детальная диагностика ошибок
-        char errorMsg[64];
+        char errorMsg[96];
                  switch (res) {
              case 200:
                  strlcpy(errorMsg, "HTTP 200 (успех)", sizeof(errorMsg));
@@ -402,6 +413,49 @@ bool sendDataToThingSpeak()
         }
         
         logWarnSafe("ThingSpeak: ошибка отправки: %s", errorMsg);
+        
+        // 🔁 Fallback: прямой HTTP POST без channelId при HTTP 400 (проверяем связку api_key+fields)
+        if (res == 400) {
+            HTTPClient http;
+            String url = String("http://api.thingspeak.com/update");
+            if (http.begin(url)) {
+                http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+                String body;
+                body.reserve(200);
+                body += "api_key="; body += apiKeyBuf.data();
+                body += "&field1="; body += String(sensorData.temperature, 2);
+                {
+                    SensorCompensationService compensationService;
+                    const SoilType soil = SensorProcessing::getSoilType(config.soilProfile);
+                    const float vwcFraction = sensorData.humidity / 100.0F;
+                    const float asmPercent = compensationService.vwcToAsm(vwcFraction, soil);
+                    body += "&field2="; body += String(asmPercent, 2); // ASM
+                }
+                body += "&field3="; body += String(sensorData.ec, 2);
+                body += "&field4="; body += String(sensorData.ph, 2);
+                body += "&field5="; body += String((int)sensorData.nitrogen);
+                body += "&field6="; body += String((int)sensorData.phosphorus);
+                body += "&field7="; body += String((int)sensorData.potassium);
+                body += "&field8="; body += String(millis());
+
+                int httpCode = http.POST(body);
+                String resp = http.getString();
+                http.end();
+
+                if (httpCode == 200 && resp.length() > 0 && resp != "0") {
+                    logSuccessSafe("ThingSpeak fallback: данные отправлены (entry_id=%s)", resp.c_str());
+                    lastTsPublish = millis();
+                    snprintf(thingSpeakLastPublishBuffer.data(), thingSpeakLastPublishBuffer.size(), "%lu", lastTsPublish);
+                    thingSpeakLastErrorBuffer[0] = '\0';
+                    consecutiveFailCount = 0;
+                    lastFailTime = 0;
+                    nextThingSpeakTry = 0;
+                    return true;
+                } else {
+                    logWarnSafe("ThingSpeak fallback: HTTP %d, resp='%s'", httpCode, resp.c_str());
+                }
+            }
+        }
         strlcpy(thingSpeakLastErrorBuffer.data(), errorMsg, thingSpeakLastErrorBuffer.size());
         
         consecutiveFailCount++;
@@ -440,9 +494,9 @@ bool sendDataToThingSpeak()
              
              // ✅ ИСПРАВЛЕНО: Сохраняем И блокировку, И реальную ошибку
              char combinedError[128];
-             snprintf(combinedError, sizeof(combinedError), "Блокировка 30 мин (%d ошибок) | Последняя: %s", 
+              snprintf(combinedError, sizeof(combinedError), "Блокировка 30 мин (%d ошибок) | Последняя: %s", 
                      consecutiveFailCount, errorMsg);
-             strlcpy(thingSpeakLastErrorBuffer.data(), combinedError, thingSpeakLastErrorBuffer.size());
+              strlcpy(thingSpeakLastErrorBuffer.data(), combinedError, thingSpeakLastErrorBuffer.size());
          }
         
         return false;
