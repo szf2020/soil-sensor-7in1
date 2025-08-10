@@ -453,11 +453,18 @@ bool shouldPublishMqtt()
         hasSignificantChange = true;
     }
 
-    if (abs(sensorData.humidity - sensorData.prev_humidity) >= config.deltaHumidity)
     {
-        DEBUG_PRINTF("[DELTA] Влажность изменилась: %.1f -> %.1f (дельта=%.1f)\n", sensorData.prev_humidity,
-                     sensorData.humidity, config.deltaHumidity);
-        hasSignificantChange = true;
+        // Сравнение по ASM вместо VWC
+        SensorCompensationService compensationService;
+        const SoilType soil = SensorProcessing::getSoilType(config.soilProfile);
+        const float prevAsm = compensationService.vwcToAsm(sensorData.prev_humidity / 100.0F, soil);
+        const float curAsm = compensationService.vwcToAsm(sensorData.humidity / 100.0F, soil);
+        if (fabsf(curAsm - prevAsm) >= config.deltaHumidityAsm)
+        {
+            DEBUG_PRINTF("[DELTA] Влажность (ASM) изменилась: %.1f%% -> %.1f%% (дельта=%.1f)\n", prevAsm, curAsm,
+                         config.deltaHumidityAsm);
+            hasSignificantChange = true;
+        }
     }
 
     if (abs(sensorData.ph - sensorData.prev_ph) >= config.deltaPh)
@@ -551,24 +558,26 @@ void publishSensorDataInternal()
     if (needToRebuildJson)
     {
         // Пересоздаем JSON только при необходимости
-        StaticJsonDocument<256> doc;  // ✅ Уменьшен размер с 512 до 256
+        StaticJsonDocument<320> doc;  // немного увеличен из-за добавления hv/valid/quality
 
         // ✅ ОПТИМИЗАЦИЯ 3.1: Сокращенные ключи для экономии трафика
         doc["t"] = round(sensorData.temperature * 10) / 10.0;                        // temperature → t (-10 байт)
-        // Влажность публикуем как ASM (%), конвертируя VWC→ASM с учётом типа почвы
-        {
-            SensorCompensationService compensationService;
-            const SoilType soil = SensorProcessing::getSoilType(config.soilProfile);
-            const float vwcFraction = sensorData.humidity / 100.0F; // sensorData.humidity хранит VWC в %
-            const float asmPercent = compensationService.vwcToAsm(vwcFraction, soil);
-            doc["h"] = round(asmPercent * 10) / 10.0;                                  // humidity (ASM) → h
-        }
+        // Влажность: публикуем ASM в h и VWC в hv (обратная совместимость)
+        SensorCompensationService compensationService;
+        const SoilType soil = SensorProcessing::getSoilType(config.soilProfile);
+        const float vwcFraction = sensorData.humidity / 100.0F; // sensorData.humidity хранит VWC в %
+        const float asmPercent = compensationService.vwcToAsm(vwcFraction, soil);
+        doc["h"] = round(asmPercent * 10) / 10.0;                                    // humidity (ASM) → h
+        doc["hv"] = round(sensorData.humidity * 10) / 10.0;                          // humidity (VWC) → hv
         doc["e"] = (int)round(sensorData.ec);                                        // ec → e (стабильно)
         doc["p"] = round(sensorData.ph * 10) / 10.0;                                 // ph → p (стабильно)
         doc["n"] = (int)round(sensorData.nitrogen);                                  // nitrogen → n (-7 байт)
         doc["r"] = (int)round(sensorData.phosphorus);                                // phosphorus → r (-9 байт)
         doc["k"] = (int)round(sensorData.potassium);                                 // potassium → k (-8 байт)
         doc["ts"] = (long)(timeClient != nullptr ? timeClient->getEpochTime() : 0);  // timestamp → ts (-7 байт)
+        // Метаданные качества
+        doc["valid"] = (bool)sensorData.valid;
+        doc["q"] = allowFirstBootPublish && !sensorData.valid ? "initial" : "ok";
 
         // ✅ Кэшируем результат
         serializeJson(doc, cachedSensorJson.data(), cachedSensorJson.size());
@@ -597,7 +606,7 @@ void publishSensorDataInternal()
         // ДЕЛЬТА-ФИЛЬТР v2.2.1: Сохраняем текущие значения как предыдущие
         // Даже если это была публикация при невалидных данных первого запуска — фиксируем базовую точку
         sensorData.prev_temperature = sensorData.temperature;
-        sensorData.prev_humidity = sensorData.humidity;
+        sensorData.prev_humidity = sensorData.humidity; // prev хранит VWC, для дельты конвертируем в ASM динамически
         sensorData.prev_ec = sensorData.ec;
         sensorData.prev_ph = sensorData.ph;
         sensorData.prev_nitrogen = sensorData.nitrogen;
@@ -661,7 +670,7 @@ void publishHomeAssistantConfigInternal()
         serializeJson(tempConfig, haConfigCache.tempConfig.data(), haConfigCache.tempConfig.size());
 
         StaticJsonDocument<512> humConfig;
-        humConfig["name"] = "JXCT Humidity";
+        humConfig["name"] = "JXCT Soil Moisture (ASM)";
         humConfig["device_class"] = "humidity";
         humConfig["state_topic"] = String(config.mqttTopicPrefix) + "/state";
         humConfig["unit_of_measurement"] = "%";

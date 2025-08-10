@@ -316,7 +316,7 @@ bool sendDataToThingSpeak()
         const SoilType soil = SensorProcessing::getSoilType(config.soilProfile);
         const float vwcFraction = sensorData.humidity / 100.0F;
         const float asmPercent = compensationService.vwcToAsm(vwcFraction, soil);
-        ThingSpeak.setField(2, asmPercent);
+        ThingSpeak.setField(2, asmPercent); // ASM
     }
     ThingSpeak.setField(3, sensorData.ec);
     ThingSpeak.setField(4, sensorData.ph);
@@ -429,7 +429,7 @@ bool sendDataToThingSpeak()
                     const SoilType soil = SensorProcessing::getSoilType(config.soilProfile);
                     const float vwcFraction = sensorData.humidity / 100.0F;
                     const float asmPercent = compensationService.vwcToAsm(vwcFraction, soil);
-                    body += "&field2="; body += String(asmPercent, 2);
+                    body += "&field2="; body += String(asmPercent, 2); // ASM
                 }
                 body += "&field3="; body += String(sensorData.ec, 2);
                 body += "&field4="; body += String(sensorData.ph, 2);

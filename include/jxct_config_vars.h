@@ -90,6 +90,7 @@ struct __attribute__((packed)) Config
     // v2.3.0: Настраиваемые пороги дельта-фильтра (20 байт)
     float deltaTemperature;  // Порог температуры (0.1-5.0°C)
     float deltaHumidity;     // Порог влажности (0.5-10.0%)
+    float deltaHumidityAsm;  // Порог влажности ASM (0.5-10.0%)
     float deltaPh;           // Порог pH (0.01-1.0)
     float deltaEc;           // Порог EC (10-500 µS/cm)
     float deltaNpk;          // Порог NPK (1-50 mg/kg)

@@ -120,6 +120,7 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
     // v2.3.0: Настраиваемые пороги дельта-фильтра
     config.deltaTemperature = preferences.getFloat("deltaTemp", DELTA_TEMPERATURE);
     config.deltaHumidity = preferences.getFloat("deltaHum", DELTA_HUMIDITY);
+    config.deltaHumidityAsm = preferences.getFloat("deltaHumAsm", DELTA_HUMIDITY);
     config.deltaPh = preferences.getFloat("deltaPh", DELTA_PH);
     config.deltaEc = preferences.getFloat("deltaEc", DELTA_EC);
     config.deltaNpk = preferences.getFloat("deltaNpk", DELTA_NPK);
@@ -129,6 +130,12 @@ void loadConfig()  // NOLINT(misc-use-internal-linkage)
     {
         logWarn("Некорректный deltaHumidity: " + String(config.deltaHumidity, 2) + ", сбрасываем к умолчанию");
         config.deltaHumidity = DELTA_HUMIDITY;
+    }
+
+    if (config.deltaHumidityAsm < CONFIG_DELTA_HUMIDITY_MIN || config.deltaHumidityAsm > CONFIG_DELTA_HUMIDITY_MAX)
+    {
+        logWarn("Некорректный deltaHumidityAsm: " + String(config.deltaHumidityAsm, 2) + ", сбрасываем к умолчанию");
+        config.deltaHumidityAsm = DELTA_HUMIDITY;
     }
 
     if (config.deltaPh < CONFIG_DELTA_PH_MIN || config.deltaPh > CONFIG_DELTA_PH_MAX)
@@ -286,6 +293,7 @@ void saveConfig()  // NOLINT(misc-use-internal-linkage)
     // v2.3.0: Настраиваемые пороги дельта-фильтра
     preferences.putFloat("deltaTemp", config.deltaTemperature);
     preferences.putFloat("deltaHum", config.deltaHumidity);
+    preferences.putFloat("deltaHumAsm", config.deltaHumidityAsm);
     preferences.putFloat("deltaPh", config.deltaPh);
     preferences.putFloat("deltaEc", config.deltaEc);
     preferences.putFloat("deltaNpk", config.deltaNpk);
@@ -392,6 +400,7 @@ void resetConfig()  // NOLINT(misc-use-internal-linkage)
     config.deltaPh = DELTA_PH;
     config.deltaEc = DELTA_EC;
     config.deltaNpk = DELTA_NPK;
+    config.deltaHumidityAsm = DELTA_HUMIDITY;
 
     // v2.3.0: Сброс настроек скользящего среднего (МИНИМАЛЬНАЯ ФИЛЬТРАЦИЯ)
     config.movingAverageWindow = 5;  // минимальное окно
