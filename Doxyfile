@@ -2,7 +2,7 @@
 # Генерация документации C++ API
 
 PROJECT_NAME           = "JXCT Soil Sensor 7-in-1"
-PROJECT_NUMBER         = 3.10.1
+PROJECT_NUMBER         = 3.13.2
 PROJECT_BRIEF          = "IoT система мониторинга почвы на базе ESP32"
 OUTPUT_DIRECTORY       = docs/doxygen
 CREATE_SUBDIRS         = NO
