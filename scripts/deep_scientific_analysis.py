@@ -16,7 +16,7 @@ class DeepScientificAnalysis:
     def __init__(self):
         self.analysis_results = {
             "timestamp": datetime.now().isoformat(),
-            "version": "3.13.1",
+            "version": "3.13.2",
             "status": "IN_PROGRESS",
             "crops_analyzed": 0,
             "scientific_sources": {},
