@@ -78,3 +78,7 @@ test_reports/*.json
 test_reports/*.html
 test_reports/*.md
 !test_reports/README.md
+
+# Автогенерация документации (не коммитим в ветках, сайт собирается из main)
+/docs/doxygen/
+/html/
