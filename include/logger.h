@@ -13,6 +13,8 @@
 #endif
 #include <array>
 #include <utility>
+#include <type_traits>
+#include <cstdint>
 
 // Уровни логгирования
 enum LogLevel : std::uint8_t
@@ -80,7 +82,116 @@ void logData(const String& message);
 template <typename... Args>
 String formatLogMessageSafe(const char* format, Args&&... args)
 {
-    std::array<char, 512> buffer;
+    // If format is null, just join arguments
+    if (format == nullptr)
+    {
+        String out;
+        auto toStringAny = [](const auto& value) -> String {
+            using T = typename std::decay<decltype(value)>::type;
+            if constexpr (std::is_same<T, String>::value)
+            {
+                return value;
+            }
+            else if constexpr (std::is_same<T, const char*>::value || std::is_same<T, char*>::value)
+            {
+                return String(value ? value : "");
+            }
+            else if constexpr (std::is_same<T, bool>::value)
+            {
+                return value ? String("true") : String("false");
+            }
+            else if constexpr (std::is_arithmetic<T>::value)
+            {
+                return String(value);
+            }
+            else if constexpr (std::is_pointer<T>::value)
+            {
+                // Render pointer address as hex
+                uintptr_t addr = reinterpret_cast<uintptr_t>(value);
+                char buf[3 + (sizeof(uintptr_t) * 2)];
+                // 0x + hex digits, ensure null-termination
+                int n = snprintf(buf, sizeof(buf), "0x%llx", static_cast<unsigned long long>(addr));
+                (void)n;
+                return String(buf);
+            }
+            else
+            {
+                return String(value);
+            }
+        };
+
+        auto appendArg = [&](const auto& v) {
+            if (out.length() > 0) out += " ";
+            out += toStringAny(v);
+        };
+        (appendArg(std::forward<Args>(args)), ...);
+        return out;
+    }
+
+    // Detect if format contains printf-style placeholders
+    bool hasPrintfPlaceholders = false;
+    for (const char* p = format; *p; ++p)
+    {
+        if (*p == '%')
+        {
+            hasPrintfPlaceholders = true;
+            break;
+        }
+    }
+
+    // If there are no placeholders, avoid passing variadic args to snprintf
+    // Build message by concatenation of base text and arguments
+    if (!hasPrintfPlaceholders)
+    {
+        // Special sentinel: "\1" often used to mean "no base text, just args"
+        // In C/C++ the literal "\1" is a single char with value 1
+        const bool isSentinel = (format[0] == '\x01' && format[1] == '\0');
+        String out = isSentinel ? String("") : String(format);
+
+        if constexpr (sizeof...(args) > 0)
+        {
+            if (out.length() > 0) out += " ";
+            auto toStringAny = [](const auto& value) -> String {
+                using T = typename std::decay<decltype(value)>::type;
+                if constexpr (std::is_same<T, String>::value)
+                {
+                    return value;
+                }
+                else if constexpr (std::is_same<T, const char*>::value || std::is_same<T, char*>::value)
+                {
+                    return String(value ? value : "");
+                }
+                else if constexpr (std::is_same<T, bool>::value)
+                {
+                    return value ? String("true") : String("false");
+                }
+                else if constexpr (std::is_arithmetic<T>::value)
+                {
+                    return String(value);
+                }
+                else if constexpr (std::is_pointer<T>::value)
+                {
+                    uintptr_t addr = reinterpret_cast<uintptr_t>(value);
+                    char buf[3 + (sizeof(uintptr_t) * 2)];
+                    int n = snprintf(buf, sizeof(buf), "0x%llx", static_cast<unsigned long long>(addr));
+                    (void)n;
+                    return String(buf);
+                }
+                else
+                {
+                    return String(value);
+                }
+            };
+            auto appendArg = [&](const auto& v) {
+                if (out.length() > 0 && out[out.length() - 1] != ' ') out += " ";
+                out += toStringAny(v);
+            };
+            (appendArg(std::forward<Args>(args)), ...);
+        }
+        return out;
+    }
+
+    std::array<char, 512> buffer{};
     int result = snprintf(buffer.data(), buffer.size(), format, std::forward<Args>(args)...);
     if (result < 0)
     {
