@@ -4,11 +4,15 @@ IndentWidth: 4
 TabWidth: 4
 UseTab: Never
 ColumnLimit: 120
-AllowShortFunctionsOnASingleLine: Empty
 DerivePointerAlignment: false
 PointerAlignment: Left
+AllowShortFunctionsOnASingleLine: Empty
+BinPackArguments: false
+BinPackParameters: false
+ReflowComments: true
 SpacesInAngles: false
 SpaceBeforeCpp11BracedList: false
+SpaceBeforeParens: ControlStatements
 BreakBeforeBraces: Allman
 SortIncludes: true
-IncludeBlocks: Preserve
+IncludeBlocks: Regroup

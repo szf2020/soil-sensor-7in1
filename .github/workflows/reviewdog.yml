@@ -1,0 +1,36 @@
+name: PR Lints (C/C++)
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  cpp_linter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: C/C++ Linter (clang-tidy)
+        uses: cpp-linter/cpp-linter-action@v2
+        continue-on-error: true
+        with:
+          files-changed-only: true
+          ignore: |
+            test/**
+            html/**
+            docs/**
+            site/**
+            temp_analysis/**
+          extensions: cpp,h,hpp,cxx,cc,hh
+          tidy-checks: '-*,bugprone-*,performance-*,clang-analyzer-*'
+          tidy-review: true
+          format-review: false
+          thread-comments: true
+          step-summary: true
+          file-annotations: true
+          verbosity: info
+
