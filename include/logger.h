@@ -131,20 +131,86 @@ String formatLogMessageSafe(const char* format, Args&&... args)
         return out;
     }
 
-    // Detect if format contains printf-style placeholders
-    bool hasPrintfPlaceholders = false;
-    for (const char* p = format; *p; ++p)
-    {
-        if (*p == '%')
+    // Count real printf-style placeholders, ignoring escaped percent signs ("%%").
+    auto countPrintfSpecifiers = [](const char* fmt) -> int {
+        int count = 0;
+        for (const char* p = fmt; *p; ++p)
         {
-            hasPrintfPlaceholders = true;
-            break;
-        }
-    }
+            if (*p != '%')
+            {
+                continue;
+            }
 
-    // If there are no placeholders, avoid passing variadic args to snprintf
-    // Build message by concatenation of base text and arguments
-    if (!hasPrintfPlaceholders)
+            // Handle escaped percent: "%%" → skip both
+            if (*(p + 1) == '%')
+            {
+                ++p; // skip the second '%'
+                continue;
+            }
+
+            // We are at start of a conversion specifier. Skip flags/width/precision/length.
+            ++p;
+            // Flags: -+ #0 '
+            while (*p == '-' || *p == '+' || *p == ' ' || *p == '#' || *p == '0' || *p == '\'')
+            {
+                ++p;
+            }
+            // Width: number or '*'
+            if (*p == '*')
+            {
+                ++p;
+            }
+            else
+            {
+                while (*p >= '0' && *p <= '9') ++p;
+            }
+            // Precision: .number or .*
+            if (*p == '.')
+            {
+                ++p;
+                if (*p == '*')
+                {
+                    ++p;
+                }
+                else
+                {
+                    while (*p >= '0' && *p <= '9') ++p;
+                }
+            }
+            // Length modifiers (subset sufficient for our targets)
+            if ((*p == 'h' && *(p + 1) == 'h') || (*p == 'l' && *(p + 1) == 'l'))
+            {
+                p += 2;
+            }
+            else if (*p == 'h' || *p == 'l' || *p == 'j' || *p == 'z' || *p == 't' || *p == 'L')
+            {
+                ++p;
+            }
+            // Conversion specifier
+            if (*p == '\0')
+            {
+                break;
+            }
+            const char c = *p;
+            switch (c)
+            {
+                case 'd': case 'i': case 'u': case 'o': case 'x': case 'X':
+                case 'f': case 'F': case 'e': case 'E': case 'g': case 'G': case 'a': case 'A':
+                case 'c': case 's': case 'p': case 'n':
+                    ++count;
+                    break;
+                default:
+                    // Unknown specifier; treat as non-specifier (do not increment)
+                    break;
+            }
+        }
+        return count;
+    };
+
+    const int placeholderCount = countPrintfSpecifiers(format);
+
+    // If there are no placeholders, or argument count mismatches, prefer safe concatenation
+    if (placeholderCount == 0 || placeholderCount != static_cast<int>(sizeof...(args)))
     {
         // Special sentinel: "\1" often used to mean "no base text, just args"
         // In C/C++ the literal "\1" is a single char with value 1
