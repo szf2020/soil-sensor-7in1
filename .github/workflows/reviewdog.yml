@@ -1,4 +1,4 @@
-name: reviewdog (clang-tidy & cppcheck)
+name: PR Lints (clang-tidy & cppcheck)
 
 on:
   pull_request:
@@ -14,29 +14,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install deps
-        run: sudo apt-get update && sudo apt-get install -y clang-tidy
-      - name: Run clang-tidy via reviewdog
-        uses: reviewdog/action-clang-tidy@v3
+      - name: Clang-Tidy Review
+        uses: ZedThree/clang-tidy-review@v0.16.1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-check
-          filter_mode: diff_context
-          fail_on_error: false
-          clang_tidy_flags: -p=.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files-changed-only: true
+          lgtm_comment_body: false
+          fail-on-error: false
+          clang_tidy_checks: '-*,bugprone-*,performance-*,clang-analyzer-*'
+          include: |
+            src/**/*.cpp
+            include/**/*.h
 
   cppcheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install cppcheck
-        run: sudo apt-get update && sudo apt-get install -y cppcheck
-      - name: Run cppcheck via reviewdog
-        uses: reviewdog/action-cppcheck@v2
+      - name: Cppcheck PR Annotations
+        uses: lpenz/ghaction-cppcheck@v9
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-check
-          filter_mode: diff_context
-          fail_on_error: false
-          cppcheck_flags: --enable=warning,style,performance,portability --std=c++17 --language=c++ --inline-suppr
+          files: |
+            src
+            include
+          enable: warning,style,performance,portability
+          std: c++17
+          inline-suppr: true
+          platform: unspecified
+          inconclusive: false
 
