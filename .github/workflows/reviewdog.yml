@@ -1,4 +1,4 @@
-name: PR Lints (clang-tidy & cppcheck)
+name: PR Lints (C/C++)
 
 on:
   pull_request:
@@ -10,35 +10,27 @@ permissions:
   checks: write
 
 jobs:
-  clang_tidy:
+  cpp_linter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Clang-Tidy Review
-        uses: ZedThree/clang-tidy-review@v0.16.1
+      - name: C/C++ Linter (clang-tidy + cppcheck)
+        uses: cpp-linter/cpp-linter-action@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           files-changed-only: true
-          lgtm_comment_body: false
-          fail-on-error: false
-          clang_tidy_checks: '-*,bugprone-*,performance-*,clang-analyzer-*'
           include: |
-            src/**/*.cpp
-            include/**/*.h
-
-  cppcheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cppcheck PR Annotations
-        uses: lpenz/ghaction-cppcheck@v9
-        with:
-          files: |
-            src
-            include
-          enable: warning,style,performance,portability
-          std: c++17
-          inline-suppr: true
-          platform: unspecified
-          inconclusive: false
+            src/**
+            include/**
+          ignore: |
+            test/**
+            html/**
+            docs/**
+          style: ''
+          tidy-checks: '-*,bugprone-*,performance-*,clang-analyzer-*'
+          tidy-review: true
+          cppcheck: true
+          cppcheck-extra-args: '--enable=warning,style,performance,portability --std=c++17 --inline-suppr'
+          thread-comments: true
+          fail-on: ''
 
