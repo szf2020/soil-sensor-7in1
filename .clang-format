@@ -1,4 +1,17 @@
 ﻿BasedOnStyle: Google
+IndentWidth: 4
+ColumnLimit: 120
+DerivePointerAlignment: false
+PointerAlignment: Left
+AllowShortFunctionsOnASingleLine: Empty
+BinPackArguments: false
+BinPackParameters: false
+ReflowComments: true
+SortIncludes: true
+IncludeBlocks: Regroup
+SpacesInAngles: false
+SpaceBeforeParens: ControlStatements
+BasedOnStyle: Google
 Language: Cpp
 IndentWidth: 4
 TabWidth: 4

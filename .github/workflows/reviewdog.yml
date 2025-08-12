@@ -1,0 +1,37 @@
+name: reviewdog (clang-tidy & cppcheck)
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  clang_tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y clang-tidy
+      - name: Run clang-tidy via reviewdog
+        uses: reviewdog/action-clang-tidy@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-check
+          filter_mode: diff_context
+          fail_on_error: false
+          clang_tidy_flags: -p=.
+
+  cppcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cppcheck
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+      - name: Run cppcheck via reviewdog
+        uses: reviewdog/action-cppcheck@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-check
+          filter_mode: diff_context
+          fail_on_error: false
+          cppcheck_flags: --enable=warning,style,performance,portability --std=c++17 --language=c++ --inline-suppr
+

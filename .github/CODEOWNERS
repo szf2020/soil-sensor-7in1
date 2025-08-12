@@ -1,0 +1,21 @@
+# Code owners by path
+
+# Web/UI
+src/web/**        @Gfermoto
+
+# Business logic
+src/business/**   @Gfermoto
+
+# Modbus / sensor IO
+src/modbus_*      @Gfermoto
+
+# Core services
+src/mqtt_client.cpp  @Gfermoto
+src/thingspeak_client.cpp  @Gfermoto
+src/ota_manager.cpp  @Gfermoto
+
+# CI/Workflows/Docs
+.github/**        @Gfermoto
+docs/**           @Gfermoto
+html/**           @Gfermoto
+

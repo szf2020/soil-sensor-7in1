@@ -1,0 +1,53 @@
+name: Danger CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  danger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Danger
+        run: npm install -g danger
+      - name: Run Danger
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat > dangerfile.js <<'EOF'
+          const fs = require('fs');
+          const changed = [...danger.git.created_files, ...danger.git.modified_files];
+          const pr = danger.github.pr; 
+
+          // Warn on big PRs
+          const totalChanges = pr.additions + pr.deletions;
+          if (totalChanges > 800) {
+            warn(`Большой PR (${totalChanges} строк). Подумай о разбиении.`);
+          }
+
+          // Block binaries/media
+          const banned = changed.filter(p => /\.(bin|exe|dll|png|jpg|pdf|zip)$/i.test(p));
+          if (banned.length) {
+            fail(`Запрещены бинарники/медиа в PR:\n- ${banned.join('\n- ')}`);
+          }
+
+          // Require tests when business logic changes
+          const businessChanged = changed.some(p => p.startsWith('src/business/'));
+          const testChanged = changed.some(p => p.startsWith('test/'));
+          if (businessChanged && !testChanged) {
+            warn('Изменена бизнес-логика без обновления тестов. Пожалуйста, добавь/обнови тесты.');
+          }
+
+          // Conventional commits in PR title
+          const title = pr.title || '';
+          if (!/^(feat|fix|refactor|chore|docs|ci|test|perf|build|style)(\(.+\))?:\s.+/.test(title)) {
+            warn('Заголовок PR не соответствует Conventional Commits.');
+          }
+          EOF
+          danger ci --failOnErrors
+
