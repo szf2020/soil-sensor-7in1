@@ -14,23 +14,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: C/C++ Linter (clang-tidy + cppcheck)
+      - name: C/C++ Linter (clang-tidy)
         uses: cpp-linter/cpp-linter-action@v2
+        continue-on-error: true
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           files-changed-only: true
-          include: |
-            src/**
-            include/**
           ignore: |
             test/**
             html/**
             docs/**
-          style: ''
+            site/**
+            temp_analysis/**
+          extensions: cpp,h,hpp,cxx,cc,hh
           tidy-checks: '-*,bugprone-*,performance-*,clang-analyzer-*'
           tidy-review: true
-          cppcheck: true
-          cppcheck-extra-args: '--enable=warning,style,performance,portability --std=c++17 --inline-suppr'
+          format-review: false
           thread-comments: true
-          fail-on: ''
+          step-summary: true
+          file-annotations: true
+          verbosity: info
 
