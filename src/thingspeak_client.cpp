@@ -113,7 +113,7 @@ void diagnoseThingSpeakStatus()
     logSystemSafe("Счетчик ошибок: %d", consecutiveFailCount);
     logSystemSafe("Время последней ошибки: %lu мс назад", timeSinceLastFail);
     logSystemSafe("Время последней публикации: %lu мс назад", timeSinceLastPublish);
-    logSystemSafe("Интервал отправки: %lu мс", (unsigned long)config.thingSpeakInterval);
+    logSystemSafe("Интервал отправки: %lu мс", static_cast<unsigned long>(config.thingSpeakInterval));
     
     if (consecutiveFailCount >= 5) {
         const unsigned long remainingBlockTime = 1800000UL - timeSinceLastFail;
@@ -143,7 +143,7 @@ String getThingSpeakDiagnosticsJson()
     json += "\"consecutive_fail_count\":" + String(consecutiveFailCount) + ",";
     json += "\"time_since_last_fail_ms\":" + String(timeSinceLastFail) + ",";
     json += "\"time_since_last_publish_ms\":" + String(timeSinceLastPublish) + ",";
-    json += "\"interval_ms\":" + String((unsigned long)config.thingSpeakInterval) + ",";
+    json += "\"interval_ms\":" + String(static_cast<unsigned long>(config.thingSpeakInterval)) + ",";
     json += "\"blocked\":" + String((consecutiveFailCount >= 5 && timeSinceLastFail < 1800000UL) ? "true" : "false") + ",";
     json += "\"remaining_block_time_ms\":" + String(remainingBlockTime) + ",";
     json += "\"remaining_block_time_min\":" + String(remainingBlockTime / 60000) + ",";
@@ -204,7 +204,7 @@ bool canSendToThingSpeak()
     }
 
     // ✅ ДОБАВЛЕНО: Проверка времени следующей попытки (wrap-safe)
-    if (nextThingSpeakTry && (long)(now - nextThingSpeakTry) < 0) {
+    if (nextThingSpeakTry && static_cast<long>(now - nextThingSpeakTry) < 0) {
         return false;
     }
 
@@ -213,7 +213,7 @@ bool canSendToThingSpeak()
     if (effectiveInterval < 20000UL) {
         effectiveInterval = 20000UL;
     }
-    if ((unsigned long)(now - lastTsPublish) < effectiveInterval) {
+    if (static_cast<unsigned long>(now - lastTsPublish) < effectiveInterval) {
         return false;
     }
 
@@ -231,7 +231,7 @@ bool sendDataToThingSpeak()
     // ✅ ДОБАВЛЕНО: Подробная диагностика входа в функцию
     logDebug("ThingSpeak: Попытка отправки данных");
     logDebugSafe("ThingSpeak: enabled=%d, wifi=%d, data_valid=%d", 
-                 (int)config.flags.thingSpeakEnabled, wifiConnected, sensorData.valid);
+                 static_cast<int>(config.flags.thingSpeakEnabled), wifiConnected, sensorData.valid);
     
     // Проверки
     if (!config.flags.thingSpeakEnabled)
@@ -304,7 +304,7 @@ bool sendDataToThingSpeak()
     // ✅ Диагностика данных перед отправкой + User-Agent через фейковое поле 8
     logDebugSafe("ThingSpeak: Данные для отправки - T:%.2f, H:%.2f, EC:%.2f, pH:%.2f, N:%d, P:%d, K:%d", 
                  sensorData.temperature, sensorData.humidity, sensorData.ec, sensorData.ph,
-                 (int)sensorData.nitrogen, (int)sensorData.phosphorus, (int)sensorData.potassium);
+                 static_cast<int>(sensorData.nitrogen), static_cast<int>(sensorData.phosphorus), static_cast<int>(sensorData.potassium));
 
     // Обнуляем поля перед заполнением, чтобы избежать унаследованных значений
     for (unsigned f = 1; f <= 8; ++f) { ThingSpeak.setField(f, ""); }
@@ -320,9 +320,9 @@ bool sendDataToThingSpeak()
     }
     ThingSpeak.setField(3, sensorData.ec);
     ThingSpeak.setField(4, sensorData.ph);
-    ThingSpeak.setField(5, (long)sensorData.nitrogen);
-    ThingSpeak.setField(6, (long)sensorData.phosphorus);
-    ThingSpeak.setField(7, (long)sensorData.potassium);
+    ThingSpeak.setField(5, static_cast<long>(sensorData.nitrogen));
+    ThingSpeak.setField(6, static_cast<long>(sensorData.phosphorus));
+    ThingSpeak.setField(7, static_cast<long>(sensorData.potassium));
 
     // Уникальный идентификатор для избежания HTTP 304 (исправлено: используем строку вместо float)
     char buf[12];
@@ -433,9 +433,9 @@ bool sendDataToThingSpeak()
                 }
                 body += "&field3="; body += String(sensorData.ec, 2);
                 body += "&field4="; body += String(sensorData.ph, 2);
-                body += "&field5="; body += String((int)sensorData.nitrogen);
-                body += "&field6="; body += String((int)sensorData.phosphorus);
-                body += "&field7="; body += String((int)sensorData.potassium);
+                body += "&field5="; body += String(static_cast<int>(sensorData.nitrogen));
+                body += "&field6="; body += String(static_cast<int>(sensorData.phosphorus));
+                body += "&field7="; body += String(static_cast<int>(sensorData.potassium));
                 body += "&field8="; body += String(millis());
 
                 int httpCode = http.POST(body);

@@ -74,19 +74,19 @@ void setupMainRoutes()
             if (currentWiFiMode == WiFiMode::STA)
             {
                 // ✅ Явное приведение bool для битовых полей
-                config.flags.mqttEnabled = (uint8_t)webServer.hasArg("mqtt_enabled");
+                config.flags.mqttEnabled = static_cast<uint8_t>(webServer.hasArg("mqtt_enabled"));
                 strlcpy(config.mqttServer, webServer.arg("mqtt_server").c_str(), sizeof(config.mqttServer));
                 config.mqttPort = webServer.arg("mqtt_port").toInt();
                 strlcpy(config.mqttUser, webServer.arg("mqtt_user").c_str(), sizeof(config.mqttUser));
                 strlcpy(config.mqttPassword, webServer.arg("mqtt_password").c_str(), sizeof(config.mqttPassword));
-                config.flags.hassEnabled = (uint8_t)webServer.hasArg("hass_enabled");
-                config.flags.thingSpeakEnabled = (uint8_t)webServer.hasArg("ts_enabled");
+                config.flags.hassEnabled = static_cast<uint8_t>(webServer.hasArg("hass_enabled"));
+                config.flags.thingSpeakEnabled = static_cast<uint8_t>(webServer.hasArg("ts_enabled"));
                 strlcpy(config.thingSpeakApiKey, webServer.arg("ts_api_key").c_str(), sizeof(config.thingSpeakApiKey));
                 config.mqttQos = webServer.arg("mqtt_qos").toInt();
                 strlcpy(config.thingSpeakChannelId, webServer.arg("ts_channel_id").c_str(),
                         sizeof(config.thingSpeakChannelId));
-                config.flags.useRealSensor = (uint8_t)webServer.hasArg("real_sensor");
-                config.flags.compensationEnabled = (uint8_t)webServer.hasArg("comp_enabled");
+                config.flags.useRealSensor = static_cast<uint8_t>(webServer.hasArg("real_sensor"));
+                config.flags.compensationEnabled = static_cast<uint8_t>(webServer.hasArg("comp_enabled"));
                 // Тип среды выращивания v3.12.0 (расширенный)
                 if (webServer.hasArg("env_type"))
                 {
@@ -106,7 +106,7 @@ void setupMainRoutes()
                     config.environmentType = 0;
                 }
                 // Сезонная поправка
-                config.flags.seasonalAdjustEnabled = (uint8_t)webServer.hasArg("season_adj");
+                config.flags.seasonalAdjustEnabled = static_cast<uint8_t>(webServer.hasArg("season_adj"));
 
                 // Обратная совместимость
                 config.flags.isGreenhouse = (config.environmentType == 1);

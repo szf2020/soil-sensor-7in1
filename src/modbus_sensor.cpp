@@ -166,7 +166,7 @@ void updateIrrigationFlag(ModbusSensorData& data)
         ++filled;
     }
 
-    data.recentIrrigation = (millis() - lastIrrigationTs) <= (unsigned long)config.irrigationHoldMinutes * 60000UL;
+    data.recentIrrigation = (millis() - lastIrrigationTs) <= static_cast<unsigned long>(config.irrigationHoldMinutes) * 60000UL;
 }
 
 void applyCompensationIfEnabled(ModbusSensorData& data)

@@ -160,9 +160,9 @@ class SensorCalibrationService : public ISensorCalibrationService
     bool addECCalibrationPoint(float expected, float measured) override;
     bool addTemperatureCalibrationPoint(float expected, float measured) override;
     bool addHumidityCalibrationPoint(float expected, float measured) override;
-    bool setTemperatureOffset(float offset);
-    bool setHumidityOffset(float offset);
-    bool setNPKCoefficients(float nSlope, float nOffset, float pSlope, float pOffset, float kSlope, float kOffset);
+    bool setTemperatureOffset(float offset) override;
+    bool setHumidityOffset(float offset) override;
+    bool setNPKCoefficients(float nSlope, float nOffset, float pSlope, float pOffset, float kSlope, float kOffset) override;
     bool setNPKCalibrationPoint(float n, float p, float k) override;
     bool calculatePHCalibration();
     bool calculateECCalibration();
