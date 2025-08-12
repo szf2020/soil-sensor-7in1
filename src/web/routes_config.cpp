@@ -169,13 +169,13 @@ void setupConfigRoutes()
 
             html += "<div class='form-group'><label for='delta_ec'>Порог EC (µS/cm):</label>";
             html += "<input type='number' id='delta_ec' name='delta_ec' min='" + String(CONFIG_DELTA_EC_MIN) +
-                    "' max='" + String(CONFIG_DELTA_EC_MAX) + "' value='" + String(static_cast<int>(config.deltaEc)) + "' required>";
+                    "' max='" + String(CONFIG_DELTA_EC_MAX) + "' value='" + String(config.deltaEc, 0) + "' required>";
             html += "<div class='help'>" + String(CONFIG_DELTA_EC_MIN) + "-" + String(CONFIG_DELTA_EC_MAX) +
                     " µS/cm. Публикация при изменении более чем на это значение</div></div>";
 
             html += "<div class='form-group'><label for='delta_npk'>Порог NPK (mg/kg):</label>";
             html += "<input type='number' id='delta_npk' name='delta_npk' min='" + String(CONFIG_DELTA_NPK_MIN) +
-                    "' max='" + String(CONFIG_DELTA_NPK_MAX) + "' value='" + String(static_cast<int>(config.deltaNpk)) +
+                    "' max='" + String(CONFIG_DELTA_NPK_MAX) + "' value='" + String(config.deltaNpk, 0) +
                     "' required>";
             html += "<div class='help'>" + String(CONFIG_DELTA_NPK_MIN) + "-" + String(CONFIG_DELTA_NPK_MAX) +
                     " mg/kg. Публикация при изменении более чем на это значение</div></div></div>";
