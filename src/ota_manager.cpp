@@ -278,7 +278,7 @@ bool downloadData(HTTPClient& http, int contentLen, mbedtls_sha256_context& shaC
             {
                 if (isChunked)
                 {
-                    snprintf(statusBuf.data(), sizeof(statusBuf), "Загружено %dКБ", (int)(totalDownloaded / 1024));
+                    snprintf(statusBuf.data(), sizeof(statusBuf), "Загружено %dКБ", static_cast<int>(totalDownloaded / 1024));
                 }
                 else
                 {

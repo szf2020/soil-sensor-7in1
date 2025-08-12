@@ -569,14 +569,14 @@ void publishSensorDataInternal()
         const float asmPercent = compensationService.vwcToAsm(vwcFraction, soil);
         doc["h"] = round(asmPercent * 10) / 10.0;                                    // humidity (ASM) → h
         doc["hv"] = round(sensorData.humidity * 10) / 10.0;                          // humidity (VWC) → hv
-        doc["e"] = (int)round(sensorData.ec);                                        // ec → e (стабильно)
+        doc["e"] = static_cast<int>(round(sensorData.ec));                            // ec → e (стабильно)
         doc["p"] = round(sensorData.ph * 10) / 10.0;                                 // ph → p (стабильно)
-        doc["n"] = (int)round(sensorData.nitrogen);                                  // nitrogen → n (-7 байт)
-        doc["r"] = (int)round(sensorData.phosphorus);                                // phosphorus → r (-9 байт)
-        doc["k"] = (int)round(sensorData.potassium);                                 // potassium → k (-8 байт)
-        doc["ts"] = (long)(timeClient != nullptr ? timeClient->getEpochTime() : 0);  // timestamp → ts (-7 байт)
+        doc["n"] = static_cast<int>(round(sensorData.nitrogen));                      // nitrogen → n (-7 байт)
+        doc["r"] = static_cast<int>(round(sensorData.phosphorus));                    // phosphorus → r (-9 байт)
+        doc["k"] = static_cast<int>(round(sensorData.potassium));                     // potassium → k (-8 байт)
+        doc["ts"] = static_cast<long>(timeClient != nullptr ? timeClient->getEpochTime() : 0);  // timestamp → ts
         // Метаданные качества
-        doc["valid"] = (bool)sensorData.valid;
+        doc["valid"] = static_cast<bool>(sensorData.valid);
         doc["q"] = allowFirstBootPublish && !sensorData.valid ? "initial" : "ok";
 
         // ✅ Кэшируем результат

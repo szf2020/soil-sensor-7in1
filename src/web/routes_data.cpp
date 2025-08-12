@@ -358,7 +358,7 @@ void sendSensorJson()  // ✅ Убираем static - функция extern в h
     }
     doc["alerts"] = alerts;
 
-    doc["timestamp"] = (long)(timeClient != nullptr ? timeClient->getEpochTime() : 0);
+    doc["timestamp"] = static_cast<long>(timeClient != nullptr ? timeClient->getEpochTime() : 0);
 
     String json;
     serializeJson(doc, json);

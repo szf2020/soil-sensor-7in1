@@ -6,6 +6,7 @@ JXCT Clang-Tidy Analysis Script
 
 import os
 import subprocess
+import shutil
 import json
 import datetime
 from pathlib import Path
@@ -14,8 +15,10 @@ from collections import defaultdict
 def run_clang_tidy(file_path):
     """Запускает clang-tidy для одного файла"""
     try:
+        # Resolve clang-tidy binary cross-platform: prefer PATH, fallback to Windows default
+        clang_tidy_bin = shutil.which("clang-tidy") or "C:\\Program Files\\LLVM\\bin\\clang-tidy.exe"
         cmd = [
-            "C:\\Program Files\\LLVM\\bin\\clang-tidy.exe",
+            clang_tidy_bin,
             file_path,
             "--quiet",
             "--format-style=file"

@@ -350,7 +350,7 @@ static void sendHealthJson()
     }
 
     // MQTT status
-    doc["mqtt"]["enabled"] = (bool)config.flags.mqttEnabled;
+    doc["mqtt"]["enabled"] = static_cast<bool>(config.flags.mqttEnabled);
     if (config.flags.mqttEnabled)
     {
         doc["mqtt"]["connected"] = mqttClient.connected();
@@ -360,7 +360,7 @@ static void sendHealthJson()
     }
 
     // ThingSpeak status
-    doc["thingspeak"]["enabled"] = (bool)config.flags.thingSpeakEnabled;
+    doc["thingspeak"]["enabled"] = static_cast<bool>(config.flags.thingSpeakEnabled);
     if (config.flags.thingSpeakEnabled)
     {
         doc["thingspeak"]["last_publish"] = getThingSpeakLastPublish();
@@ -369,10 +369,10 @@ static void sendHealthJson()
     }
 
     // Home Assistant status
-    doc["homeassistant"]["enabled"] = (bool)config.flags.hassEnabled;
+    doc["homeassistant"]["enabled"] = static_cast<bool>(config.flags.hassEnabled);
 
     // Sensor status
-    doc["sensor"]["enabled"] = (bool)config.flags.useRealSensor;
+    doc["sensor"]["enabled"] = static_cast<bool>(config.flags.useRealSensor);
     doc["sensor"]["valid"] = sensorData.valid;
     doc["sensor"]["last_read"] = sensorData.last_update;
     if (getSensorLastError().length() > 0)
@@ -407,13 +407,13 @@ static void sendServiceStatusJson()
     doc["wifi_ip"] = WiFi.localIP().toString();
     doc["wifi_ssid"] = WiFi.SSID();
     doc["wifi_rssi"] = WiFi.RSSI();
-    doc["mqtt_enabled"] = (bool)config.flags.mqttEnabled;
-    doc["mqtt_connected"] = (bool)config.flags.mqttEnabled && mqttClient.connected();
+    doc["mqtt_enabled"] = static_cast<bool>(config.flags.mqttEnabled);
+    doc["mqtt_connected"] = static_cast<bool>(config.flags.mqttEnabled) && mqttClient.connected();
     doc["mqtt_last_error"] = getMqttLastError();
-    doc["thingspeak_enabled"] = (bool)config.flags.thingSpeakEnabled;
+    doc["thingspeak_enabled"] = static_cast<bool>(config.flags.thingSpeakEnabled);
     doc["thingspeak_last_pub"] = getThingSpeakLastPublish();
     doc["thingspeak_last_error"] = getThingSpeakLastError();
-    doc["hass_enabled"] = (bool)config.flags.hassEnabled;
+    doc["hass_enabled"] = static_cast<bool>(config.flags.hassEnabled);
     doc["sensor_ok"] = sensorData.valid;
     doc["sensor_last_error"] = getSensorLastError();
 

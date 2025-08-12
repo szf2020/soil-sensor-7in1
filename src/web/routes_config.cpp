@@ -34,7 +34,7 @@ void sendConfigExportJson()
 
     // MQTT
     JsonObject mqtt = root.createNestedObject("mqtt");
-    mqtt["enabled"] = (bool)config.flags.mqttEnabled;  // NOLINT(readability-misplaced-array-index)
+    mqtt["enabled"] = static_cast<bool>(config.flags.mqttEnabled);  // NOLINT(readability-misplaced-array-index)
     mqtt["server"] = "YOUR_MQTT_SERVER_HERE";          // NOLINT(readability-misplaced-array-index)
     mqtt["port"] = config.mqttPort;                    // NOLINT(readability-misplaced-array-index)
     mqtt["user"] = "YOUR_MQTT_USER_HERE";              // NOLINT(readability-misplaced-array-index)
@@ -42,7 +42,7 @@ void sendConfigExportJson()
 
     // ThingSpeak
     JsonObject thingSpeakJson = root.createNestedObject("thingspeak");
-    thingSpeakJson["enabled"] = (bool)config.flags.thingSpeakEnabled;  // NOLINT(readability-misplaced-array-index)
+    thingSpeakJson["enabled"] = static_cast<bool>(config.flags.thingSpeakEnabled);  // NOLINT(readability-misplaced-array-index)
     thingSpeakJson["channel_id"] = "YOUR_CHANNEL_ID_HERE";             // NOLINT(readability-misplaced-array-index)
     thingSpeakJson["api_key"] = "YOUR_API_KEY_HERE";                   // NOLINT(readability-misplaced-array-index)
 
@@ -71,8 +71,8 @@ void sendConfigExportJson()
 
     // Device flags
     JsonObject device = root.createNestedObject("device");
-    device["use_real_sensor"] = (bool)config.flags.useRealSensor;  // NOLINT(readability-misplaced-array-index)
-    device["hass_enabled"] = (bool)config.flags.hassEnabled;       // NOLINT(readability-misplaced-array-index)
+    device["use_real_sensor"] = static_cast<bool>(config.flags.useRealSensor);  // NOLINT(readability-misplaced-array-index)
+    device["hass_enabled"] = static_cast<bool>(config.flags.hassEnabled);       // NOLINT(readability-misplaced-array-index)
 
     root["export_timestamp"] = millis();  // NOLINT(readability-misplaced-array-index)
 
@@ -169,13 +169,13 @@ void setupConfigRoutes()
 
             html += "<div class='form-group'><label for='delta_ec'>Порог EC (µS/cm):</label>";
             html += "<input type='number' id='delta_ec' name='delta_ec' min='" + String(CONFIG_DELTA_EC_MIN) +
-                    "' max='" + String(CONFIG_DELTA_EC_MAX) + "' value='" + String((int)config.deltaEc) + "' required>";
+                    "' max='" + String(CONFIG_DELTA_EC_MAX) + "' value='" + String(static_cast<int>(config.deltaEc)) + "' required>";
             html += "<div class='help'>" + String(CONFIG_DELTA_EC_MIN) + "-" + String(CONFIG_DELTA_EC_MAX) +
                     " µS/cm. Публикация при изменении более чем на это значение</div></div>";
 
             html += "<div class='form-group'><label for='delta_npk'>Порог NPK (mg/kg):</label>";
             html += "<input type='number' id='delta_npk' name='delta_npk' min='" + String(CONFIG_DELTA_NPK_MIN) +
-                    "' max='" + String(CONFIG_DELTA_NPK_MAX) + "' value='" + String((int)config.deltaNpk) +
+                    "' max='" + String(CONFIG_DELTA_NPK_MAX) + "' value='" + String(static_cast<int>(config.deltaNpk)) +
                     "' required>";
             html += "<div class='help'>" + String(CONFIG_DELTA_NPK_MIN) + "-" + String(CONFIG_DELTA_NPK_MAX) +
                     " mg/kg. Публикация при изменении более чем на это значение</div></div></div>";

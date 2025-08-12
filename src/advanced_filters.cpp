@@ -61,7 +61,7 @@ float applyExponentialSmoothing(float new_value, ExponentialSmoothingState& stat
 
 struct StatisticsBuffer
 {
-    std::array<float, STATISTICS_WINDOW_SIZE> values;
+    std::array<float, STATISTICS_WINDOW_SIZE> values{};
     uint8_t index = 0;
     uint8_t filled = 0;
     float mean = 0.0F;
@@ -389,6 +389,9 @@ struct ECFilterState
     bool baseline_valid = false;
 
     ECFilterState() = default;
+    // Гарантированная инициализация, даже при расширении конструктора
+    // (std::array по умолчанию не заполняется нулями без {})
+    // recent_values уже нулится в объявлении через {} ниже
 };
 
 namespace

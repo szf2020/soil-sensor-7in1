@@ -112,7 +112,7 @@ class CropRecommendationEngine : public ICropRecommendationEngine
     std::vector<String> getAvailableCrops() const;
 
     // Получение конфигурации культуры
-    CropConfig getCropConfig(const String& cropType) const;
+    CropConfig getCropConfig(const String& cropType) const override;
 
     // Валидация данных с датчиков
     bool validateSensorData(const SensorData& data) const;
@@ -131,7 +131,7 @@ class CropRecommendationEngine : public ICropRecommendationEngine
                                              const NPKReferences& npk,
                                              SoilType soilType, 
                                              float pH,
-                                             const String& season = "none");
+                                             const String& season = "none") override;
 };
 
 #endif  // CROP_RECOMMENDATION_ENGINE_H

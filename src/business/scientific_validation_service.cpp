@@ -324,7 +324,7 @@ String ScientificValidationService::generateValidationReport() const
     }
     sources_stats["verified_sources"] = verified_sources;
     sources_stats["verification_rate"] =
-        (float)verified_sources / (sizeof(SCIENTIFIC_SOURCES) / sizeof(SCIENTIFIC_SOURCES[0]));
+        static_cast<float>(verified_sources) / (sizeof(SCIENTIFIC_SOURCES) / sizeof(SCIENTIFIC_SOURCES[0]));
 
     // Статистика культур
     JsonObject crops_stats = doc.createNestedObject("crops_statistics");
@@ -350,7 +350,7 @@ String ScientificValidationService::generateValidationReport() const
     }
     environments_stats["sensor_compatible"] = compatible_environments;
     environments_stats["compatibility_rate"] =
-        (float)compatible_environments / (sizeof(ENVIRONMENT_ADJUSTMENTS) / sizeof(ENVIRONMENT_ADJUSTMENTS[0]));
+        static_cast<float>(compatible_environments) / (sizeof(ENVIRONMENT_ADJUSTMENTS) / sizeof(ENVIRONMENT_ADJUSTMENTS[0]));
 
     String json;
     serializeJson(doc, json);

@@ -63,9 +63,9 @@ bool loadTestReport(const String& filename, TestSummary& summary)
         return false;
     }
 
-    summary.total = doc["summary"]["total"] | 0;
-    summary.passed = doc["summary"]["passed"] | 0;
-    summary.failed = doc["summary"]["failed"] | 0;
+    summary.total = doc["summary"]["total"];
+    summary.passed = doc["summary"]["passed"];
+    summary.failed = doc["summary"]["failed"];
     summary.success_rate = doc["summary"]["success_rate"] | 0.0;
     summary.timestamp = doc["timestamp"] | "Unknown";
 
@@ -102,10 +102,10 @@ bool loadTechDebtReport(const String& filename, TechnicalDebtMetrics& debt)
         return false;
     }
 
-    debt.code_smells = doc["metrics"]["code_smells"] | 0;
-    debt.duplicated_lines = doc["metrics"]["duplicated_lines"] | 0;
-    debt.complexity_issues = doc["metrics"]["complexity_issues"] | 0;
-    debt.security_hotspots = doc["metrics"]["security_hotspots"] | 0;
+    debt.code_smells = doc["metrics"]["code_smells"];
+    debt.duplicated_lines = doc["metrics"]["duplicated_lines"];
+    debt.complexity_issues = doc["metrics"]["complexity_issues"];
+    debt.security_hotspots = doc["metrics"]["security_hotspots"];
     debt.maintainability_rating = doc["metrics"]["maintainability_rating"] | "Unknown";
     debt.debt_ratio = doc["metrics"]["debt_ratio"] | 0.0;
     debt.coverage = doc["metrics"]["coverage"] | 0.0;
