@@ -108,7 +108,7 @@ uint16_t calculateCRC16(const uint8_t* data, size_t length)
 
     for (size_t i = 0; i < length; ++i)
     {
-        crc ^= (uint16_t)data[i];
+        crc ^= static_cast<uint16_t>(data[i]);
         for (int j = 0; j < 8; ++j)
         {
             if ((crc & 0x0001) != 0)
