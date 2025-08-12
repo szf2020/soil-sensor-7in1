@@ -13,6 +13,9 @@
 #endif
 #include <array>
 #include <utility>
+#include <type_traits>
+#include <cstdint>
+#include <cstdio>
 
 // Уровни логгирования
 enum LogLevel : std::uint8_t
@@ -80,7 +83,153 @@ void logData(const String& message);
 template <typename... Args>
 String formatLogMessageSafe(const char* format, Args&&... args)
 {
-    std::array<char, 512> buffer;
+    // Define once to avoid duplication
+    auto toStringAny = [](const auto& value) -> String {
+        using T = typename std::decay<decltype(value)>::type;
+        if constexpr (std::is_same<T, String>::value)
+        {
+            return value;
+        }
+        else if constexpr (std::is_same<T, const char*>::value || std::is_same<T, char*>::value)
+        {
+            return String(value ? value : "");
+        }
+        else if constexpr (std::is_same<T, bool>::value)
+        {
+            return value ? String("true") : String("false");
+        }
+        else if constexpr (std::is_arithmetic<T>::value)
+        {
+            return String(value);
+        }
+        else if constexpr (std::is_pointer<T>::value)
+        {
+            // Render pointer address as hex
+            uintptr_t addr = reinterpret_cast<uintptr_t>(value);
+            char buf[3 + (sizeof(uintptr_t) * 2)];
+            // 0x + hex digits, ensure null-termination
+            int n = snprintf(buf, sizeof(buf), "0x%llx", static_cast<unsigned long long>(addr));
+            (void)n;
+            return String(buf);
+        }
+        else
+        {
+            return String(value);
+        }
+    };
+
+    // If format is null, just join arguments
+    if (format == nullptr)
+    {
+        String out;
+
+        auto appendArg = [&](const auto& v) {
+            if (out.length() > 0) out += " ";
+            out += toStringAny(v);
+        };
+        (appendArg(std::forward<Args>(args)), ...);
+        return out;
+    }
+
+    // Count real printf-style placeholders, ignoring escaped percent signs ("%%").
+    auto countPrintfSpecifiers = [](const char* fmt) -> int {
+        int count = 0;
+        for (const char* p = fmt; *p; ++p)
+        {
+            if (*p != '%')
+            {
+                continue;
+            }
+
+            // Handle escaped percent: "%%" → skip both
+            if (*(p + 1) == '%')
+            {
+                ++p; // skip the second '%'
+                continue;
+            }
+
+            // We are at start of a conversion specifier. Skip flags/width/precision/length.
+            ++p;
+            // Flags: -+ #0 '
+            while (*p == '-' || *p == '+' || *p == ' ' || *p == '#' || *p == '0' || *p == '\'')
+            {
+                ++p;
+            }
+            // Width: number or '*'
+            if (*p == '*')
+            {
+                ++p;
+            }
+            else
+            {
+                while (*p >= '0' && *p <= '9') ++p;
+            }
+            // Precision: .number or .*
+            if (*p == '.')
+            {
+                ++p;
+                if (*p == '*')
+                {
+                    ++p;
+                }
+                else
+                {
+                    while (*p >= '0' && *p <= '9') ++p;
+                }
+            }
+            // Length modifiers (subset sufficient for our targets)
+            if ((*p == 'h' && *(p + 1) == 'h') || (*p == 'l' && *(p + 1) == 'l'))
+            {
+                p += 2;
+            }
+            else if (*p == 'h' || *p == 'l' || *p == 'j' || *p == 'z' || *p == 't' || *p == 'L')
+            {
+                ++p;
+            }
+            // Conversion specifier
+            if (*p == '\0')
+            {
+                break;
+            }
+            const char c = *p;
+            switch (c)
+            {
+                case 'd': case 'i': case 'u': case 'o': case 'x': case 'X':
+                case 'f': case 'F': case 'e': case 'E': case 'g': case 'G': case 'a': case 'A':
+                case 'c': case 's': case 'p': case 'n':
+                    ++count;
+                    break;
+                default:
+                    // Unknown specifier; treat as non-specifier (do not increment)
+                    break;
+            }
+        }
+        return count;
+    };
+
+    const int placeholderCount = countPrintfSpecifiers(format);
+
+    // If there are no placeholders, or argument count mismatches, prefer safe concatenation
+    if (placeholderCount == 0 || placeholderCount != static_cast<int>(sizeof...(args)))
+    {
+        // Special sentinel: "\1" often used to mean "no base text, just args"
+        // In C/C++ the literal "\1" is a single char with value 1
+        const bool isSentinel = (format[0] == '\x01' && format[1] == '\0');
+        String out = isSentinel ? String("") : String(format);
+
+        if constexpr (sizeof...(args) > 0)
+        {
+            if (out.length() > 0) out += " ";
+            auto appendArg = [&](const auto& v) {
+                if (out.length() > 0 && out[out.length() - 1] != ' ') out += " ";
+                out += toStringAny(v);
+            };
+            (appendArg(std::forward<Args>(args)), ...);
+        }
+        return out;
+    }
+
+    std::array<char, 512> buffer{};
     int result = snprintf(buffer.data(), buffer.size(), format, std::forward<Args>(args)...);
     if (result < 0)
     {
