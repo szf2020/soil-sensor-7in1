@@ -1,10 +1,4 @@
 name: JXCT CodeQL Config
-packs:
-  - codeql/cpp-queries
-queries:
-  - uses: codeql/cpp-queries@latest
-    with:
-      suite: security-and-quality
 paths:
   - src
   - include

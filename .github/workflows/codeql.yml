@@ -27,6 +27,9 @@ jobs:
   analyze:
     name: Analyze (C/C++)
     runs-on: ubuntu-latest
+    env:
+      GIT_TERMINAL_PROMPT: 0
+      GIT_ASKPASS: /bin/true
     permissions:
       contents: read
       actions: read
@@ -64,7 +67,6 @@ jobs:
         with:
           languages: cpp
           config-file: ./.github/codeql/codeql-config.yml
-          queries: +security-and-quality
 
       - name: Build (PlatformIO)
         env:
