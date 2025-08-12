@@ -4,7 +4,7 @@
 PROJECT_NAME           = "JXCT Soil Sensor 7-in-1"
 PROJECT_NUMBER         = 3.13.2
 PROJECT_BRIEF          = "IoT система мониторинга почвы на базе ESP32"
-OUTPUT_DIRECTORY       = docs/doxygen
+OUTPUT_DIRECTORY       = .
 CREATE_SUBDIRS         = NO
 ALLOW_UNICODE_NAMES    = NO
 OUTPUT_LANGUAGE        = Russian
@@ -124,7 +124,7 @@ DOT_CLEANUP            = YES
 
 # HTML вывод
 GENERATE_HTML          = YES
-HTML_OUTPUT            = docs/doxygen/html
+HTML_OUTPUT            = html
 HTML_FILE_EXTENSION    = .html
 HTML_HEADER            =
 HTML_FOOTER            =
@@ -248,7 +248,7 @@ SKIP_FUNCTION_MACROS   = YES
 
 # Внешние ссылки
 TAGFILES               =
-GENERATE_TAGFILE       = docs/doxygen/jxct.tag
+GENERATE_TAGFILE       = html/jxct.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = YES
 EXTERNAL_PAGES         = YES
