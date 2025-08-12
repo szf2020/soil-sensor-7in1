@@ -1,0 +1,81 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [ main, refactoring ]
+    paths-ignore:
+      - 'site/**'
+      - 'html/**'
+      - 'docs/**'
+      - 'temp_analysis/**'
+      - 'temp_competitor_analysis/**'
+      - 'test_reports/**'
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - 'site/**'
+      - 'html/**'
+      - 'docs/**'
+      - 'temp_analysis/**'
+      - 'temp_competitor_analysis/**'
+      - 'test_reports/**'
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Analyze (C/C++)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      - name: Cache PlatformIO packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
+          restore-keys: ${{ runner.os }}-pio-
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: cpp
+          config-file: ./.github/codeql/codeql-config.yml
+          queries: +security-and-quality
+
+      - name: Build (PlatformIO)
+        env:
+          PIO_HOME_DIR: ~/.platformio
+        run: |
+          pio pkg update
+          pio run -e esp32dev
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:cpp'
+
+

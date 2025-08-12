@@ -1,0 +1,28 @@
+name: JXCT CodeQL Config
+packs:
+  - codeql/cpp-queries
+queries:
+  - uses: codeql/cpp-queries@latest
+    with:
+      suite: security-and-quality
+paths:
+  - src
+  - include
+paths-ignore:
+  - test/**
+  - temp_analysis/**
+  - temp_competitor_analysis/**
+  - html/**
+  - site/**
+  - docs/**
+  - test_reports/**
+extraction:
+  cpp:
+    prepare:
+      packages:
+        - build-essential
+        - python3
+        - python3-pip
+    index:
+      buildless: true
+
